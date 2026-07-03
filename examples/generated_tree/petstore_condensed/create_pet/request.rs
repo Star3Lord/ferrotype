@@ -8,7 +8,7 @@ use super::super::shared::enums::*;
 use super::super::shared::request::*;
 pub use super::super::support::error;
 
-///`CreatePetRequest`
+/// `CreatePetRequest`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]

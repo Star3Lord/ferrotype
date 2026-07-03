@@ -45,7 +45,7 @@ pub mod error {
     }
 }
 
-///Contains required and optional elements to refund tickets.
+/// Contains required and optional elements to refund tickets.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -55,18 +55,21 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RefundTicketsRequest {
-    ///The booking reference ID as shown in the source supplier or vendor system.
+    /// The booking reference ID as shown in the source supplier or vendor system.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
-    ///Lists printers or a printer profile to designate. It is possible to provide a single `PrinterAddress` object with a printer profile. Alternatively, the array may contain multiple `PrinterAddress` objects, but each of them must have the same printer type definition.
+    /// Lists printers or a printer profile to designate. It is possible to provide a single
+    /// `PrinterAddress` object with a printer profile. Alternatively, the array may contain
+    /// multiple `PrinterAddress` objects, but each of them must have the same printer type
+    /// definition.
     pub designate_printers: ::std::option::Option<::std::vec::Vec<PrinterAddress>>,
     pub documents_type: ::std::option::Option<DocumentsTypeEnum>,
     pub error_handling_policy: ::std::option::Option<CancelErrorPolicyEnum>,
     #[patch(name = "Option<NotificationPatch>")]
     pub notification: ::std::option::Option<Notification>,
-    ///The entity that authorizes the changes in a Passenger Name Record.
+    /// The entity that authorizes the changes in a Passenger Name Record.
     pub received_from: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code of the target destination for which the ticket refund is requested.
+    /// The pseudo city code of the target destination for which the ticket refund is requested.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///Lists tickets which should be refunded. Can contain up to 12 elements.
+    /// Lists tickets which should be refunded. Can contain up to 12 elements.
     pub tickets: ::std::option::Option<::std::vec::Vec<RefundFlightTicket>>,
 }

@@ -56,16 +56,17 @@ fn body(out: &str) -> &str {
     out.split_once("\n\n").expect("generated header").1
 }
 
-/// The output slice for one emitted item: from its `///`Name`` doc line
-/// to the next item's doc line (items carry no spec descriptions here).
+/// The output slice for one emitted item: from its `` /// `Name` `` doc
+/// line to the next item's doc line (items carry no spec descriptions
+/// here).
 fn item_block<'a>(out: &'a str, name: &str) -> &'a str {
-    let marker = format!("///`{name}`");
+    let marker = format!("/// `{name}`");
     let start = out
         .find(&marker)
         .unwrap_or_else(|| panic!("no item {name} in:\n{out}"));
     let rest = &out[start + marker.len()..];
     let end = rest
-        .find("///`")
+        .find("/// `")
         .map(|offset| start + marker.len() + offset)
         .unwrap_or(out.len());
     &out[start..end]

@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains voided ticket information.
+/// Contains voided ticket information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -56,14 +56,16 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RefundTicketsResponse {
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
-    ///Lists all successfully refunded tickets.
+    /// Lists all successfully refunded tickets.
     pub refunded_tickets: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
     #[patch(name = "Option<RefundTicketsRequestPatch>")]
     pub request: ::std::option::Option<RefundTicketsRequest>,
-    ///Lists information about cancellation eligibility and refundable amounts per ticket in the order of the request.
+    /// Lists information about cancellation eligibility and refundable amounts per ticket in the
+    /// order of the request.
     pub tickets: ::std::option::Option<::std::vec::Vec<Ticket>>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
 }

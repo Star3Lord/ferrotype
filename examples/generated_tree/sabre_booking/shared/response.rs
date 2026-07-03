@@ -44,7 +44,8 @@ pub mod error {
     }
 }
 
-///Contains accounting data correlated with a fulfilled document. Supported for ATPCO content only.
+/// Contains accounting data correlated with a fulfilled document. Supported for ATPCO content
+/// only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -54,37 +55,39 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AccountingItem {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the marketing airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the marketing airline.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///The number of a credit or debit card.
+    /// The number of a credit or debit card.
     pub card_number: ::std::option::Option<::std::string::String>,
-    ///The vendor code of a credit or debit card.
+    /// The vendor code of a credit or debit card.
     pub card_type_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<CommissionPatch>")]
     pub commission: ::std::option::Option<Commission>,
     pub creation_type: ::std::option::Option<AccountingItemCreationTypeEnum>,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The monetary amount of the fare paid for the ticket.
+    /// The monetary amount of the fare paid for the ticket.
     pub fare_amount: ::std::option::Option<::std::string::String>,
     pub fare_application_type: ::std::option::Option<FareApplicationTypeEnum>,
     pub form_of_payment_type: ::std::option::Option<AccountingFormOfPaymentTypeEnum>,
     #[patch(name = "Option<GoodsAndServicesTaxPatch>")]
     pub goods_and_services_tax: ::std::option::Option<GoodsAndServicesTax>,
-    ///Contains order invoice number. Supported for NDC only.
+    /// Contains order invoice number. Supported for NDC only.
     pub invoice_number: ::std::option::Option<::std::string::String>,
     pub tariff_basis_type: ::std::option::Option<TariffBasisTypeEnum>,
-    ///The monetary amount of the tax applied to the fare.
+    /// The monetary amount of the tax applied to the fare.
     pub tax_amount: ::std::option::Option<::std::string::String>,
-    ///The original text of the ATPCO accounting line.
+    /// The original text of the ATPCO accounting line.
     pub text: ::std::option::Option<::std::string::String>,
-    ///The number of the electronic document.
+    /// The number of the electronic document.
     pub ticket_number: ::std::option::Option<::std::string::String>,
-    ///Lists the indices of travelers in the `travelers` array to whom the particular accounting item is assigned. Returned only if `fareApplication` is set to `Single Traveler`.
+    /// Lists the indices of travelers in the `travelers` array to whom the particular accounting
+    /// item is assigned. Returned only if `fareApplication` is set to `Single Traveler`.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains the details for an ancillary.
+/// Contains the details for an ancillary.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -94,45 +97,54 @@ pub struct AccountingItem {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Ancillary {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline that owns the service.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the airline that owns the service.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///The commercial name of the ancillary.
+    /// The commercial name of the ancillary.
     pub commercial_name: ::std::option::Option<::std::string::String>,
-    ///The electronic document number.
+    /// The electronic document number.
     pub electronic_miscellaneous_document_number: ::std::option::Option<
         ::std::string::String,
     >,
     pub flight_applicability_type: ::std::option::Option<FlightApplicabilityTypeEnum>,
-    ///Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a single ancillary item.
+    /// Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a
+    /// single ancillary item.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///If true, the ancilliary has a Commission included.
+    /// If true, the ancilliary has a Commission included.
     pub is_commissionable: ::std::option::Option<bool>,
-    ///If true, the ancilliary is refundable.
+    /// If true, the ancilliary is refundable.
     pub is_refundable: ::std::option::Option<bool>,
-    ///The ID of an ancillary item.
+    /// The ID of an ancillary item.
     pub item_id: ::std::option::Option<::std::string::String>,
-    ///Quantity of ancillary items.
+    /// Quantity of ancillary items.
     pub number_of_items: ::std::option::Option<i32>,
-    ///The IATA-defined reason for issuance code (RFIC).
+    /// The IATA-defined reason for issuance code (RFIC).
     pub reason_for_issuance_code: ::std::option::Option<::std::string::String>,
     pub reason_for_issuance_name: ::std::option::Option<ReasonForIssuanceEnum>,
     pub source: ::std::option::Option<AncillarySourceEnum>,
-    ///The category of the special service associated with the selected ancillary service.
+    /// The category of the special service associated with the selected ancillary service.
     pub special_service_code: ::std::option::Option<::std::string::String>,
-    ///The two-letter status code used by vendors. It indicates the booking status.
+    /// The two-letter status code used by vendors. It indicates the booking status.
     pub status_code: ::std::option::Option<::std::string::String>,
     pub status_name: ::std::option::Option<AncillaryStatusNameEnum>,
-    ///The issuance subcode (`RFISC`) is an industry-defined or airline-defined code identifying a specific type of service. Industry-defined subcodes are available for all airlines to use, have standard definitions, and are maintained by [ATPCO](https://www.atpco.net/sites/atpco-public/files/all_pdfs/Opt_Scvs_Industry_Sub_Codes_Online_C.pdf). Airline-defined subcodes are available for specific airlines only, and are defined and maintained by the airline utilizing the code.
+    /// The issuance subcode (`RFISC`) is an industry-defined or airline-defined code identifying a
+    /// specific type of service. Industry-defined subcodes are available for all airlines to use,
+    /// have standard definitions, and are maintained by
+    /// [ATPCO](https://www.atpco.net/sites/atpco-public/files/all_pdfs/Opt_Scvs_Industry_Sub_Codes_Online_C.pdf).
+    /// Airline-defined subcodes are available for specific airlines only, and are defined and
+    /// maintained by the airline utilizing the code.
     pub subcode: ::std::option::Option<::std::string::String>,
-    ///Lists tax information associated with the ancillary.
+    /// Lists tax information associated with the ancillary.
     pub taxes: ::std::option::Option<::std::vec::Vec<Tax>>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub totals: ::std::option::Option<TotalValues>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline providing the service. Mutually exclusive with the `source` property.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the airline providing the service. Mutually exclusive with the `source`
+    /// property.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains the allowed baggage number which is included in the ticket price.
+/// Contains the allowed baggage number which is included in the ticket price.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -142,17 +154,17 @@ pub struct Ancillary {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct BaggageAllowance {
-    ///Lists baggage allowance policies for each type of baggage.
+    /// Lists baggage allowance policies for each type of baggage.
     pub baggage_pieces: ::std::option::Option<::std::vec::Vec<BaggagePolicy>>,
-    ///Maximum number of allowed baggage pieces.
+    /// Maximum number of allowed baggage pieces.
     pub maximum_pieces: ::std::option::Option<i32>,
-    ///Maximum summary weight of all allowed baggage measured in kilograms [kg].
+    /// Maximum summary weight of all allowed baggage measured in kilograms [kg].
     pub total_weight_in_kilograms: ::std::option::Option<i32>,
-    ///Maximum summary weight of all allowed baggage measured in pounds [lb].
+    /// Maximum summary weight of all allowed baggage measured in pounds [lb].
     pub total_weight_in_pounds: ::std::option::Option<i32>,
 }
 
-///Contains restrictions applied on number of baggage pieces and optional fee applicable.
+/// Contains restrictions applied on number of baggage pieces and optional fee applicable.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -164,23 +176,30 @@ pub struct BaggageAllowance {
 pub struct BaggagePolicy {
     #[patch(name = "Option<ValuePatch>")]
     pub fee: ::std::option::Option<Value>,
-    ///If `true`, the baggage restrictions are for informational purposes only. Baggage is available for purchase during check-in at the airport.
+    /// If `true`, the baggage restrictions are for informational purposes only. Baggage is
+    /// available for purchase during check-in at the airport.
     pub is_check_in_only: ::std::option::Option<bool>,
-    ///Maximum allowed size of the baggage piece measured in centimeters [cm]. If null, no size limit is specified for this type of baggage.
+    /// Maximum allowed size of the baggage piece measured in centimeters [cm]. If null, no size
+    /// limit is specified for this type of baggage.
     pub maximum_size_in_centimeters: ::std::option::Option<i32>,
-    ///Maximum allowed size of the baggage piece measured in inches [in]. If null, no size limit is specified for this type of baggage.
+    /// Maximum allowed size of the baggage piece measured in inches [in]. If null, no size limit is
+    /// specified for this type of baggage.
     pub maximum_size_in_inches: ::std::option::Option<i32>,
-    ///Maximum allowed weight of the baggage piece measured in kilograms [kg]. If null, no weight limit is specified for this type of baggage.
+    /// Maximum allowed weight of the baggage piece measured in kilograms [kg]. If null, no weight
+    /// limit is specified for this type of baggage.
     pub maximum_weight_in_kilograms: ::std::option::Option<i32>,
-    ///Maximum allowed weight of the baggage piece measured in pounds [lb]. If null, no weight limit is specified for this type of baggage.
+    /// Maximum allowed weight of the baggage piece measured in pounds [lb]. If null, no weight
+    /// limit is specified for this type of baggage.
     pub maximum_weight_in_pounds: ::std::option::Option<i32>,
-    ///The number of pieces allowed within the baggage policy.
+    /// The number of pieces allowed within the baggage policy.
     pub number_of_pieces: i32,
-    ///The description of the special baggage items allowed, if the baggage policy provides information about special baggage items such as musical instruments, fishing or sporting equipment, mobility device, etc.
+    /// The description of the special baggage items allowed, if the baggage policy provides
+    /// information about special baggage items such as musical instruments, fishing or sporting
+    /// equipment, mobility device, etc.
     pub special_item_description: ::std::option::Option<::std::string::String>,
 }
 
-///Contains booking information.
+/// Contains booking information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -190,79 +209,89 @@ pub struct BaggagePolicy {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Booking {
-    ///Lists accounting items from the booking.
+    /// Lists accounting items from the booking.
     pub accounting_items: ::std::option::Option<::std::vec::Vec<AccountingItem>>,
-    ///The customer identifier used by their travel agency, also known as the customer number or the DK number. Can be a six, seven, or 10-character string.
+    /// The customer identifier used by their travel agency, also known as the customer number or
+    /// the DK number. Can be a six, seven, or 10-character string.
     pub agency_customer_number: ::std::option::Option<::std::string::String>,
-    ///Lists all segments of the booking which overlaps with contextual booking elements such as flights, hotels, cars, trains and so on. This list also contains non-product related segments which exist in an underlying booking system.
+    /// Lists all segments of the booking which overlaps with contextual booking elements such as
+    /// flights, hotels, cars, trains and so on. This list also contains non-product related
+    /// segments which exist in an underlying booking system.
     pub all_segments: ::std::option::Option<::std::vec::Vec<SegmentBasics>>,
-    ///The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is the PNR Locator or NDC `orderId` value, depending on content type.
+    /// The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is
+    /// the PNR Locator or NDC `orderId` value, depending on content type.
     pub booking_id: ::std::option::Option<::std::string::String>,
-    ///Lists all car rentals associated with the booking.
+    /// Lists all car rentals associated with the booking.
     pub cars: ::std::option::Option<::std::vec::Vec<Car>>,
     #[patch(name = "Option<ContactInformationPatch>")]
     pub contact_info: ::std::option::Option<ContactInformation>,
     #[patch(name = "Option<CreationDetailsPatch>")]
     pub creation_details: ::std::option::Option<CreationDetails>,
-    ///Lists all cruises associated with the booking.
+    /// Lists all cruises associated with the booking.
     pub cruises: ::std::option::Option<::std::vec::Vec<Cruise>>,
-    ///The end date of the booking in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The end date of the booking in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub end_date: ::std::option::Option<::std::string::String>,
-    ///Lists ancillary offers for selected flights identified by `itemId` flight references.
+    /// Lists ancillary offers for selected flights identified by `itemId` flight references.
     pub fare_offers: ::std::option::Option<::std::vec::Vec<FareOffer>>,
-    ///Lists most restrictive fare rule information displayed at the time of purchase. This service applies data from either Tickets or Price Quotes.
+    /// Lists most restrictive fare rule information displayed at the time of purchase. This service
+    /// applies data from either Tickets or Price Quotes.
     pub fare_rules: ::std::option::Option<::std::vec::Vec<FareRule>>,
-    ///Lists the details for saved fares. This service applies data either from a Price Quote or an Order Item.
+    /// Lists the details for saved fares. This service applies data either from a Price Quote or an
+    /// Order Item.
     pub fares: ::std::option::Option<::std::vec::Vec<Fare>>,
-    ///Lists all electronic flight tickets issued for the travelers.
+    /// Lists all electronic flight tickets issued for the travelers.
     pub flight_tickets: ::std::option::Option<::std::vec::Vec<FlightTicket>>,
-    ///Lists all flights associated with the booking in chronological order.
+    /// Lists all flights associated with the booking in chronological order.
     pub flights: ::std::option::Option<::std::vec::Vec<Flight>>,
     #[patch(name = "Option<FutureTicketingPolicyPatch>")]
     pub future_ticketing_policy: ::std::option::Option<FutureTicketingPolicy>,
-    ///Lists all hotel reservations associated with the booking.
+    /// Lists all hotel reservations associated with the booking.
     pub hotels: ::std::option::Option<::std::vec::Vec<Hotel>>,
-    ///If `true`, the booking is cancelable in full or in segments. Refer to the `refundPenalties` array for more information.
+    /// If `true`, the booking is cancelable in full or in segments. Refer to the `refundPenalties`
+    /// array for more information.
     pub is_cancelable: ::std::option::Option<bool>,
-    ///If true, at least one ticket was issued for the booking.
+    /// If true, at least one ticket was issued for the booking.
     pub is_ticketed: ::std::option::Option<bool>,
-    /**Lists all the journeys associated with the booking.
-  * For one-way, this is a single element list.
-  * For round-trip, the list contains two journeys.
-  * For multi-destinations, the list contains more than two journeys.
-*/
+    /// Lists all the journeys associated with the booking.
+    /// * For one-way, this is a single element list.
+    /// * For round-trip, the list contains two journeys.
+    /// * For multi-destinations, the list contains more than two journeys.
     pub journeys: ::std::option::Option<::std::vec::Vec<Journey>>,
-    ///Lists nonelectronic tickets from the booking.
+    /// Lists nonelectronic tickets from the booking.
     pub non_electronic_tickets: ::std::option::Option<
         ::std::vec::Vec<NonElectronicTicket>,
     >,
-    ///Lists Other Service Information (OSI) sent to or retrieved from a specific vendor.
+    /// Lists Other Service Information (OSI) sent to or retrieved from a specific vendor.
     pub other_services: ::std::option::Option<::std::vec::Vec<OtherServiceInformation>>,
     #[patch(name = "Option<TotalPaymentsPatch>")]
     pub payments: ::std::option::Option<TotalPayments>,
-    ///Lists profiles used in the booking.
+    /// Lists profiles used in the booking.
     pub profiles: ::std::option::Option<::std::vec::Vec<Profile>>,
-    ///Contains list of remarks added to the PNR.
+    /// Contains list of remarks added to the PNR.
     pub remarks: ::std::option::Option<::std::vec::Vec<Remark>>,
-    ///The retention date of the booking. Used optionally to keep the booking active past the date of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set for purging.
+    /// The retention date of the booking. Used optionally to keep the booking active past the date
+    /// of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set
+    /// for purging.
     pub retention_end_date: ::std::option::Option<::std::string::String>,
-    ///The label associated with the retention date.
+    /// The label associated with the retention date.
     pub retention_label: ::std::option::Option<::std::string::String>,
-    ///Lists all special services associated with a traveler.
+    /// Lists all special services associated with a traveler.
     pub special_services: ::std::option::Option<::std::vec::Vec<SpecialService>>,
-    ///The start date of the booking in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The start date of the booking in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub start_date: ::std::option::Option<::std::string::String>,
-    ///Lists all trains associated with the booking.
+    /// Lists all trains associated with the booking.
     pub trains: ::std::option::Option<::std::vec::Vec<Train>>,
-    ///Lists the traveler(s) associated with the booking.
+    /// Lists the traveler(s) associated with the booking.
     pub travelers: ::std::option::Option<::std::vec::Vec<Traveler>>,
-    ///Lists details of the travelers' employers.
+    /// Lists details of the travelers' employers.
     pub travelers_employers: ::std::option::Option<::std::vec::Vec<TravelersEmployer>>,
     #[patch(name = "Option<TravelersGroupPatch>")]
     pub travelers_group: ::std::option::Option<TravelersGroup>,
 }
 
-///Contains a Branded Fare attribute.
+/// Contains a Branded Fare attribute.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -272,13 +301,13 @@ pub struct Booking {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct BrandAttribute {
-    ///Marketing information about the product.
+    /// Marketing information about the product.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The ID of a given Branded Fare attribute.
+    /// The ID of a given Branded Fare attribute.
     pub item_id: ::std::option::Option<::std::string::String>,
 }
 
-///Contains car rental information, identified by `itemId`, for the given booking.
+/// Contains car rental information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -294,7 +323,7 @@ pub struct Car {
     pub car_item: CarItem,
 }
 
-///Contains car rental information for the given booking.
+/// Contains car rental information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -304,67 +333,70 @@ pub struct Car {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CarItem {
-    ///The one or two-letter status code used by vendors. It indicates the car's booking status.
+    /// The one or two-letter status code used by vendors. It indicates the car's booking status.
     pub car_status_code: ::std::option::Option<::std::string::String>,
     pub car_status_name: ::std::option::Option<StatusNameEnum>,
     #[patch(name = "Option<AddressPatch>")]
     pub collection_address: ::std::option::Option<Address>,
     #[patch(name = "Option<CarRentalSitePatch>")]
     pub collection_site: ::std::option::Option<CarRentalSite>,
-    ///The car rental reservation number.
+    /// The car rental reservation number.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<AddressPatch>")]
     pub delivery_address: ::std::option::Option<Address>,
     #[patch(name = "Option<CarRentalSitePatch>")]
     pub delivery_site: ::std::option::Option<CarRentalSite>,
-    ///The included distance in the car rental booking.
+    /// The included distance in the car rental booking.
     pub distance_allowance: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<GenericAddressPatch>")]
     pub drop_off_address: ::std::option::Option<GenericAddress>,
     #[patch(name = "Option<ContactInformationPatch>")]
     pub drop_off_contact_info: ::std::option::Option<ContactInformation>,
-    ///The drop off date of the rental car in `YYYY-MM-DD` format in the drop off location local time zone.
+    /// The drop off date of the rental car in `YYYY-MM-DD` format in the drop off location local
+    /// time zone.
     pub drop_off_date: ::std::string::String,
-    ///The code of the drop-off location.
+    /// The code of the drop-off location.
     pub drop_off_location_code: ::std::option::Option<::std::string::String>,
-    ///The time of the rental car drop off in `HH:MM` format in the drop off location local time.
+    /// The time of the rental car drop off in `HH:MM` format in the drop off location local time.
     pub drop_off_time: ::std::string::String,
-    ///The payment information provided to the vendor to guarantee the booking.
+    /// The payment information provided to the vendor to guarantee the booking.
     pub guarantee_payment_note: ::std::option::Option<::std::string::String>,
     pub guarantee_payment_type: ::std::option::Option<GuaranteePaymentTypeEnum>,
-    ///If `true`, the car rental can be refunded in total or in segments. Refer to the `refundPenalties` array for more information.
+    /// If `true`, the car rental can be refunded in total or in segments. Refer to the
+    /// `refundPenalties` array for more information.
     pub is_refundable: bool,
-    ///The number of requested cars.
+    /// The number of requested cars.
     pub number_of_vehicles: ::std::option::Option<i32>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub payment: ::std::option::Option<TotalValues>,
     pub pick_up_address: GenericAddress,
     #[patch(name = "Option<ContactInformationPatch>")]
     pub pick_up_contact_info: ::std::option::Option<ContactInformation>,
-    ///The pick up date of the rental car in `YYYY-MM-DD` format in the pick up location local time zone.
+    /// The pick up date of the rental car in `YYYY-MM-DD` format in the pick up location local time
+    /// zone.
     pub pick_up_date: ::std::string::String,
-    ///The code of the pick-up location.
+    /// The code of the pick-up location.
     pub pick_up_location_code: ::std::option::Option<::std::string::String>,
-    ///The time of the rental car pick up in `HH:MM` format in the pick up location local time.
+    /// The time of the rental car pick up in `HH:MM` format in the pick up location local time.
     pub pick_up_time: ::std::string::String,
-    ///The unique ID for an offer at a given vendor.
+    /// The unique ID for an offer at a given vendor.
     pub rate_code: ::std::option::Option<::std::string::String>,
-    ///Lists the conditions and payments for a car rental cancellation.
+    /// Lists the conditions and payments for a car rental cancellation.
     pub refund_penalties: ::std::option::Option<::std::vec::Vec<DateRangeRefundPenalty>>,
-    ///The special information provided to the vendor.
+    /// The special information provided to the vendor.
     pub special_instructions: ::std::option::Option<::std::string::String>,
-    ///Specifies the traveler from the travelers list with whom the car booking is associated.
+    /// Specifies the traveler from the travelers list with whom the car booking is associated.
     pub traveler_index: ::std::option::Option<i32>,
-    ///The 4 character [ACRISS](https://www.acriss.org/car-codes/) code of the car.
+    /// The 4 character [ACRISS](https://www.acriss.org/car-codes/) code of the car.
     pub vehicle_type_code: ::std::option::Option<::std::string::String>,
     pub vehicle_type_name: ::std::option::Option<VehicleTypeNameEnum>,
-    ///The two-letter code of the car rental vendor.
+    /// The two-letter code of the car rental vendor.
     pub vendor_code: ::std::string::String,
-    ///The full name of the car rental vendor.
+    /// The full name of the car rental vendor.
     pub vendor_name: ::std::string::String,
 }
 
-///Contains the commission amount applicable to the fare or ticket.
+/// Contains the commission amount applicable to the fare or ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -374,15 +406,16 @@ pub struct CarItem {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Commission {
-    ///The commission amount included in the fare or applied during ticketing.
+    /// The commission amount included in the fare or applied during ticketing.
     pub commission_amount: ::std::option::Option<::std::string::String>,
-    ///The commission percentage included in the fare or applied during ticketing.
+    /// The commission percentage included in the fare or applied during ticketing.
     pub commission_percentage: ::std::option::Option<::std::string::String>,
-    ///The three letters [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) currency code.
+    /// The three letters [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) currency
+    /// code.
     pub currency_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains contact information for the booking.
+/// Contains contact information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -392,17 +425,17 @@ pub struct Commission {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct ContactInformation {
-    ///Lists email addresses of travelers or vendors.
+    /// Lists email addresses of travelers or vendors.
     pub emails: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///Lists formatted phone numbers to use as vendor emergency contacts.
+    /// Lists formatted phone numbers to use as vendor emergency contacts.
     pub emergency_phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///Lists formatted fax numbers of travelers or vendors.
+    /// Lists formatted fax numbers of travelers or vendors.
     pub faxes: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///Lists formatted phone numbers of travelers or vendors.
+    /// Lists formatted phone numbers of travelers or vendors.
     pub phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }
 
-///Contains the ticket's coupon information.
+/// Contains the ticket's coupon information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -416,7 +449,7 @@ pub struct CouponStatus {
     pub coupon_status_code: CouponStatusCodeEnum,
 }
 
-///Contains details about the creation.
+/// Contains details about the creation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -426,33 +459,36 @@ pub struct CouponStatus {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CreationDetails {
-    ///A unique identifier accredited by the International Air Transport Association (IATA).
+    /// A unique identifier accredited by the International Air Transport Association (IATA).
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
-    ///The date in `YYYY-MM-DD` format when the booking was created.
+    /// The date in `YYYY-MM-DD` format when the booking was created.
     pub creation_date: ::std::option::Option<::std::string::String>,
-    ///The time in `HH:MM` format when the booking was created. Not supported for NDC bookings.
+    /// The time in `HH:MM` format when the booking was created. Not supported for NDC bookings.
     pub creation_time: ::std::option::Option<::std::string::String>,
-    ///The sine of the Employee Profile Record that created the booking. Not supported for NDC bookings.
+    /// The sine of the Employee Profile Record that created the booking. Not supported for NDC
+    /// bookings.
     pub creation_user_sine: ::std::option::Option<::std::string::String>,
-    ///The date in `YYYY-MM-DD` format when the booking was last updated.
+    /// The date in `YYYY-MM-DD` format when the booking was last updated.
     pub last_update_date: ::std::option::Option<::std::string::String>,
-    ///The time in `HH:MM` format when the booking was last updated. Not supported for NDC bookings.
+    /// The time in `HH:MM` format when the booking was last updated. Not supported for NDC
+    /// bookings.
     pub last_update_time: ::std::option::Option<::std::string::String>,
-    ///The number of all booking updates committed.
+    /// The number of all booking updates committed.
     pub number_of_updates: ::std::option::Option<i32>,
-    ///The identification code for the prime host (global distribution system) associated with the reservation.
+    /// The identification code for the prime host (global distribution system) associated with the
+    /// reservation.
     pub prime_host_id: ::std::option::Option<::std::string::String>,
-    ///The date in the `YYYY-MM-DD` format by which the stored fare must be ticketed.
+    /// The date in the `YYYY-MM-DD` format by which the stored fare must be ticketed.
     pub purchase_deadline_date: ::std::option::Option<::std::string::String>,
-    ///The time in the `HH:MM` format by which the stored fare must be ticketed.
+    /// The time in the `HH:MM` format by which the stored fare must be ticketed.
     pub purchase_deadline_time: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code of the agent who created the booking.
+    /// The pseudo city code of the agent who created the booking.
     pub user_home_pcc: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code where the booking was created.
+    /// The pseudo city code where the booking was created.
     pub user_work_pcc: ::std::option::Option<::std::string::String>,
 }
 
-///Contains cruise reservation information, identified by `itemId`, for the given booking.
+/// Contains cruise reservation information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -468,7 +504,7 @@ pub struct Cruise {
     pub cruise_item: CruiseItem,
 }
 
-///Contains cruise information for the given booking.
+/// Contains cruise information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -478,36 +514,38 @@ pub struct Cruise {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CruiseItem {
-    ///The arrival date in `YYYY-MM-DD` format in the port's timezone.
+    /// The arrival date in `YYYY-MM-DD` format in the port's timezone.
     pub arrival_date: ::std::string::String,
-    ///The time of arrival in `HH:MM` format.
+    /// The time of arrival in `HH:MM` format.
     pub arrival_time: ::std::option::Option<::std::string::String>,
-    ///The number of the reserved cabin on the ship.
+    /// The number of the reserved cabin on the ship.
     pub cabin_number: ::std::option::Option<::std::string::String>,
-    ///The cruise booking reference ID in the cruise line's system.
+    /// The cruise booking reference ID in the cruise line's system.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
-    ///The one or two-letter status code used by vendors. It indicates the cruise's booking status.
+    /// The one or two-letter status code used by vendors. It indicates the cruise's booking status.
     pub cruise_status_code: ::std::option::Option<::std::string::String>,
     pub cruise_status_name: ::std::option::Option<StatusNameEnum>,
-    ///The departure date in `YYYY-MM-DD` format in the origin port's timezone.
+    /// The departure date in `YYYY-MM-DD` format in the origin port's timezone.
     pub departure_date: ::std::string::String,
-    ///The time of departure in `HH:MM` format.
+    /// The time of departure in `HH:MM` format.
     pub departure_time: ::std::option::Option<::std::string::String>,
-    ///The origin port code.
+    /// The origin port code.
     pub from_port_code: ::std::string::String,
-    ///The number of guests.
+    /// The number of guests.
     pub number_of_guests: ::std::option::Option<i32>,
-    ///The ship code in the cruise line system.
+    /// The ship code in the cruise line system.
     pub ship_code: ::std::option::Option<::std::string::String>,
-    ///The ship name in the cruise line system.
+    /// The ship name in the cruise line system.
     pub ship_name: ::std::option::Option<::std::string::String>,
-    ///The destination port code for cruises where destination port is different than the origin port.
+    /// The destination port code for cruises where destination port is different than the origin
+    /// port.
     pub to_port_code: ::std::option::Option<::std::string::String>,
-    ///The cruise vendor code.
+    /// The cruise vendor code.
     pub vendor_code: ::std::string::String,
 }
 
-///Contains the date range up to which a penalty is applicable, including the total cost of the penalty.
+/// Contains the date range up to which a penalty is applicable, including the total cost of the
+/// penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -517,14 +555,16 @@ pub struct CruiseItem {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct DateRangeRefundPenalty {
-    ///The date from when the penalty becomes applicable, in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The date from when the penalty becomes applicable, in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub applicable_from_date: ::std::option::Option<::std::string::String>,
-    ///The date when the penalty applicability ends, in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The date when the penalty applicability ends, in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub applicable_to_date: ::std::option::Option<::std::string::String>,
     pub penalty: Value,
 }
 
-///Contains error information.
+/// Contains error information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -534,21 +574,21 @@ pub struct DateRangeRefundPenalty {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Error {
-    ///The category of the error.
+    /// The category of the error.
     pub category: ::std::string::String,
-    ///The detailed description of the error.
+    /// The detailed description of the error.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The field name of the request if the error is related to a specific request/response field.
+    /// The field name of the request if the error is related to a specific request/response field.
     pub field_name: ::std::option::Option<::std::string::String>,
-    ///The field path of the request if the error is related to a specific request/response field.
+    /// The field path of the request if the error is related to a specific request/response field.
     pub field_path: ::std::option::Option<::std::string::String>,
-    ///The field value of the request if the error is related to a specific request/response field.
+    /// The field value of the request if the error is related to a specific request/response field.
     pub field_value: ::std::option::Option<::std::string::String>,
-    ///The type of the error.
+    /// The type of the error.
     pub type_: ::std::string::String,
 }
 
-///Contains construction details of a specific fare.
+/// Contains construction details of a specific fare.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -558,51 +598,56 @@ pub struct Error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Fare {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline that validated the fare.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the airline that validated the fare.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///Lists services and fees that are bundled with the selected fare.
+    /// Lists services and fees that are bundled with the selected fare.
     pub bundled_services_and_fees: ::std::option::Option<::std::vec::Vec<FareService>>,
     #[patch(name = "Option<CommissionPatch>")]
     pub commission: ::std::option::Option<Commission>,
     #[patch(name = "Option<FareCreationDetailsPatch>")]
     pub creation_details: ::std::option::Option<FareCreationDetails>,
-    ///Coded fare construction information. Not supported for NDC.
+    /// Coded fare construction information. Not supported for NDC.
     pub fare_calculation_line: ::std::option::Option<::std::string::String>,
-    ///Lists the components used to construct the fare.
+    /// Lists the components used to construct the fare.
     pub fare_construction: ::std::option::Option<::std::vec::Vec<FareComponent>>,
-    ///If `true`, the fare pricing is valid for the agency. If `false`, the agency's local date exceeds the purchase date.
+    /// If `true`, the fare pricing is valid for the agency. If `false`, the agency's local date
+    /// exceeds the purchase date.
     pub has_valid_pricing: ::std::option::Option<bool>,
     #[patch(name = "Option<InitialSellingFarePatch>")]
     pub initial_selling_fare: ::std::option::Option<InitialSellingFare>,
-    ///If `true`, the fare used for pricing is negotiated. If `false`, the fare used for pricing is public.
+    /// If `true`, the fare used for pricing is negotiated. If `false`, the fare used for pricing is
+    /// public.
     pub is_negotiated_fare: ::std::option::Option<bool>,
     #[patch(name = "Option<OriginalTotalValuesPatch>")]
     pub original_total_values: ::std::option::Option<OriginalTotalValues>,
-    ///The type code of the traveler returned in the pricing response and stored in the price quote.
+    /// The type code of the traveler returned in the pricing response and stored in the price
+    /// quote.
     pub priced_traveler_type: ::std::option::Option<::std::string::String>,
     pub pricing_status_code: ::std::option::Option<PricingStatusCodeEnum>,
     pub pricing_status_name: ::std::option::Option<PricingStatusNameEnum>,
     pub pricing_type_code: ::std::option::Option<PricingTypeCodeEnum>,
     pub pricing_type_name: ::std::option::Option<PricingTypeNameEnum>,
-    ///The ID of the fare source.
+    /// The ID of the fare source.
     pub record_id: ::std::option::Option<::std::string::String>,
-    ///The code describing the source of the fare.
+    /// The code describing the source of the fare.
     pub record_type_code: ::std::option::Option<::std::string::String>,
-    ///The name describing the source of the fare.
+    /// The name describing the source of the fare.
     pub record_type_name: ::std::option::Option<::std::string::String>,
-    ///The type code of the traveler requested when pricing the fare.
+    /// The type code of the traveler requested when pricing the fare.
     pub requested_traveler_type: ::std::option::Option<::std::string::String>,
-    ///Lists the taxes applied to the fare.
+    /// Lists the taxes applied to the fare.
     pub tax_breakdown: ::std::option::Option<::std::vec::Vec<TaxComponent>>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub totals: ::std::option::Option<TotalValues>,
-    ///The tour code applied to price the fare.
+    /// The tour code applied to price the fare.
     pub tour_code: ::std::option::Option<::std::string::String>,
-    ///Indicates to which travelers from the `travelers` list the fare belongs to. If the fare is applicable for all travelers, this list is not provided.
+    /// Indicates to which travelers from the `travelers` list the fare belongs to. If the fare is
+    /// applicable for all travelers, this list is not provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains details of a specific fare component.
+/// Contains details of a specific fare component.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -612,33 +657,41 @@ pub struct Fare {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareComponent {
-    ///The accountCode used for fare construction.
+    /// The accountCode used for fare construction.
     pub account_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<ValuePatch>")]
     pub base_rate: ::std::option::Option<Value>,
-    ///Lists Branded Fare (Price Class) attributes from NDC offers.
+    /// Lists Branded Fare (Price Class) attributes from NDC offers.
     pub brand_attributes: ::std::option::Option<::std::vec::Vec<BrandAttribute>>,
-    ///The code of the Branded Fare.
+    /// The code of the Branded Fare.
     pub brand_fare_code: ::std::option::Option<::std::string::String>,
-    ///The name of the Branded Fare.
+    /// The name of the Branded Fare.
     pub brand_fare_name: ::std::option::Option<::std::string::String>,
-    ///The code of the program the Branded Fare belongs to.
+    /// The code of the program the Branded Fare belongs to.
     pub brand_program_code: ::std::option::Option<::std::string::String>,
-    ///The name of the program the Branded Fare belongs to.
+    /// The name of the program the Branded Fare belongs to.
     pub brand_program_name: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<BaggageAllowancePatch>")]
     pub checked_baggage_allowance: ::std::option::Option<BaggageAllowance>,
-    ///The fare basis code used for fare construction.
+    /// The fare basis code used for fare construction.
     pub fare_basis_code: ::std::option::Option<::std::string::String>,
-    ///Lists the indices of flights within the current itinerary. If the fare component is associated with all flights, this list is not provided. This property will be deprecated in the future major version of this API. If you wish to check flight association, use the `flights` property within the `FareComponent` object.
+    /// Lists the indices of flights within the current itinerary. If the fare component is
+    /// associated with all flights, this list is not provided. This property will be deprecated in
+    /// the future major version of this API. If you wish to check flight association, use the
+    /// `flights` property within the `FareComponent` object.
     pub flight_indices: ::std::option::Option<::std::vec::Vec<i32>>,
-    ///Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a single fare component. If the fare component is associated with all flights or a different flight itinerary was used to create this fare component (verify `isCurrentItinerary` property), this list is not provided.
+    /// Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a
+    /// single fare component. If the fare component is associated with all flights or a different
+    /// flight itinerary was used to create this fare component (verify `isCurrentItinerary`
+    /// property), this list is not provided.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///If `true`, the fare component was created for a flight present in the current itinerary. If `false`, the fare component is related to a flight which is no longer a part of the current itinerary. This may be the case, for example, after a schedule change.
+    /// If `true`, the fare component was created for a flight present in the current itinerary. If
+    /// `false`, the fare component is related to a flight which is no longer a part of the current
+    /// itinerary. This may be the case, for example, after a schedule change.
     pub is_current_itinerary: ::std::option::Option<bool>,
 }
 
-///Contains details about the fare creation.
+/// Contains details about the fare creation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -648,27 +701,30 @@ pub struct FareComponent {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareCreationDetails {
-    ///A unique identifier accredited by the International Air Transport Association (IATA).
+    /// A unique identifier accredited by the International Air Transport Association (IATA).
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
-    ///The date in `YYYY-MM-DD` format when the booking was created.
+    /// The date in `YYYY-MM-DD` format when the booking was created.
     pub creation_date: ::std::option::Option<::std::string::String>,
-    ///The time in `HH:MM` format when the booking was created. Not supported for NDC bookings.
+    /// The time in `HH:MM` format when the booking was created. Not supported for NDC bookings.
     pub creation_time: ::std::option::Option<::std::string::String>,
-    ///The sine of the Employee Profile Record that created the booking. Not supported for NDC bookings.
+    /// The sine of the Employee Profile Record that created the booking. Not supported for NDC
+    /// bookings.
     pub creation_user_sine: ::std::option::Option<::std::string::String>,
-    ///The identification code for the prime host (global distribution system) associated with the reservation.
+    /// The identification code for the prime host (global distribution system) associated with the
+    /// reservation.
     pub prime_host_id: ::std::option::Option<::std::string::String>,
-    ///The date in the `YYYY-MM-DD` format by which the stored fare must be ticketed.
+    /// The date in the `YYYY-MM-DD` format by which the stored fare must be ticketed.
     pub purchase_deadline_date: ::std::option::Option<::std::string::String>,
-    ///The time in the `HH:MM` format by which the stored fare must be ticketed.
+    /// The time in the `HH:MM` format by which the stored fare must be ticketed.
     pub purchase_deadline_time: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code of the agent who created the booking.
+    /// The pseudo city code of the agent who created the booking.
     pub user_home_pcc: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code where the booking was created.
+    /// The pseudo city code where the booking was created.
     pub user_work_pcc: ::std::option::Option<::std::string::String>,
 }
 
-///Contains a breakdown of the fare difference between the initially offered fare totals and the final fare totals.
+/// Contains a breakdown of the fare difference between the initially offered fare totals and
+/// the final fare totals.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -678,19 +734,20 @@ pub struct FareCreationDetails {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareDifferenceBreakdown {
-    ///The monetary amount of the adjusted fare.
+    /// The monetary amount of the adjusted fare.
     pub adjusted_amount: ::std::option::Option<::std::string::String>,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///Lists handling fees.
+    /// Lists handling fees.
     pub fees: ::std::option::Option<::std::vec::Vec<HandlingFee>>,
-    ///Lists Goods and Services Taxes (GST) that adjust the total tax amount.
+    /// Lists Goods and Services Taxes (GST) that adjust the total tax amount.
     pub goods_and_services_taxes: ::std::option::Option<
         ::std::vec::Vec<GoodsAndServicesTax>,
     >,
 }
 
-///Contains ancillary offer for selected flights identified by `itemId` flight references and for selected travelers identified by indices in `travelers` list.
+/// Contains ancillary offer for selected flights identified by `itemId` flight references and
+/// for selected travelers identified by indices in `travelers` list.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -702,19 +759,21 @@ pub struct FareDifferenceBreakdown {
 pub struct FareOffer {
     #[patch(name = "Option<BaggageAllowancePatch>")]
     pub cabin_baggage_allowance: ::std::option::Option<BaggageAllowance>,
-    ///Lists cabin baggage (carry-on) policies and service fees.
+    /// Lists cabin baggage (carry-on) policies and service fees.
     pub cabin_baggage_charges: ::std::option::Option<::std::vec::Vec<BaggagePolicy>>,
     #[patch(name = "Option<BaggageAllowancePatch>")]
     pub checked_baggage_allowance: ::std::option::Option<BaggageAllowance>,
-    ///Lists checked baggage policies and service fees.
+    /// Lists checked baggage policies and service fees.
     pub checked_baggage_charges: ::std::option::Option<::std::vec::Vec<BaggagePolicy>>,
-    ///Lists flights referenced by flight `itemId`. If the offer is valid for all flights, this list is not provided.
+    /// Lists flights referenced by flight `itemId`. If the offer is valid for all flights, this
+    /// list is not provided.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///Indicates to which travelers from the `travelers` list the ancillary offer belongs to. If the offer is valid for all travelers, this list is not provided.
+    /// Indicates to which travelers from the `travelers` list the ancillary offer belongs to. If
+    /// the offer is valid for all travelers, this list is not provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains eligibility requirements and travel restrictions for a flight.
+/// Contains eligibility requirements and travel restrictions for a flight.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -724,29 +783,36 @@ pub struct FareOffer {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareRule {
-    ///Lists conditions and payments associated with order cancellation.
+    /// Lists conditions and payments associated with order cancellation.
     pub cancel_penalties: ::std::option::Option<::std::vec::Vec<FareRulePenalty>>,
-    ///The three-letter IATA airport code of the destination airport.
+    /// The three-letter IATA airport code of the destination airport.
     pub destination_airport_code: ::std::option::Option<::std::string::String>,
-    ///Lists estimated penalty details associated with a fare exchange. Estimates assume that all fare components are changed and the highest applicable penalty is applied.
+    /// Lists estimated penalty details associated with a fare exchange. Estimates assume that all
+    /// fare components are changed and the highest applicable penalty is applied.
     pub exchange_penalties: ::std::option::Option<::std::vec::Vec<FareRulePenalty>>,
-    ///If `true`, the order can be cancelled with or without additional cost. Refer to the `cancelPenalties` array for more information.
+    /// If `true`, the order can be cancelled with or without additional cost. Refer to the
+    /// `cancelPenalties` array for more information.
     pub is_cancelable: ::std::option::Option<bool>,
-    ///If `true`, the fare can be exchanged with or without additional cost. Refer to the `exchangePenalties` array for more information.
+    /// If `true`, the fare can be exchanged with or without additional cost. Refer to the
+    /// `exchangePenalties` array for more information.
     pub is_changeable: ::std::option::Option<bool>,
-    ///If `true`, the fare can be refunded in total or in segments. Refer to the `refundPenalties` array for more information.
+    /// If `true`, the fare can be refunded in total or in segments. Refer to the `refundPenalties`
+    /// array for more information.
     pub is_refundable: ::std::option::Option<bool>,
-    ///The three-letter IATA airport code of the origin airport.
+    /// The three-letter IATA airport code of the origin airport.
     pub origin_airport_code: ::std::option::Option<::std::string::String>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline that owns the fare rule.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the airline that owns the fare rule.
     pub owning_airline_code: ::std::string::String,
-    ///The ATPCO code of the passenger type. Applicable travelers are identified by the passenger type code.
+    /// The ATPCO code of the passenger type. Applicable travelers are identified by the passenger
+    /// type code.
     pub passenger_code: ::std::option::Option<::std::string::String>,
-    ///Lists estimated penalty details associated with a refund. Estimates assume the highest possible refund penalty is applied.
+    /// Lists estimated penalty details associated with a refund. Estimates assume the highest
+    /// possible refund penalty is applied.
     pub refund_penalties: ::std::option::Option<::std::vec::Vec<FareRulePenalty>>,
 }
 
-///Contains penalty information applied to specific fare rules.
+/// Contains penalty information applied to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -757,16 +823,16 @@ pub struct FareRule {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareRulePenalty {
     pub applicability: FareRulePenaltyApplicabilityEnum,
-    ///If `true`, additional restrictions apply.
+    /// If `true`, additional restrictions apply.
     pub conditions_apply: ::std::option::Option<bool>,
-    ///If `true`, the traveler is charged in case they do not show up for the flight.
+    /// If `true`, the traveler is charged in case they do not show up for the flight.
     pub has_no_show_cost: ::std::option::Option<bool>,
     #[patch(name = "Option<ValuePatch>")]
     pub no_show_penalty: ::std::option::Option<Value>,
     pub penalty: Value,
 }
 
-///Contains a service or fee that is bundled with the fare.
+/// Contains a service or fee that is bundled with the fare.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -776,21 +842,21 @@ pub struct FareRulePenalty {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareService {
-    ///The monetary amount of fare fee.
+    /// The monetary amount of fare fee.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///The category of the fare service or fee.
+    /// The category of the fare service or fee.
     pub code: ::std::option::Option<::std::string::String>,
-    ///The three-letter ISO 4217 code of the `amount` currency.
+    /// The three-letter ISO 4217 code of the `amount` currency.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///Textual information about the service or fee.
+    /// Textual information about the service or fee.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The applicable unit count for the service or fee.
+    /// The applicable unit count for the service or fee.
     pub quantity: ::std::option::Option<i32>,
-    ///The type of the fare service or fee.
+    /// The type of the fare service or fee.
     pub type_: ::std::option::Option<::std::string::String>,
 }
 
-///Contains flight information, identified by `itemId`, for the given booking.
+/// Contains flight information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -806,7 +872,7 @@ pub struct Flight {
     pub flight_item: FlightItem,
 }
 
-///Contains flight information for the given booking.
+/// Contains flight information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -816,101 +882,136 @@ pub struct Flight {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FlightItem {
-    ///The IATA code of the aircraft.
+    /// The IATA code of the aircraft.
     pub aircraft_type_code: ::std::option::Option<::std::string::String>,
-    ///The name of the aircraft model.
+    /// The name of the aircraft model.
     pub aircraft_type_name: ::std::option::Option<::std::string::String>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the marketing airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the marketing airline.
     pub airline_code: ::std::string::String,
-    ///The name of the marketing airline.
+    /// The name of the marketing airline.
     pub airline_name: ::std::option::Option<::std::string::String>,
-    ///The scheduled arrival date in `YYYY-MM-DD` format in the airport's time zone.
+    /// The scheduled arrival date in `YYYY-MM-DD` format in the airport's time zone.
     pub arrival_date: ::std::string::String,
-    ///The arrival gate's number.
+    /// The arrival gate's number.
     pub arrival_gate: ::std::option::Option<::std::string::String>,
-    ///The arrival terminal name.
+    /// The arrival terminal name.
     pub arrival_terminal_name: ::std::option::Option<::std::string::String>,
-    ///The scheduled time of arrival in `HH:MM` format.
+    /// The scheduled time of arrival in `HH:MM` format.
     pub arrival_time: ::std::string::String,
-    ///The booking inventory code of the marketing airline.
+    /// The booking inventory code of the marketing airline.
     pub booking_class: ::std::option::Option<::std::string::String>,
-    ///The cabin type code.
+    /// The cabin type code.
     pub cabin_type_code: ::std::option::Option<::std::string::String>,
-    ///The type of aircraft cabin. The name used is specific to the airline carrier's naming convention.
+    /// The type of aircraft cabin. The name used is specific to the airline carrier's naming
+    /// convention.
     pub cabin_type_name: ::std::option::Option<::std::string::String>,
-    ///Lists seats assigned to the travelers on the departing aircraft on a change of gauge or funnel flight. The first seat in the `seats` array corresponds to the first traveler in the `travelers` array, the second seat to the second traveler, and so on. A null value instead of a `Seat` object indicates that there is no seat assigned to the corresponding traveler.
+    /// Lists seats assigned to the travelers on the departing aircraft on a change of gauge or
+    /// funnel flight. The first seat in the `seats` array corresponds to the first traveler in the
+    /// `travelers` array, the second seat to the second traveler, and so on. A null value instead
+    /// of a `Seat` object indicates that there is no seat assigned to the corresponding traveler.
     pub change_of_gauge_seats: ::std::option::Option<::std::vec::Vec<Seat>>,
-    ///The booking reference ID in the carrier's system. For example, this value would reflect the PNR Locator for American Airlines.
+    /// The booking reference ID in the carrier's system. For example, this value would reflect the
+    /// PNR Locator for American Airlines.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
-    ///The scheduled departure date in `YYYY-MM-DD` format in the airport's time zone.
+    /// The scheduled departure date in `YYYY-MM-DD` format in the airport's time zone.
     pub departure_date: ::std::string::String,
-    ///The departure gate number.
+    /// The departure gate number.
     pub departure_gate: ::std::option::Option<::std::string::String>,
-    ///The departure terminal name.
+    /// The departure terminal name.
     pub departure_terminal_name: ::std::option::Option<::std::string::String>,
-    ///The scheduled time of departure in `HH:MM` format.
+    /// The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::string::String,
-    ///The flight distance in miles.
+    /// The flight distance in miles.
     pub distance_in_miles: ::std::option::Option<i32>,
-    ///Flight duration in minutes.
+    /// Flight duration in minutes.
     pub duration_in_minutes: ::std::option::Option<i32>,
-    ///The flight number associated with the marketing carrier.
+    /// The flight number associated with the marketing carrier.
     pub flight_number: i32,
-    ///The two-letter status code used by vendors. It indicates the booking status.
+    /// The two-letter status code used by vendors. It indicates the booking status.
     pub flight_status_code: ::std::option::Option<::std::string::String>,
     pub flight_status_name: ::std::option::Option<StatusNameEnum>,
-    ///The three-letter IATA airport code of the origin airport.
+    /// The three-letter IATA airport code of the origin airport.
     pub from_airport_code: ::std::string::String,
-    ///The IATA code of the aircraft. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The IATA code of the aircraft. This property is not returned when the aircraft type is
+    /// unchanged. This property will be deprecated in the future major version of this API. If you
+    /// wish to check hidden stop information, use the `hiddenStops` list instead.
     pub hidden_stop_aircraft_type_code: ::std::option::Option<::std::string::String>,
-    ///The name of the aircraft model. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The name of the aircraft model. This property is not returned when the aircraft type is
+    /// unchanged. This property will be deprecated in the future major version of this API. If you
+    /// wish to check hidden stop information, use the `hiddenStops` list instead.
     pub hidden_stop_aircraft_type_name: ::std::option::Option<::std::string::String>,
-    ///The three-letter IATA airport code of the hidden stop airport. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The three-letter IATA airport code of the hidden stop airport. This property is not returned
+    /// when the aircraft type is unchanged. This property will be deprecated in the future major
+    /// version of this API. If you wish to check hidden stop information, use the `hiddenStops`
+    /// list instead.
     pub hidden_stop_airport_code: ::std::option::Option<::std::string::String>,
-    ///The arrival date to the hidden stop airport in the `YYYY-MM-DD` format in the airport's time zone. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The arrival date to the hidden stop airport in the `YYYY-MM-DD` format in the airport's time
+    /// zone. This property is not returned when the aircraft type is unchanged. This property will
+    /// be deprecated in the future major version of this API. If you wish to check hidden stop
+    /// information, use the `hiddenStops` list instead.
     pub hidden_stop_arrival_date: ::std::option::Option<::std::string::String>,
-    ///The time of arrival to the hidden stop airport in the `HH:MM` format. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The time of arrival to the hidden stop airport in the `HH:MM` format. This property is not
+    /// returned when the aircraft type is unchanged. This property will be deprecated in the future
+    /// major version of this API. If you wish to check hidden stop information, use the
+    /// `hiddenStops` list instead.
     pub hidden_stop_arrival_time: ::std::option::Option<::std::string::String>,
-    ///The departure date from the hidden stop airport in the `YYYY-MM-DD` format in the airport's time zone. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The departure date from the hidden stop airport in the `YYYY-MM-DD` format in the airport's
+    /// time zone. This property is not returned when the aircraft type is unchanged. This property
+    /// will be deprecated in the future major version of this API. If you wish to check hidden stop
+    /// information, use the `hiddenStops` list instead.
     pub hidden_stop_departure_date: ::std::option::Option<::std::string::String>,
-    ///The time of departure from the hidden stop airport in the `HH:MM` format. This property is not returned when the aircraft type is unchanged. This property will be deprecated in the future major version of this API. If you wish to check hidden stop information, use the `hiddenStops` list instead.
+    /// The time of departure from the hidden stop airport in the `HH:MM` format. This property is
+    /// not returned when the aircraft type is unchanged. This property will be deprecated in the
+    /// future major version of this API. If you wish to check hidden stop information, use the
+    /// `hiddenStops` list instead.
     pub hidden_stop_departure_time: ::std::option::Option<::std::string::String>,
-    ///Lists details of hidden stops that are part of the flight.
+    /// Lists details of hidden stops that are part of the flight.
     pub hidden_stops: ::std::option::Option<::std::vec::Vec<HiddenStop>>,
-    ///Lists assigned identity documents with statuses for each flight.
+    /// Lists assigned identity documents with statuses for each flight.
     pub identity_documents: ::std::option::Option<
         ::std::vec::Vec<IdentityDocumentReference>,
     >,
-    ///If true, the current flight is past-dated.
+    /// If true, the current flight is past-dated.
     pub is_past: ::std::option::Option<bool>,
-    ///Lists the meal options provided on the flight.
+    /// Lists the meal options provided on the flight.
     pub meals: ::std::option::Option<::std::vec::Vec<Meal>>,
-    ///The quantity of seats occupied by the travelers. Specific seat details, if applicable, are listed in the 'seats' array.
+    /// The quantity of seats occupied by the travelers. Specific seat details, if applicable, are
+    /// listed in the 'seats' array.
     pub number_of_seats: ::std::option::Option<i32>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the operating airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the operating airline.
     pub operating_airline_code: ::std::option::Option<::std::string::String>,
-    ///The name of the operating airline.
+    /// The name of the operating airline.
     pub operating_airline_name: ::std::option::Option<::std::string::String>,
-    ///The flight number associated with the operating carrier.
+    /// The flight number associated with the operating carrier.
     pub operating_flight_number: ::std::option::Option<i32>,
-    ///Lists seats assigned to the travelers. The first seat in the `seats` array corresponds to the first traveler in the `travelers` array, the second seat to the second traveler, and so on. An empty Seat object or a null value indicates that no seat is assigned to the corresponding traveler. In the case of a change of gauge or funnel flight, this array lists seats for the first aircraft.
+    /// Lists seats assigned to the travelers. The first seat in the `seats` array corresponds to
+    /// the first traveler in the `travelers` array, the second seat to the second traveler, and so
+    /// on. An empty Seat object or a null value indicates that no seat is assigned to the
+    /// corresponding traveler. In the case of a change of gauge or funnel flight, this array lists
+    /// seats for the first aircraft.
     pub seats: ::std::option::Option<::std::vec::Vec<Seat>>,
     pub source_type: ::std::option::Option<FlightSourceEnum>,
-    ///The three-letter IATA airport code of the destination airport.
+    /// The three-letter IATA airport code of the destination airport.
     pub to_airport_code: ::std::string::String,
-    ///Lists the travelers within the `travelers` list. Indicates which travelers are associated with a particular flight.
+    /// Lists the travelers within the `travelers` list. Indicates which travelers are associated
+    /// with a particular flight.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
-    ///The estimated (before arrival) or actual arrival date in `YYYY-MM-DD` format in the airport's time zone.
+    /// The estimated (before arrival) or actual arrival date in `YYYY-MM-DD` format in the
+    /// airport's time zone.
     pub updated_arrival_date: ::std::option::Option<::std::string::String>,
-    ///The estimated (before arrival) or actual arrival time in `HH:MM` format.
+    /// The estimated (before arrival) or actual arrival time in `HH:MM` format.
     pub updated_arrival_time: ::std::option::Option<::std::string::String>,
-    ///The estimated (before departure) or actual departure date in `YYYY-MM-DD` format in the airport's time zone.
+    /// The estimated (before departure) or actual departure date in `YYYY-MM-DD` format in the
+    /// airport's time zone.
     pub updated_departure_date: ::std::option::Option<::std::string::String>,
-    ///The estimated (before departure) or actual departure time in `HH:MM` format.
+    /// The estimated (before departure) or actual departure time in `HH:MM` format.
     pub updated_departure_time: ::std::option::Option<::std::string::String>,
 }
 
-///Contains coupon information of the corresponding flight, identified by `itemId`, for the given booking.
+/// Contains coupon information of the corresponding flight, identified by `itemId`, for the
+/// given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -926,7 +1027,7 @@ pub struct FlightReferenceCoupon {
     pub coupon_status: CouponStatus,
 }
 
-///Contains detailed information about a flight booking refund.
+/// Contains detailed information about a flight booking refund.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -936,14 +1037,15 @@ pub struct FlightReferenceCoupon {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FlightRefund {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the marketing airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the marketing airline.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///The booking reference ID as shown in the source supplier or vendor system.
+    /// The booking reference ID as shown in the source supplier or vendor system.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
     pub refund_totals: TotalValues,
 }
 
-///Contains information about an electronic flight ticket or EMD issued for a traveler.
+/// Contains information about an electronic flight ticket or EMD issued for a traveler.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -953,33 +1055,40 @@ pub struct FlightRefund {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FlightTicket {
-    ///The unique identifier of an IATA-accredited agency that issued the ticket.
+    /// The unique identifier of an IATA-accredited agency that issued the ticket.
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the issuing airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the issuing airline.
     pub airline_code: ::std::string::String,
-    ///Lists all coupons of booked and ticketed flights. The corresponding flight `itemId` is provided if available. If a coupon cannot be associated with any flight present in the booking (e.g. due to schedule change), the `itemId` is hidden, however the coupon status details are still returned.
+    /// Lists all coupons of booked and ticketed flights. The corresponding flight `itemId` is
+    /// provided if available. If a coupon cannot be associated with any flight present in the
+    /// booking (e.g. due to schedule change), the `itemId` is hidden, however the coupon status
+    /// details are still returned.
     pub all_coupons: ::std::option::Option<::std::vec::Vec<TicketCoupon>>,
     #[patch(name = "Option<CommissionPatch>")]
     pub commission: ::std::option::Option<Commission>,
-    ///The date the electronic flight ticket was issued in `YYYY-MM-DD` format.
+    /// The date the electronic flight ticket was issued in `YYYY-MM-DD` format.
     pub date: ::std::string::String,
-    ///Lists all coupons of booked and ticketed flights referenced by the flight `itemId`.
+    /// Lists all coupons of booked and ticketed flights referenced by the flight `itemId`.
     pub flight_coupons: ::std::option::Option<::std::vec::Vec<FlightReferenceCoupon>>,
-    ///If `true`, the ticket is part of a larger travel package (e.g., Inclusive Tour) or group booking (e.g., Bulk Ticket), often offered at a discounted rate. Therefore, ticket payment details obtained from the airline database may contain "0.0".
+    /// If `true`, the ticket is part of a larger travel package (e.g., Inclusive Tour) or group
+    /// booking (e.g., Bulk Ticket), often offered at a discounted rate. Therefore, ticket payment
+    /// details obtained from the airline database may contain "0.0".
     pub is_bundled_ticket: ::std::option::Option<bool>,
-    ///The electronic flight ticket number.
+    /// The electronic flight ticket number.
     pub number: ::std::string::String,
     pub payment: TotalValues,
-    ///The code of the ticket status.
+    /// The code of the ticket status.
     pub ticket_status_code: ::std::option::Option<::std::string::String>,
     pub ticket_status_name: ::std::option::Option<TicketStatusEnum>,
-    ///The pseudo city code of the agency which issued the ticket or EMD.
+    /// The pseudo city code of the agency which issued the ticket or EMD.
     pub ticketing_pcc: ::std::option::Option<::std::string::String>,
-    ///Specifies the traveler from the `travelers` array whose name is associated with the ticket.
+    /// Specifies the traveler from the `travelers` array whose name is associated with the ticket.
     pub traveler_index: i32,
 }
 
-///Contains details of the payment amount - the total amount to pay, the amount before tax, and the amount of tax.
+/// Contains details of the payment amount - the total amount to pay, the amount before tax, and
+/// the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -989,17 +1098,17 @@ pub struct FlightTicket {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct GenericTotalValues {
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::string::String,
-    ///The subtotal before applying taxes and fees.
+    /// The subtotal before applying taxes and fees.
     pub subtotal: ::std::option::Option<::std::string::String>,
-    ///The amount of all taxes.
+    /// The amount of all taxes.
     pub taxes: ::std::option::Option<::std::string::String>,
-    ///The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
+    /// The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::string::String,
 }
 
-///Contains details of Goods and Services Tax (GST).
+/// Contains details of Goods and Services Tax (GST).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1009,15 +1118,16 @@ pub struct GenericTotalValues {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct GoodsAndServicesTax {
-    ///The GST tax amount. Mutually exclusive with `percentage`.
+    /// The GST tax amount. Mutually exclusive with `percentage`.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///The tax code. Must be combined with `amount`.
+    /// The tax code. Must be combined with `amount`.
     pub code: ::std::option::Option<::std::string::String>,
-    ///The GST tax percentage. Mutually exclusive with `amount`.
+    /// The GST tax percentage. Mutually exclusive with `amount`.
     pub percentage: ::std::option::Option<::std::string::String>,
 }
 
-///Contains detailed information about the handling fee applied to the fare. This fee typically covers administrative or processing costs.
+/// Contains detailed information about the handling fee applied to the fare. This fee typically
+/// covers administrative or processing costs.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1027,15 +1137,15 @@ pub struct GoodsAndServicesTax {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct HandlingFee {
-    ///The monetary amount of the fee.
+    /// The monetary amount of the fee.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///The fee code.
+    /// The fee code.
     pub code: ::std::option::Option<::std::string::String>,
-    ///The fee type.
+    /// The fee type.
     pub type_: ::std::option::Option<::std::string::String>,
 }
 
-///Contains detailed information about the hidden stop location.
+/// Contains detailed information about the hidden stop location.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1045,25 +1155,25 @@ pub struct HandlingFee {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct HiddenStop {
-    ///The IATA code of the aircraft.
+    /// The IATA code of the aircraft.
     pub aircraft_type_code: ::std::option::Option<::std::string::String>,
-    ///The name of the aircraft model.
+    /// The name of the aircraft model.
     pub aircraft_type_name: ::std::option::Option<::std::string::String>,
-    ///The three-letter IATA airport code of the hidden stop location.
+    /// The three-letter IATA airport code of the hidden stop location.
     pub airport_code: ::std::option::Option<::std::string::String>,
-    ///The scheduled arrival date in `YYYY-MM-DD` format in the airport's timezone.
+    /// The scheduled arrival date in `YYYY-MM-DD` format in the airport's timezone.
     pub arrival_date: ::std::option::Option<::std::string::String>,
-    ///The scheduled time of arrival in `HH:MM` format.
+    /// The scheduled time of arrival in `HH:MM` format.
     pub arrival_time: ::std::option::Option<::std::string::String>,
-    ///The scheduled departure date in `YYYY-MM-DD` format in the airport's timezone.
+    /// The scheduled departure date in `YYYY-MM-DD` format in the airport's timezone.
     pub departure_date: ::std::option::Option<::std::string::String>,
-    ///The scheduled time of departure in `HH:MM` format.
+    /// The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::option::Option<::std::string::String>,
-    ///Layover duration in minutes.
+    /// Layover duration in minutes.
     pub duration_in_minutes: ::std::option::Option<i32>,
 }
 
-///Contains hotel reservation information identified by `itemId` and associated with a booking.
+/// Contains hotel reservation information identified by `itemId` and associated with a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1079,7 +1189,7 @@ pub struct Hotel {
     pub hotel_item: HotelItem,
 }
 
-///Contains hotel address information.
+/// Contains hotel address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1091,11 +1201,12 @@ pub struct Hotel {
 pub struct HotelAddress {
     #[serde(flatten)]
     pub generic_address: GenericAddress,
-    ///The three-letter IATA city code of the hotel location.
+    /// The three-letter IATA city code of the hotel location.
     pub city_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains the date range up to which a hotel penalty is applicable, including the total cost of the penalty.
+/// Contains the date range up to which a hotel penalty is applicable, including the total cost
+/// of the penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1105,14 +1216,16 @@ pub struct HotelAddress {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct HotelDateRangeRefundPenalty {
-    ///The date from when the penalty becomes applicable, in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The date from when the penalty becomes applicable, in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub applicable_from_date: ::std::option::Option<::std::string::String>,
-    ///The date when the penalty applicability ends, in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The date when the penalty applicability ends, in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub applicable_to_date: ::std::option::Option<::std::string::String>,
     pub penalty: HotelPenaltyValue,
 }
 
-///Contains hotel information for the given booking.
+/// Contains hotel information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1125,63 +1238,69 @@ pub struct HotelItem {
     pub address: HotelAddress,
     #[patch(name = "Option<AssociatedFlightDetailsPatch>")]
     pub associated_flight_details: ::std::option::Option<AssociatedFlightDetails>,
-    ///The two character code of the chain.
+    /// The two character code of the chain.
     pub chain_code: ::std::option::Option<::std::string::String>,
-    ///The name of the chain.
+    /// The name of the chain.
     pub chain_name: ::std::option::Option<::std::string::String>,
-    ///The check-in date in `YYYY-MM-DD` format in the hotel's local time zone.
+    /// The check-in date in `YYYY-MM-DD` format in the hotel's local time zone.
     pub check_in_date: ::std::string::String,
-    ///The check-in time in `HH:MM` format in the hotel's local time.
+    /// The check-in time in `HH:MM` format in the hotel's local time.
     pub check_in_time: ::std::string::String,
-    ///The checkout date in `YYYY-MM-DD` format in the hotel's local time zone.
+    /// The checkout date in `YYYY-MM-DD` format in the hotel's local time zone.
     pub check_out_date: ::std::string::String,
-    ///The checkout time in `HH:MM` format in the hotel's local time.
+    /// The checkout time in `HH:MM` format in the hotel's local time.
     pub check_out_time: ::std::string::String,
-    ///The hotel supplier reservation number.
+    /// The hotel supplier reservation number.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<ContactInformationPatch>")]
     pub contact_info: ::std::option::Option<ContactInformation>,
-    ///A discount code that a company may provide to an agency. Usually tied to a negotiated rate code.
+    /// A discount code that a company may provide to an agency. Usually tied to a negotiated rate
+    /// code.
     pub corporate_discount_code: ::std::option::Option<i32>,
-    ///Provides information regarding the guarantee provided for the legacy GDS hotel content.
+    /// Provides information regarding the guarantee provided for the legacy GDS hotel content.
     pub guarantee_payment_note: ::std::option::Option<::std::string::String>,
-    ///The Open Travel Alliance [Payment Type Code](https://opentravel.org/download-the-opentravel-specification). Applicable OTA codes can be one of the following - 5, 18, 19, 29, 30, or 43.
+    /// The Open Travel Alliance [Payment Type
+    /// Code](https://opentravel.org/download-the-opentravel-specification). Applicable OTA codes
+    /// can be one of the following - 5, 18, 19, 29, 30, or 43.
     pub guarantee_type_code: ::std::option::Option<i32>,
     pub guarantee_type_name: ::std::option::Option<GuaranteeTypeNameEnum>,
-    ///The full name of the hotel.
+    /// The full name of the hotel.
     pub hotel_name: ::std::string::String,
-    ///The one or two-letter status code used by vendors. It indicates the hotel booking status.
+    /// The one or two-letter status code used by vendors. It indicates the hotel booking status.
     pub hotel_status_code: ::std::option::Option<::std::string::String>,
     pub hotel_status_name: ::std::option::Option<StatusNameEnum>,
-    ///If `true`, the hotel reservation can be refunded in total or in segments. Refer to the `refundPenalties` array for more information.
+    /// If `true`, the hotel reservation can be refunded in total or in segments. Refer to the
+    /// `refundPenalties` array for more information.
     pub is_refundable: bool,
-    ///Specifies the lead traveler from the travelers list with whom the hotel booking is associated.
+    /// Specifies the lead traveler from the travelers list with whom the hotel booking is
+    /// associated.
     pub lead_traveler_index: ::std::option::Option<i32>,
-    ///The number of guests.
+    /// The number of guests.
     pub number_of_guests: ::std::option::Option<i32>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub payment: ::std::option::Option<TotalValues>,
     pub payment_policy: ::std::option::Option<HotelPaymentPolicyEnum>,
-    ///The unique ID of the property agreed between vendors.
+    /// The unique ID of the property agreed between vendors.
     pub property_id: ::std::option::Option<::std::string::String>,
-    ///Lists conditions and payments for hotel room reservation cancellations.
+    /// Lists conditions and payments for hotel room reservation cancellations.
     pub refund_penalties: ::std::option::Option<
         ::std::vec::Vec<HotelDateRangeRefundPenalty>,
     >,
-    ///The penalty code for a cancellation within the context of legacy GDS hotel content.
+    /// The penalty code for a cancellation within the context of legacy GDS hotel content.
     pub refund_penalty_policy_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<RoomPatch>")]
     pub room: ::std::option::Option<Room>,
-    ///The code that uniquely identifies a single hotel property. This is a legacy concept, to be sunset in the future major version.
+    /// The code that uniquely identifies a single hotel property. This is a legacy concept, to be
+    /// sunset in the future major version.
     pub sabre_property_id: ::std::option::Option<::std::string::String>,
-    ///A specific numeric code indicating the source of the hotel booking.
+    /// A specific numeric code indicating the source of the hotel booking.
     pub source_type_code: ::std::option::Option<i32>,
     pub source_type_name: ::std::option::Option<HotelSourceEnum>,
-    ///Additional special requests put in by the traveler with regards to the hotel reservation.
+    /// Additional special requests put in by the traveler with regards to the hotel reservation.
     pub special_instructions: ::std::option::Option<::std::string::String>,
 }
 
-///Contains monetary amount information of hotel penalty.
+/// Contains monetary amount information of hotel penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1193,13 +1312,14 @@ pub struct HotelItem {
 pub struct HotelPenaltyValue {
     #[serde(flatten)]
     pub value: Value,
-    ///Hotel cancellation penalty returned as the number of nights.  If present, ignore `amount` returned.
+    /// Hotel cancellation penalty returned as the number of nights. If present, ignore `amount`
+    /// returned.
     pub number_of_nights: ::std::option::Option<i32>,
-    ///The hotel refund penalty expressed as percentage. If present, ignore `amount` returned.
+    /// The hotel refund penalty expressed as percentage. If present, ignore `amount` returned.
     pub percentage: ::std::option::Option<::std::string::String>,
 }
 
-///Contains details of an identity document.
+/// Contains details of an identity document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1209,50 +1329,57 @@ pub struct HotelPenaltyValue {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct IdentityDocument {
-    ///The traveler's date of birth in the `YYYY-MM-DD` format.
+    /// The traveler's date of birth in the `YYYY-MM-DD` format.
     pub birth_date: ::std::option::Option<::std::string::String>,
-    ///The traveler's citizenship country provided as a two- or three-letter ISO 3166 code.
+    /// The traveler's citizenship country provided as a two- or three-letter ISO 3166 code.
     pub citizenship_country_code: ::std::option::Option<::std::string::String>,
-    ///The unique identifier of the document.
+    /// The unique identifier of the document.
     pub document_number: ::std::option::Option<::std::string::String>,
     pub document_sub_type: ::std::option::Option<DocumentSubTypeEnum>,
     pub document_type: DocumentTypeEnum,
-    ///The expiration date of the identity document in the `YYYY-MM-DD` format.
+    /// The expiration date of the identity document in the `YYYY-MM-DD` format.
     pub expiry_date: ::std::option::Option<::std::string::String>,
-    ///Lists the indices of flights within a booking. This property will be deprecated in the future major version of this API. If you wish to list documents associated with the flight, use the `identityDocuments` property within the `Flight` object.
+    /// Lists the indices of flights within a booking. This property will be deprecated in the
+    /// future major version of this API. If you wish to list documents associated with the flight,
+    /// use the `identityDocuments` property within the `Flight` object.
     pub flight_indices: ::std::option::Option<::std::vec::Vec<i32>>,
     pub gender: ::std::option::Option<GenderEnum>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::option::Option<::std::string::String>,
-    ///The two- or three-letter ISO 3166 country code where the document is valid. This is mainly used for the `VISA` document type.
+    /// The two- or three-letter ISO 3166 country code where the document is valid. This is mainly
+    /// used for the `VISA` document type.
     pub host_country_code: ::std::option::Option<::std::string::String>,
-    ///If `true`, the identity document applies to a lap child.
+    /// If `true`, the identity document applies to a lap child.
     pub is_lap_child_document: ::std::option::Option<bool>,
-    ///If `true`, indicates the primary passport holder of a document issued for multiple travelers.
+    /// If `true`, indicates the primary passport holder of a document issued for multiple
+    /// travelers.
     pub is_primary_document_holder: ::std::option::Option<bool>,
-    ///The date the identity document was issued in `YYYY-MM-DD` format. This is mainly used for the `visa` document type.
+    /// The date the identity document was issued in `YYYY-MM-DD` format. This is mainly used for
+    /// the `visa` document type.
     pub issue_date: ::std::option::Option<::std::string::String>,
-    ///The country issuing the passenger document provided as a two- or three-letter ISO 3166 code.
+    /// The country issuing the passenger document provided as a two- or three-letter ISO 3166 code.
     pub issuing_country_code: ::std::option::Option<::std::string::String>,
-    ///The unique identifier of the document.
+    /// The unique identifier of the document.
     pub item_id: ::std::option::Option<::std::string::String>,
-    ///The traveler's middle name. (NDC not supported).
+    /// The traveler's middle name. (NDC not supported).
     pub middle_name: ::std::option::Option<::std::string::String>,
     pub passport_type: ::std::option::Option<PassportTypeResponseEnum>,
-    ///The passenger's place of birth, fully spelled out. This is mainly used for the `VISA` document type.
+    /// The passenger's place of birth, fully spelled out. This is mainly used for the `VISA`
+    /// document type.
     pub place_of_birth: ::std::option::Option<::std::string::String>,
-    ///The name of the place where the document was issued.
+    /// The name of the place where the document was issued.
     pub place_of_issue: ::std::option::Option<::std::string::String>,
-    ///The country the passenger resides in or their nationality country provided as a two- or three-letter ISO 3166 code.
+    /// The country the passenger resides in or their nationality country provided as a two- or
+    /// three-letter ISO 3166 code.
     pub residence_country_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<AddressPatch>")]
     pub residence_destination_address: ::std::option::Option<Address>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
     pub visa_type: ::std::option::Option<VisaTypeResponseEnum>,
 }
 
-///`IdentityDocumentReference`
+/// `IdentityDocumentReference`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1262,12 +1389,13 @@ pub struct IdentityDocument {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct IdentityDocumentReference {
-    ///The unique identifier of the document.
+    /// The unique identifier of the document.
     pub item_id: ::std::option::Option<::std::string::String>,
     pub status: ::std::option::Option<StatusNameEnum>,
 }
 
-///Contains details of the initially offered fare. To obtain this data, the Employee Profile Record (EPR) needs to include the ORGFQD keyword.
+/// Contains details of the initially offered fare. To obtain this data, the Employee Profile
+/// Record (EPR) needs to include the ORGFQD keyword.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1283,7 +1411,7 @@ pub struct InitialSellingFare {
     pub totals: ::std::option::Option<GenericTotalValues>,
 }
 
-///Contains details of the flights within the journey.
+/// Contains details of the flights within the journey.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1293,19 +1421,19 @@ pub struct InitialSellingFare {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Journey {
-    ///The scheduled departure date in `YYYY-MM-DD` format in the airport's time zone.
+    /// The scheduled departure date in `YYYY-MM-DD` format in the airport's time zone.
     pub departure_date: ::std::string::String,
-    ///The scheduled time of departure in `HH:MM` format.
+    /// The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::string::String,
-    ///The three-letter IATA airport code of the first flight in the journey.
+    /// The three-letter IATA airport code of the first flight in the journey.
     pub first_airport_code: ::std::string::String,
-    ///The three-letter IATA airport code of the last flight in the journey.
+    /// The three-letter IATA airport code of the last flight in the journey.
     pub last_airport_code: ::std::string::String,
-    ///The total number of flights in the journey.
+    /// The total number of flights in the journey.
     pub number_of_flights: i32,
 }
 
-///Contains the meal options provided on the flight.
+/// Contains the meal options provided on the flight.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1315,12 +1443,13 @@ pub struct Journey {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Meal {
-    ///The code of the type of meal. Available meal type codes are `P`, `B`, `O`, `C`, `K`, `D`, `F`, `G`, `H`, `L`, `M`, `N`, `R`, `V` and `S`.
+    /// The code of the type of meal. Available meal type codes are `P`, `B`, `O`, `C`, `K`, `D`,
+    /// `F`, `G`, `H`, `L`, `M`, `N`, `R`, `V` and `S`.
     pub code: ::std::string::String,
     pub description: MealDescriptionEnum,
 }
 
-///Contains a nonelectronic ticket. Supported for ATPCO content only.
+/// Contains a nonelectronic ticket. Supported for ATPCO content only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1330,22 +1459,24 @@ pub struct Meal {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct NonElectronicTicket {
-    ///The date the nonelectronic ticket was issued, provided in `YYYY-MM-DD` format in the issuing agency's time zone.
+    /// The date the nonelectronic ticket was issued, provided in `YYYY-MM-DD` format in the issuing
+    /// agency's time zone.
     pub date: ::std::option::Option<::std::string::String>,
-    ///The number of the nonelectronic ticket.
+    /// The number of the nonelectronic ticket.
     pub ticket_number: ::std::option::Option<::std::string::String>,
     pub ticket_status: ::std::option::Option<NonElectronicTicketStatusEnum>,
-    ///The pseudo city code of the agency which issued the ticket.
+    /// The pseudo city code of the agency which issued the ticket.
     pub ticketing_pcc: ::std::option::Option<::std::string::String>,
-    ///The code of the user that issued the ticket. Not supported for NDC bookings.
+    /// The code of the user that issued the ticket. Not supported for NDC bookings.
     pub ticketing_user_code: ::std::option::Option<::std::string::String>,
-    ///The time the nonelectronic ticket was issued, provided in `HH:MM` format in the issuing agency's time zone.
+    /// The time the nonelectronic ticket was issued, provided in `HH:MM` format in the issuing
+    /// agency's time zone.
     pub time: ::std::option::Option<::std::string::String>,
-    ///The index of the traveler to whom the ticket is assigned.
+    /// The index of the traveler to whom the ticket is assigned.
     pub traveler_index: ::std::option::Option<i32>,
 }
 
-///Contains penalty information that applies to specific fare rules.
+/// Contains penalty information that applies to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1360,7 +1491,8 @@ pub struct NonShowPenalty {
     pub source: ::std::option::Option<PenaltySourceEnum>,
 }
 
-///Contains details of the payment amount in original currency of the base fare - the total amount to pay, the amount before tax, and the amount of tax.
+/// Contains details of the payment amount in original currency of the base fare - the total
+/// amount to pay, the amount before tax, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1370,13 +1502,13 @@ pub struct NonShowPenalty {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct OriginalTotalValues {
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The total amount in original currency; the sum of the `subtotal`, `taxes`, and `fees`.
+    /// The total amount in original currency; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::option::Option<::std::string::String>,
 }
 
-///Contains penalty information that applies to specific fare rules.
+/// Contains penalty information that applies to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1387,9 +1519,9 @@ pub struct OriginalTotalValues {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct PenaltyItem {
     pub applicability: FareRulePenaltyApplicabilityEnum,
-    ///If `true`, additional restrictions apply.
+    /// If `true`, additional restrictions apply.
     pub conditions_apply: ::std::option::Option<bool>,
-    ///If `true`, the ticketed traveler is charged in case they do not show up for the flight.
+    /// If `true`, the ticketed traveler is charged in case they do not show up for the flight.
     pub has_no_show_cost: ::std::option::Option<bool>,
     #[patch(name = "Option<NonShowPenaltyPatch>")]
     pub no_show_penalty: ::std::option::Option<NonShowPenalty>,
@@ -1397,7 +1529,7 @@ pub struct PenaltyItem {
     pub source: ::std::option::Option<PenaltySourceEnum>,
 }
 
-///Contains phone details.
+/// Contains phone details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1407,13 +1539,14 @@ pub struct PenaltyItem {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct PhoneResponse {
-    ///The type of the phone number. Available phone type codes are `H` - home, `B` - business, `C` - cell and `M` - mobile.
+    /// The type of the phone number. Available phone type codes are `H` - home, `B` - business, `C`
+    /// - cell and `M` - mobile.
     pub label: ::std::option::Option<::std::string::String>,
-    ///The formatted phone number of the traveler.
+    /// The formatted phone number of the traveler.
     pub number: ::std::string::String,
 }
 
-///Contains parameters needed to retrieve profile information.
+/// Contains parameters needed to retrieve profile information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1423,15 +1556,15 @@ pub struct PhoneResponse {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Profile {
-    ///A unique profile type code.
+    /// A unique profile type code.
     pub profile_type_code: ::std::option::Option<::std::string::String>,
-    ///The traveler index that is associated with the TVL profile.
+    /// The traveler index that is associated with the TVL profile.
     pub traveler_index: ::std::option::Option<i32>,
-    ///The unique profile ID number.
+    /// The unique profile ID number.
     pub unique_id: ::std::option::Option<::std::string::String>,
 }
 
-///Hotel rate for a particular time range of the whole reservation.
+/// Hotel rate for a particular time range of the whole reservation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1441,17 +1574,19 @@ pub struct Profile {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RateInterval {
-    ///The monetary amount.
+    /// The monetary amount.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The end date of the rate applicability in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The end date of the rate applicability in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub end_date: ::std::option::Option<::std::string::String>,
-    ///The start date of the rate applicability in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The start date of the rate applicability in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub start_date: ::std::option::Option<::std::string::String>,
 }
 
-///Contains basic information of the rooms in the hotel with the number of rooms booked.
+/// Contains basic information of the rooms in the hotel with the number of rooms booked.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1463,33 +1598,36 @@ pub struct RateInterval {
 pub struct Room {
     #[patch(name = "Option<CommissionPatch>")]
     pub agency_commission: ::std::option::Option<Commission>,
-    ///The client ID code of a negotiated rate specified by `supplierRateCode`.
+    /// The client ID code of a negotiated rate specified by `supplierRateCode`.
     pub client_id_code: ::std::option::Option<::std::string::String>,
-    ///The detailed description of the room provided by the hotel supplier.
+    /// The detailed description of the room provided by the hotel supplier.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The inventory block code of the room. An ID returned by GDS suppliers for all unique room+rate combinations. Populated only for GDS products.
+    /// The inventory block code of the room. An ID returned by GDS suppliers for all unique
+    /// room+rate combinations. Populated only for GDS products.
     pub product_code: ::std::option::Option<::std::string::String>,
-    ///The number of booked rooms of this room type.
+    /// The number of booked rooms of this room type.
     pub quantity: i32,
-    ///Lists hotel stay rate divided into interval (mostly per night) rates.
+    /// Lists hotel stay rate divided into interval (mostly per night) rates.
     pub rate_breakdown: ::std::option::Option<::std::vec::Vec<RateInterval>>,
     #[patch(name = "Option<ValuePatch>")]
     pub room_rate: ::std::option::Option<Value>,
-    ///The type of the room provided by the hotel supplier.
+    /// The type of the room provided by the hotel supplier.
     pub room_type: ::std::string::String,
-    ///The unique ID for a room type at a given vendor.
+    /// The unique ID for a room type at a given vendor.
     pub room_type_code: ::std::option::Option<::std::string::String>,
-    ///The supplier-negotiated rate plan code for the client identified by `clientIdCode`.
+    /// The supplier-negotiated rate plan code for the client identified by `clientIdCode`.
     pub supplier_rate_code: ::std::option::Option<::std::string::String>,
-    ///Lists additional free-text rate information provided by the hotel supplier.
+    /// Lists additional free-text rate information provided by the hotel supplier.
     pub supplier_rate_description: ::std::option::Option<
         ::std::vec::Vec<::std::string::String>,
     >,
-    ///Lists the travelers within the `travelers` list. Indicates which travelers are considered to be guests associated with a particular room. It is possible that not all travelers are listed as hotel guests in the hotel booking.
+    /// Lists the travelers within the `travelers` list. Indicates which travelers are considered to
+    /// be guests associated with a particular room. It is possible that not all travelers are
+    /// listed as hotel guests in the hotel booking.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains detailed information about the seat.
+/// Contains detailed information about the seat.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1499,16 +1637,18 @@ pub struct Room {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Seat {
-    ///Lists all IATA-defined characteristic codes associated with the seat. For the list of all codes refer to the following resource - IATA PADIS codeset element 9825.
+    /// Lists all IATA-defined characteristic codes associated with the seat. For the list of all
+    /// codes refer to the following resource - IATA PADIS codeset element 9825.
     pub characteristics: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///The traveler's assigned seat number.
+    /// The traveler's assigned seat number.
     pub number: ::std::string::String,
-    ///The two-letter status code used by vendors. It indicates the seat status.
+    /// The two-letter status code used by vendors. It indicates the seat status.
     pub status_code: ::std::option::Option<::std::string::String>,
     pub status_name: ::std::option::Option<StatusNameEnum>,
 }
 
-///Contains basic attributes common for all possible types of booking segments. Provided attributes are only relevant to the segment type.
+/// Contains basic attributes common for all possible types of booking segments. Provided
+/// attributes are only relevant to the segment type.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1520,37 +1660,47 @@ pub struct Seat {
 pub struct SegmentBasicAttributes {
     #[patch(name = "Option<GenericAddressPatch>")]
     pub address: ::std::option::Option<GenericAddress>,
-    ///The date of the event represented by the segment in `YYYY-MM-DD` format and in the event's local time zone. Not returned for events that span multiple days.
+    /// The date of the event represented by the segment in `YYYY-MM-DD` format and in the event's
+    /// local time zone. Not returned for events that span multiple days.
     pub date: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<GenericAddressPatch>")]
     pub end_address: ::std::option::Option<GenericAddress>,
-    ///The end date of the event represented by the segment, provided in `YYYY-MM-DD` format and in the event's local timezone. Not populated for a single-day event, such as a one-day tour.
+    /// The end date of the event represented by the segment, provided in `YYYY-MM-DD` format and in
+    /// the event's local timezone. Not populated for a single-day event, such as a one-day tour.
     pub end_date: ::std::option::Option<::std::string::String>,
-    ///The code of the ending location of the event represented by the segment, such as destination airport code for a `FLIGHT` type segment. This attribute does not exist for a single location type event such as hotel or cruise reservation.
+    /// The code of the ending location of the event represented by the segment, such as destination
+    /// airport code for a `FLIGHT` type segment. This attribute does not exist for a single
+    /// location type event such as hotel or cruise reservation.
     pub end_location_code: ::std::option::Option<::std::string::String>,
-    ///The end time of the event represented by the segment in `HH:MM` format.
+    /// The end time of the event represented by the segment in `HH:MM` format.
     pub end_time: ::std::option::Option<::std::string::String>,
-    ///The code of the location of the event represented by the segment. This attribute does not exist for an event with start and end locations.
+    /// The code of the location of the event represented by the segment. This attribute does not
+    /// exist for an event with start and end locations.
     pub location_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<GenericAddressPatch>")]
     pub start_address: ::std::option::Option<GenericAddress>,
-    ///The start date of the event represented by the segment, provided in `YYYY-MM-DD` format and in the event's local timezone. Not populated for a single-day event.
+    /// The start date of the event represented by the segment, provided in `YYYY-MM-DD` format and
+    /// in the event's local timezone. Not populated for a single-day event.
     pub start_date: ::std::option::Option<::std::string::String>,
-    ///The code of the start location of the event represented by the segment, such as origin airport code for a `FLIGHT` type segment. This attribute does not exist for a single location event, such as cruise trip.
+    /// The code of the start location of the event represented by the segment, such as origin
+    /// airport code for a `FLIGHT` type segment. This attribute does not exist for a single
+    /// location event, such as cruise trip.
     pub start_location_code: ::std::option::Option<::std::string::String>,
-    ///The start time of the event represented by the segment in `HH:MM` format.
+    /// The start time of the event represented by the segment in `HH:MM` format.
     pub start_time: ::std::option::Option<::std::string::String>,
-    ///The name or description of the segment, such as flight number for the segment representing a flight.
+    /// The name or description of the segment, such as flight number for the segment representing a
+    /// flight.
     pub text: ::std::option::Option<::std::string::String>,
-    ///The time of the event represented by the segment in `HH:MM` format.
+    /// The time of the event represented by the segment in `HH:MM` format.
     pub time: ::std::option::Option<::std::string::String>,
-    ///The type of the booking segment.
+    /// The type of the booking segment.
     pub type_: ::std::string::String,
-    ///The corresponding vendor code, such as carrier code for a `FLIGHT` type segment, or hotel vendor code for a `HOTEL` type segment.
+    /// The corresponding vendor code, such as carrier code for a `FLIGHT` type segment, or hotel
+    /// vendor code for a `HOTEL` type segment.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains essential information which is common for all possible types of booking segments.
+/// Contains essential information which is common for all possible types of booking segments.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1566,7 +1716,7 @@ pub struct SegmentBasics {
     pub segment_basic_attributes: SegmentBasicAttributes,
 }
 
-///Contains the unique ID of the segment.
+/// Contains the unique ID of the segment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1576,11 +1726,12 @@ pub struct SegmentBasics {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct SegmentReference {
-    ///The unique ID of the segment which may correspond to the itemId of a booking element, such as flight, hotel, car, etc.
+    /// The unique ID of the segment which may correspond to the itemId of a booking element, such
+    /// as flight, hotel, car, etc.
     pub id: ::std::string::String,
 }
 
-///Contains special service information (SSR) for a specific traveler.
+/// Contains special service information (SSR) for a specific traveler.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1590,22 +1741,29 @@ pub struct SegmentReference {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct SpecialService {
-    ///Defines the category of the special service request sent to the airline. Visit the official IATA website for the list of currently supported SSR code references. Some airline-specific codes may be missing within these IATA resources.
+    /// Defines the category of the special service request sent to the airline. Visit the official
+    /// IATA website for the list of currently supported SSR code references. Some airline-specific
+    /// codes may be missing within these IATA resources.
     pub code: ::std::option::Option<::std::string::String>,
-    ///Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a single special service.
+    /// Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a
+    /// single special service.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///Miscellaneous free text information used in teletype messages sent to or from the airline. May contain additional special service details which are mandatory to distinguish product characteristics on the airline's side.
+    /// Miscellaneous free text information used in teletype messages sent to or from the airline.
+    /// May contain additional special service details which are mandatory to distinguish product
+    /// characteristics on the airline's side.
     pub message: ::std::option::Option<::std::string::String>,
-    ///The name of the special service request. This property is not returned when the name is unknown.
+    /// The name of the special service request. This property is not returned when the name is
+    /// unknown.
     pub name: ::std::option::Option<::std::string::String>,
-    ///The two-letter status code used by vendors. It indicates the special service status.
+    /// The two-letter status code used by vendors. It indicates the special service status.
     pub status_code: ::std::option::Option<::std::string::String>,
     pub status_name: ::std::option::Option<StatusNameEnum>,
-    ///Lists the travelers within the travelers list the special service belongs to. This list is not provided for special services without explicit traveler assignation.
+    /// Lists the travelers within the travelers list the special service belongs to. This list is
+    /// not provided for special services without explicit traveler assignation.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains details for a single tax.
+/// Contains details for a single tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1615,15 +1773,16 @@ pub struct SpecialService {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TaxComponent {
-    ///If `true`, the tax was already paid during ticket issuance.
+    /// If `true`, the tax was already paid during ticket issuance.
     pub is_paid: ::std::option::Option<bool>,
     #[patch(name = "Option<ValuePatch>")]
     pub tax_amount: ::std::option::Option<Value>,
-    ///The desired tax code. Must be combined with `taxAmount`.
+    /// The desired tax code. Must be combined with `taxAmount`.
     pub tax_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains detailed information about cancellation eligibility, refundable amounts, and exchangeability data for a single ticket.
+/// Contains detailed information about cancellation eligibility, refundable amounts, and
+/// exchangeability data for a single ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1633,27 +1792,33 @@ pub struct TaxComponent {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Ticket {
-    ///Lists estimated penalty details associated with a fare exchange. Estimates assume that all fare components are changed and the highest applicable penalty is applied.
+    /// Lists estimated penalty details associated with a fare exchange. Estimates assume that all
+    /// fare components are changed and the highest applicable penalty is applied.
     pub exchange_penalties: ::std::option::Option<::std::vec::Vec<PenaltyItem>>,
-    ///If `true`, the electronic document meets the requirements for an automated refund.
+    /// If `true`, the electronic document meets the requirements for an automated refund.
     pub is_automated_refunds_eligible: ::std::option::Option<bool>,
-    ///If `true`, the fare can be exchanged with or without additional cost. Refer to the `exchangePenalties` array for more information. If the penalty source parameter indicates `Category 16`, exchangeability is not guaranteed.
+    /// If `true`, the fare can be exchanged with or without additional cost. Refer to the
+    /// `exchangePenalties` array for more information. If the penalty source parameter indicates
+    /// `Category 16`, exchangeability is not guaranteed.
     pub is_changeable: ::std::option::Option<bool>,
-    ///If `true`, the electronic document is fully or partially refundable. Refer to the `refundPenalties` array for more information. If the penalty source parameter indicates `Category 16`, refundability is not guaranteed.
+    /// If `true`, the electronic document is fully or partially refundable. Refer to the
+    /// `refundPenalties` array for more information. If the penalty source parameter indicates
+    /// `Category 16`, refundability is not guaranteed.
     pub is_refundable: ::std::option::Option<bool>,
-    ///If `true`, the electronic document meets the requirements for the void procedure.
+    /// If `true`, the electronic document meets the requirements for the void procedure.
     pub is_voidable: ::std::option::Option<bool>,
-    ///The electronic flight ticket number.
+    /// The electronic flight ticket number.
     pub number: ::std::option::Option<::std::string::String>,
-    ///Lists estimated penalty details associated with a refund. Estimates assume the highest possible refund penalty is applied.
+    /// Lists estimated penalty details associated with a refund. Estimates assume the highest
+    /// possible refund penalty is applied.
     pub refund_penalties: ::std::option::Option<::std::vec::Vec<PenaltyItem>>,
-    ///Lists tax information associated with a refund. Applicable to Automated Refunds only.
+    /// Lists tax information associated with a refund. Applicable to Automated Refunds only.
     pub refund_taxes: ::std::option::Option<::std::vec::Vec<Tax>>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub refund_totals: ::std::option::Option<TotalValues>,
 }
 
-///Contains coupon status details.
+/// Contains coupon status details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1665,11 +1830,11 @@ pub struct Ticket {
 pub struct TicketCoupon {
     #[serde(flatten)]
     pub coupon_status: CouponStatus,
-    ///The identifier of the flight associated with the coupon and stored in the booking.
+    /// The identifier of the flight associated with the coupon and stored in the booking.
     pub item_id: ::std::option::Option<::std::string::String>,
 }
 
-///Contains all total payment amounts across flights, hotels, car reservations and others.
+/// Contains all total payment amounts across flights, hotels, car reservations and others.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1679,23 +1844,30 @@ pub struct TicketCoupon {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TotalPayments {
-    ///Lists all ancillary payments made in a single currency. For fulfilled ancillaries, it sums all payments for items marked with the appropriate ancillary status code. For non-fulfilled ancillaries, it sums pending payments for all ancillary items stored in the booking.
+    /// Lists all ancillary payments made in a single currency. For fulfilled ancillaries, it sums
+    /// all payments for items marked with the appropriate ancillary status code. For non-fulfilled
+    /// ancillaries, it sums pending payments for all ancillary items stored in the booking.
     pub ancillary_totals: ::std::option::Option<::std::vec::Vec<GenericTotalValues>>,
-    ///Lists all car rental payments, per each currency used.
+    /// Lists all car rental payments, per each currency used.
     pub car_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
-    ///Lists all flight payments, per each currency used, and is applicable only for ticketed bookings. It sums up all payments with the exclusion of Refunded/Voided tickets, obtained directly from the ticket data.
+    /// Lists all flight payments, per each currency used, and is applicable only for ticketed
+    /// bookings. It sums up all payments with the exclusion of Refunded/Voided tickets, obtained
+    /// directly from the ticket data.
     pub flight_current_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
-    ///Lists all flight payments, per each currency used. For ticketed bookings it sums all payments irrespective of the document status. For non-ticketed bookings it sums payments from all price quotes stored in the booking.
+    /// Lists all flight payments, per each currency used. For ticketed bookings it sums all
+    /// payments irrespective of the document status. For non-ticketed bookings it sums payments
+    /// from all price quotes stored in the booking.
     pub flight_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
-    ///Lists all the payment methods that are stored in the booking.
+    /// Lists all the payment methods that are stored in the booking.
     pub forms_of_payment: ::std::option::Option<::std::vec::Vec<FormOfPayment>>,
-    ///Lists all hotel payments, per each currency used.
+    /// Lists all hotel payments, per each currency used.
     pub hotel_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
-    ///Lists all train payments, per each currency used.
+    /// Lists all train payments, per each currency used.
     pub train_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
 }
 
-///Contains details of the payment amount - the total amount to pay, the amount before tax, the amount of fees, and the amount of tax.
+/// Contains details of the payment amount - the total amount to pay, the amount before tax, the
+/// amount of fees, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1707,13 +1879,16 @@ pub struct TotalPayments {
 pub struct TotalValues {
     #[serde(flatten)]
     pub generic_total_values: GenericTotalValues,
-    ///The amount of all applicable fees.
+    /// The amount of all applicable fees.
     pub fees: ::std::option::Option<::std::string::String>,
-    ///The net remit amount. The EPR keyword "NETFQD" is required to return `netRemit`. Net remit is used to arrange the payment of an additional commission above the standard commission amount. This extra commission is payable by the validating carrier through the BSP settlement cycle.
+    /// The net remit amount. The EPR keyword "NETFQD" is required to return `netRemit`. Net remit
+    /// is used to arrange the payment of an additional commission above the standard commission
+    /// amount. This extra commission is payable by the validating carrier through the BSP
+    /// settlement cycle.
     pub net_remit: ::std::option::Option<::std::string::String>,
 }
 
-///Contains train reservation information, identified by `itemId`, for the given booking.
+/// Contains train reservation information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1729,7 +1904,7 @@ pub struct Train {
     pub train_item: TrainItem,
 }
 
-///Contains train information for the given booking.
+/// Contains train information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1739,46 +1914,46 @@ pub struct Train {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TrainItem {
-    ///The scheduled arrival date in `YYYY-MM-DD` format in the train station's timezone.
+    /// The scheduled arrival date in `YYYY-MM-DD` format in the train station's timezone.
     pub arrival_date: ::std::string::String,
-    ///The scheduled time of arrival in `HH:MM` format.
+    /// The scheduled time of arrival in `HH:MM` format.
     pub arrival_time: ::std::string::String,
-    ///The train reservation number.
+    /// The train reservation number.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
-    ///The scheduled departure date in `YYYY-MM-DD` format in the train station's timezone.
+    /// The scheduled departure date in `YYYY-MM-DD` format in the train station's timezone.
     pub departure_date: ::std::string::String,
-    ///The scheduled time of departure in `HH:MM` format.
+    /// The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::string::String,
-    ///The origin train station code of the marketing railroad company station coding system.
+    /// The origin train station code of the marketing railroad company station coding system.
     pub from_station_code: ::std::string::String,
-    ///The train station name of the origin station.
+    /// The train station name of the origin station.
     pub from_station_name: ::std::option::Option<::std::string::String>,
-    ///If true, the train reservation can be refunded in total.
+    /// If true, the train reservation can be refunded in total.
     pub is_refundable: ::std::option::Option<bool>,
-    ///The two-letter IATA designator code of the operating railroad company.
+    /// The two-letter IATA designator code of the operating railroad company.
     pub operating_vendor_code: ::std::option::Option<::std::string::String>,
-    ///The name of the operating railroad company.
+    /// The name of the operating railroad company.
     pub operating_vendor_name: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub payment: ::std::option::Option<TotalValues>,
-    ///The destination train station code of the marketing railroad company station coding system.
+    /// The destination train station code of the marketing railroad company station coding system.
     pub to_station_code: ::std::string::String,
-    ///The train station name of the destination station.
+    /// The train station name of the destination station.
     pub to_station_name: ::std::option::Option<::std::string::String>,
-    ///The train name associated with the marketing railroad company.
+    /// The train name associated with the marketing railroad company.
     pub train_name: ::std::option::Option<::std::string::String>,
-    ///The train number associated with the marketing railroad company.
+    /// The train number associated with the marketing railroad company.
     pub train_number: ::std::string::String,
-    ///The one or two-letter status code used by vendors. It indicates the train's booking status.
+    /// The one or two-letter status code used by vendors. It indicates the train's booking status.
     pub train_status_code: ::std::option::Option<::std::string::String>,
     pub train_status_name: ::std::option::Option<StatusNameEnum>,
-    ///The two-letter IATA designator code of the marketing railroad company.
+    /// The two-letter IATA designator code of the marketing railroad company.
     pub vendor_code: ::std::string::String,
-    ///The name of the marketing railroad company.
+    /// The name of the marketing railroad company.
     pub vendor_name: ::std::option::Option<::std::string::String>,
 }
 
-///Contains traveler information.
+/// Contains traveler information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1790,43 +1965,47 @@ pub struct TrainItem {
 pub struct Traveler {
     #[patch(name = "Option<GenericAddressPatch>")]
     pub address: ::std::option::Option<GenericAddress>,
-    ///Lists the details of ancillary services.
+    /// Lists the details of ancillary services.
     pub ancillaries: ::std::option::Option<::std::vec::Vec<Ancillary>>,
-    ///The date of birth of the traveler in `YYYY-MM-DD` format.
+    /// The date of birth of the traveler in `YYYY-MM-DD` format.
     pub birth_date: ::std::option::Option<::std::string::String>,
-    ///Lists all email addresses of the traveler.
+    /// Lists all email addresses of the traveler.
     pub emails: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///The ID of an item from the `travelersEmployers` array. Indicates the employer associated with the traveler.
+    /// The ID of an item from the `travelersEmployers` array. Indicates the employer associated
+    /// with the traveler.
     pub employer_index: ::std::option::Option<i32>,
-    ///Lists the indices of forms of payment associated with the traveler.
+    /// Lists the indices of forms of payment associated with the traveler.
     pub form_of_payment_indices: ::std::option::Option<::std::vec::Vec<i32>>,
     pub gender: ::std::option::Option<GenderEnum>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::string::String,
-    ///Lists the identity documents applicable for a traveler.
+    /// Lists the identity documents applicable for a traveler.
     pub identity_documents: ::std::option::Option<::std::vec::Vec<IdentityDocument>>,
-    ///If `true`, the traveler is associated with a group booking.
+    /// If `true`, the traveler is associated with a group booking.
     pub is_grouped: ::std::option::Option<bool>,
-    ///Lists the loyalty programs applicable for a traveler.
+    /// Lists the loyalty programs applicable for a traveler.
     pub loyalty_programs: ::std::option::Option<::std::vec::Vec<LoyaltyProgram>>,
-    ///The middle name or the initial of the middle name of the traveler.
+    /// The middle name or the initial of the middle name of the traveler.
     pub middle_name: ::std::option::Option<::std::string::String>,
-    ///The ID associated with the traveler. Used for reference purposes after a booking PNR divide operation or traveler name change have been performed.
+    /// The ID associated with the traveler. Used for reference purposes after a booking PNR divide
+    /// operation or traveler name change have been performed.
     pub name_association_id: ::std::option::Option<::std::string::String>,
-    ///An additional code associated with the traveler (the so-called MAN number or statement information) used for accounting or identification purposes.
+    /// An additional code associated with the traveler (the so-called MAN number or statement
+    /// information) used for accounting or identification purposes.
     pub name_reference_code: ::std::option::Option<::std::string::String>,
-    ///The ATPCO code of the passenger type used for pricing, ticketing or fare rules of booked flights.
+    /// The ATPCO code of the passenger type used for pricing, ticketing or fare rules of booked
+    /// flights.
     pub passenger_code: ::std::option::Option<::std::string::String>,
-    ///Lists all phone numbers associated with the traveler.
+    /// Lists all phone numbers associated with the traveler.
     pub phones: ::std::option::Option<::std::vec::Vec<PhoneResponse>>,
-    ///Lists all remarks associated with the traveler.
+    /// Lists all remarks associated with the traveler.
     pub remarks: ::std::option::Option<::std::vec::Vec<Remark>>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::string::String,
     pub type_: ::std::option::Option<TravelerTypeEnum>,
 }
 
-///Contains information about the group the travelers belong to.
+/// Contains information about the group the travelers belong to.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -1836,12 +2015,14 @@ pub struct Traveler {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TravelersGroup {
-    ///Contains the ID of the group.
+    /// Contains the ID of the group.
     pub item_id: ::std::option::Option<::std::string::String>,
-    ///The name of the group.
+    /// The name of the group.
     pub name: ::std::option::Option<::std::string::String>,
-    ///The total number of travelers within the group. Lap infants are not taken into consideration.
+    /// The total number of travelers within the group. Lap infants are not taken into
+    /// consideration.
     pub number_of_travelers: ::std::option::Option<i32>,
-    ///The number of remaining travelers within the group whose names are not provided. Lap infants are not taken into consideration.
+    /// The number of remaining travelers within the group whose names are not provided. Lap infants
+    /// are not taken into consideration.
     pub number_of_travelers_remaining: ::std::option::Option<i32>,
 }

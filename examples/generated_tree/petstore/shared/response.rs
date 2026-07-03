@@ -44,7 +44,7 @@ pub mod error {
     }
 }
 
-///`Pet`
+/// `Pet`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]

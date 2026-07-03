@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains the response from the Modify Booking service.
+/// Contains the response from the Modify Booking service.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -58,10 +58,11 @@ pub mod error {
 pub struct ModifyBookingResponse {
     #[patch(name = "Option<BookingPatch>")]
     pub booking: ::std::option::Option<Booking>,
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
     #[patch(name = "Option<ModifyBookingRequestPatch>")]
     pub request: ::std::option::Option<ModifyBookingRequest>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
 }

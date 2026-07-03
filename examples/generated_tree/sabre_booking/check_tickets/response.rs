@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains detailed information about a specific cancellation option for a NDC Order item.
+/// Contains detailed information about a specific cancellation option for a NDC Order item.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -56,18 +56,19 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CancelOffer {
-    ///The expiration date of a cancel offer.
+    /// The expiration date of a cancel offer.
     pub offer_expiration_date: ::std::option::Option<::std::string::String>,
-    ///The expiration time of a cancel offer in UTC.
+    /// The expiration time of a cancel offer in UTC.
     pub offer_expiration_time: ::std::option::Option<::std::string::String>,
-    ///Offer ID referencing the cancel option for a NDC order. This ID must be applied when cancelling an order to receive a refund or void.
+    /// Offer ID referencing the cancel option for a NDC order. This ID must be applied when
+    /// cancelling an order to receive a refund or void.
     pub offer_item_id: ::std::option::Option<::std::string::String>,
     pub offer_type: ::std::option::Option<CancelOfferTypeEnum>,
     #[patch(name = "Option<TotalValuesPatch>")]
     pub refund_totals: ::std::option::Option<TotalValues>,
 }
 
-///Identifies the offer type of the cancel option.
+/// Identifies the offer type of the cancel option.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CancelOfferTypeEnum {
@@ -132,7 +133,7 @@ impl ::std::default::Default for CancelOfferTypeEnum {
     }
 }
 
-///Contains information about cancellation eligibility and refundable amounts per ticket.
+/// Contains information about cancellation eligibility and refundable amounts per ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -142,21 +143,24 @@ impl ::std::default::Default for CancelOfferTypeEnum {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CheckTicketsResponse {
-    ///Lists information about cancellation options for NDC Orders.
+    /// Lists information about cancellation options for NDC Orders.
     pub cancel_offers: ::std::option::Option<::std::vec::Vec<CancelOffer>>,
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
-    ///Lists information about flight refund options.
+    /// Lists information about flight refund options.
     pub flight_refunds: ::std::option::Option<::std::vec::Vec<FlightRefund>>,
     #[patch(name = "Option<CheckTicketsRequestPatch>")]
     pub request: ::std::option::Option<CheckTicketsRequest>,
-    ///Lists information about cancellation eligibility and refundable amounts per ticket in the order of the request.
+    /// Lists information about cancellation eligibility and refundable amounts per ticket in the
+    /// order of the request.
     pub tickets: ::std::option::Option<::std::vec::Vec<CheckedTicket>>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
 }
 
-///Contains detailed information about cancellation eligibility, refundable amounts, and exchangeability data for a single ticket.
+/// Contains detailed information about cancellation eligibility, refundable amounts, and
+/// exchangeability data for a single ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -172,7 +176,8 @@ pub struct CheckedTicket {
     pub refund_fee: ::std::option::Option<RefundFee>,
 }
 
-///Contains structured details about the cancellation fee applied during an automated refund process. Includes the fee amount, currency, and any applicable taxes.
+/// Contains structured details about the cancellation fee applied during an automated refund
+/// process. Includes the fee amount, currency, and any applicable taxes.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -182,10 +187,12 @@ pub struct CheckedTicket {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RefundFee {
-    ///The monetary value of the cancellation fee. This amount represents the cost charged for canceling a ticket and may be subject to additional taxes listed in the `taxes` array.
+    /// The monetary value of the cancellation fee. This amount represents the cost charged for
+    /// canceling a ticket and may be subject to additional taxes listed in the `taxes` array.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///Lists tax components applied to the cancellation fee. Typically includes GST or VAT in markets where such taxes are applicable. Multiple taxes may apply to a fee.
+    /// Lists tax components applied to the cancellation fee. Typically includes GST or VAT in
+    /// markets where such taxes are applicable. Multiple taxes may apply to a fee.
     pub taxes: ::std::option::Option<::std::vec::Vec<Tax>>,
 }

@@ -42,7 +42,7 @@ pub mod error {
     }
 }
 
-///`PetStatus`
+/// `PetStatus`
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PetStatus {

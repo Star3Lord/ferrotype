@@ -45,7 +45,7 @@ pub mod error {
     }
 }
 
-///Contains required and optional elements to check tickets.
+/// Contains required and optional elements to check tickets.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -55,10 +55,10 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CheckTicketsRequest {
-    ///The booking reference ID as shown in the source supplier or vendor system.
+    /// The booking reference ID as shown in the source supplier or vendor system.
     pub confirmation_id: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code of the target destination for which the ticket check is requested.
+    /// The pseudo city code of the target destination for which the ticket check is requested.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///Lists tickets which should be refunded. Can contain up to 12 elements.
+    /// Lists tickets which should be refunded. Can contain up to 12 elements.
     pub tickets: ::std::option::Option<::std::vec::Vec<RefundFlightTicket>>,
 }

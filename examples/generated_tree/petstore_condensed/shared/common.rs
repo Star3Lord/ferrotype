@@ -12,7 +12,7 @@ use super::super::shared::request::*;
 use super::super::shared::response::*;
 pub use super::super::support::error;
 
-///`Category`
+/// `Category`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -27,7 +27,7 @@ pub struct Category {
     pub parent: ::std::option::Option<CategoryRef>,
 }
 
-///`CategoryRef`
+/// `CategoryRef`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -40,7 +40,7 @@ pub struct CategoryRef {
     pub slug: ::std::option::Option<::std::string::String>,
 }
 
-///`Dog`
+/// `Dog`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]

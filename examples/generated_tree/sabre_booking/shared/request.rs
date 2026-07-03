@@ -44,7 +44,7 @@ pub mod error {
     }
 }
 
-///Contains contact information of an agency.
+/// Contains contact information of an agency.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -54,15 +54,15 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AgencyContacts {
-    ///Lists the agency's email addresses.
+    /// Lists the agency's email addresses.
     pub emails: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///If `true`, an agency label will be attached to each phone number in the `phones` array.
+    /// If `true`, an agency label will be attached to each phone number in the `phones` array.
     pub include_phone_label: ::std::option::Option<bool>,
-    ///Lists the agency's formatted phone numbers.
+    /// Lists the agency's formatted phone numbers.
     pub phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }
 
-///Contains refund amount and applicable three-letter IATA airport code.
+/// Contains refund amount and applicable three-letter IATA airport code.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -72,13 +72,15 @@ pub struct AgencyContacts {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AirportTaxBreakdown {
-    ///The three-letter IATA airport code for which the refundable amount is applicable.
+    /// The three-letter IATA airport code for which the refundable amount is applicable.
     pub airport_code: ::std::option::Option<::std::string::String>,
-    ///Amount in the currency of the original ticket.
+    /// Amount in the currency of the original ticket.
     pub tax_amount: ::std::option::Option<::std::string::String>,
 }
 
-///Contains a set of additional features whose usage requires explicit indication to maintain backward compatibility. These functionalities will be seamlessly incorporated into a future major version of this API.
+/// Contains a set of additional features whose usage requires explicit indication to maintain
+/// backward compatibility. These functionalities will be seamlessly incorporated into a future
+/// major version of this API.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -88,15 +90,17 @@ pub struct AirportTaxBreakdown {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CommonExtraFeatures {
-    ///If `true`, the additional identity document `FISCAL_ID` is supported.
+    /// If `true`, the additional identity document `FISCAL_ID` is supported.
     pub return_fiscal_id: ::std::option::Option<bool>,
-    ///If `true`, the additional loyalty program type `FREQUENT_RENTER` is supported.
+    /// If `true`, the additional loyalty program type `FREQUENT_RENTER` is supported.
     pub return_frequent_renter: ::std::option::Option<bool>,
-    ///If `true`, returns the following additional forms of payment - `DOCKET`, `GOVERNMENT_TRAVEL_REQUEST`, and `INVOICE`.
+    /// If `true`, returns the following additional forms of payment - `DOCKET`,
+    /// `GOVERNMENT_TRAVEL_REQUEST`, and `INVOICE`.
     pub return_wallet_forms_of_payment: ::std::option::Option<bool>,
 }
 
-///Contains information that may be used to replace the ticket endorsement text stored during pricing.
+/// Contains information that may be used to replace the ticket endorsement text stored during
+/// pricing.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -106,13 +110,14 @@ pub struct CommonExtraFeatures {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Endorsements {
-    ///The original text for the endorsements field.
+    /// The original text for the endorsements field.
     pub description: ::std::option::Option<::std::string::String>,
-    ///If `true`, overrides all pre-programmed endorsements and prints special endorsements of the fare.
+    /// If `true`, overrides all pre-programmed endorsements and prints special endorsements of the
+    /// fare.
     pub use_override: ::std::option::Option<bool>,
 }
 
-///Contains basic agency information.
+/// Contains basic agency information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -128,7 +133,7 @@ pub struct GenericAgency {
     pub contact_info: ::std::option::Option<AgencyContacts>,
 }
 
-///Contains information about the hardcopy printer.
+/// Contains information about the hardcopy printer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -138,13 +143,14 @@ pub struct GenericAgency {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct HardcopyPrinter {
-    ///The hardcopy printer LNIATA to be designated.
+    /// The hardcopy printer LNIATA to be designated.
     pub address: ::std::option::Option<::std::string::String>,
-    ///The hardcopy printer spacing to be applied.
+    /// The hardcopy printer spacing to be applied.
     pub spacing: ::std::option::Option<::std::string::String>,
 }
 
-///Contains the actions to be performed after the completion of the requested action (booking creation/ticket void or refund).
+/// Contains the actions to be performed after the completion of the requested action (booking
+/// creation/ticket void or refund).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -155,11 +161,11 @@ pub struct HardcopyPrinter {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Notification {
     pub email: ::std::option::Option<NotificationEmailEnum>,
-    ///Lists the specific queue (up to three) to place the PNR into for the operation.
+    /// Lists the specific queue (up to three) to place the PNR into for the operation.
     pub queue_placement: ::std::option::Option<::std::vec::Vec<Queue>>,
 }
 
-///Contains code and amount of a specific tax.
+/// Contains code and amount of a specific tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -169,17 +175,21 @@ pub struct Notification {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct OverrideTax {
-    ///Lists information to override the refundable amount of individual XF airport taxes.
+    /// Lists information to override the refundable amount of individual XF airport taxes.
     pub airport_tax_breakdowns: ::std::option::Option<
         ::std::vec::Vec<AirportTaxBreakdown>,
     >,
-    ///Amount in the currency of the original ticket.
+    /// Amount in the currency of the original ticket.
     pub tax_amount: ::std::option::Option<::std::string::String>,
-    ///The two-character tax code for which the refundable amount is applicable. Must be combined with `taxAmount`.
+    /// The two-character tax code for which the refundable amount is applicable. Must be combined
+    /// with `taxAmount`.
     pub tax_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains a maximum of two forms of payment from the `formsOfPayment` array. Multiple forms of payment may be defined only if your location uses Billing and Settlement Plan (BSP) reporting and/or the point of sale country does not prohibit providing more than one credit card as the form of payment.
+/// Contains a maximum of two forms of payment from the `formsOfPayment` array. Multiple forms
+/// of payment may be defined only if your location uses Billing and Settlement Plan (BSP)
+/// reporting and/or the point of sale country does not prohibit providing more than one credit
+/// card as the form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -189,15 +199,16 @@ pub struct OverrideTax {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct PaymentMethod {
-    ///The desired base fare amount to charge to the second form of payment. Applicable only if two forms of payment are requested.
+    /// The desired base fare amount to charge to the second form of payment. Applicable only if two
+    /// forms of payment are requested.
     pub amount_on_second_form_of_payment: ::std::option::Option<::std::string::String>,
-    ///The index of the primary form of payment type in the `formsOfPayment` array.
+    /// The index of the primary form of payment type in the `formsOfPayment` array.
     pub primary_form_of_payment: i32,
-    ///The index of the primary form of payment type in the `formsOfPayment` array.
+    /// The index of the primary form of payment type in the `formsOfPayment` array.
     pub secondary_form_of_payment: ::std::option::Option<i32>,
 }
 
-///Contains information about a printer or a printer profile.
+/// Contains information about a printer or a printer profile.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -209,15 +220,15 @@ pub struct PaymentMethod {
 pub struct PrinterAddress {
     #[patch(name = "Option<HardcopyPrinterPatch>")]
     pub hardcopy: ::std::option::Option<HardcopyPrinter>,
-    ///The invoice and itinerary printer details to be designated.
+    /// The invoice and itinerary printer details to be designated.
     pub invoice_itinerary: ::std::option::Option<::std::string::String>,
-    ///The printer profile number to be designated.
+    /// The printer profile number to be designated.
     pub profile_number: ::std::option::Option<i32>,
     #[patch(name = "Option<TicketPrinterPatch>")]
     pub ticket: ::std::option::Option<TicketPrinter>,
 }
 
-///Contains details of a queue.
+/// Contains details of a queue.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -227,19 +238,24 @@ pub struct PrinterAddress {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Queue {
-    ///The future queue placement date in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Can only be used when passing `QUEUE_PLACE` remark type from `RemarkTypeEnum`.
+    /// The future queue placement date in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Can only be used when
+    /// passing `QUEUE_PLACE` remark type from `RemarkTypeEnum`.
     pub future_queue_placement_date: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code.
+    /// The pseudo city code.
     pub pcc: ::std::option::Option<::std::string::String>,
-    ///The programmable agency Prefatory Instruction Codes (PIC) that are unique to your agency. A PIC causes a message to display at the top of the booking when an agent displays it on queue. This message provides the agent information explaining why the booking is on the queue or what action needs to be completed depending on the PIC number you use.
+    /// The programmable agency Prefatory Instruction Codes (PIC) that are unique to your agency. A
+    /// PIC causes a message to display at the top of the booking when an agent displays it on
+    /// queue. This message provides the agent information explaining why the booking is on the
+    /// queue or what action needs to be completed depending on the PIC number you use.
     pub prefatory_instruction_code: i32,
-    ///The queue name.
+    /// The queue name.
     pub queue_name: ::std::option::Option<::std::string::String>,
-    ///The queue number.
+    /// The queue number.
     pub queue_number: ::std::option::Option<i32>,
 }
 
-///Contains detailed information for each ticket to be refunded.
+/// Contains detailed information for each ticket to be refunded.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -249,13 +265,13 @@ pub struct Queue {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RefundFlightTicket {
-    ///The electronic document number of the ticket that needs to be refunded.
+    /// The electronic document number of the ticket that needs to be refunded.
     pub number: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<RefundQualifiersPatch>")]
     pub refund_qualifiers: ::std::option::Option<RefundQualifiers>,
 }
 
-///Contains optional refund qualifiers for ATPCO tickets.
+/// Contains optional refund qualifiers for ATPCO tickets.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -265,26 +281,35 @@ pub struct RefundFlightTicket {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RefundQualifiers {
-    ///Amount to be applied to the refund. This will override the commission from the original ticket. Cannot be combined with `commissionPercentage`.
+    /// Amount to be applied to the refund. This will override the commission from the original
+    /// ticket. Cannot be combined with `commissionPercentage`.
     pub commission_amount: ::std::option::Option<::std::string::String>,
-    ///Amount of commission being collected on the cancel penalty.
+    /// Amount of commission being collected on the cancel penalty.
     pub commission_on_penalty: ::std::option::Option<::std::string::String>,
-    ///Percentage to be applied to the refund. This will override the commission from the original ticket. Cannot be combined with `commissionAmount`.
+    /// Percentage to be applied to the refund. This will override the commission from the original
+    /// ticket. Cannot be combined with `commissionAmount`.
     pub commission_percentage: ::std::option::Option<::std::string::String>,
     pub journey_type_code: ::std::option::Option<JourneyTypeCodeEnum>,
-    ///Amount of cancel penalty in the currency of the original ticket to apply to the refund. This will override any penalty calculated by the system.
+    /// Amount of cancel penalty in the currency of the original ticket to apply to the refund. This
+    /// will override any penalty calculated by the system.
     pub override_cancel_fee: ::std::option::Option<::std::string::String>,
-    ///Lists codes and amounts of taxes to be overridden.
+    /// Lists codes and amounts of taxes to be overridden.
     pub override_taxes: ::std::option::Option<::std::vec::Vec<OverrideTax>>,
-    ///Lists payment amounts to be applied when refunding a ticket that was issued to multiple forms of payment. Order has to match the forms of payment used when issuing the ticket. E.g. ticket was issue with 1. Form of Payment 'Cash' and 2. Form of Payment 'Credit Card'. In this case the first item should represent the amount to be refunded in cash and second the amount to be refunded to the credit card.
+    /// Lists payment amounts to be applied when refunding a ticket that was issued to multiple
+    /// forms of payment. Order has to match the forms of payment used when issuing the ticket. E.g.
+    /// ticket was issue with 1. Form of Payment 'Cash' and 2. Form of Payment 'Credit Card'. In
+    /// this case the first item should represent the amount to be refunded in cash and second the
+    /// amount to be refunded to the credit card.
     pub split_refund_amounts: ::std::option::Option<::std::vec::Vec<SplitRefundAmount>>,
-    ///A tour code to be applied to the refund. Input of a tourCode will override any tour code on the original ticket.
+    /// A tour code to be applied to the refund. Input of a tourCode will override any tour code on
+    /// the original ticket.
     pub tour_code: ::std::option::Option<::std::string::String>,
-    ///A waiver code to be applied to the refund. Typically a waiver code will be supplied by the airline for the agent to use to override a cancel fee.
+    /// A waiver code to be applied to the refund. Typically a waiver code will be supplied by the
+    /// airline for the agent to use to override a cancel fee.
     pub waiver_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains refund amount per form of payment in the currency of the original ticket.
+/// Contains refund amount per form of payment in the currency of the original ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -294,11 +319,11 @@ pub struct RefundQualifiers {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct SplitRefundAmount {
-    ///Amount in the currency of the original ticket.
+    /// Amount in the currency of the original ticket.
     pub amount: ::std::option::Option<::std::string::String>,
 }
 
-///Contains information about the ticket printer.
+/// Contains information about the ticket printer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -308,13 +333,13 @@ pub struct SplitRefundAmount {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TicketPrinter {
-    ///The ticket printer LNIATA to be designated.
+    /// The ticket printer LNIATA to be designated.
     pub address: ::std::option::Option<::std::string::String>,
-    ///The ticket stock country code to be applied.
+    /// The ticket stock country code to be applied.
     pub country_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains basic ticketing qualifiers.
+/// Contains basic ticketing qualifiers.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -324,19 +349,23 @@ pub struct TicketPrinter {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TicketingQualifiers {
-    ///The commission amount to be claimed. Cannot be combined with `commissionPercentage`.
+    /// The commission amount to be claimed. Cannot be combined with `commissionPercentage`.
     pub commission_amount: ::std::option::Option<::std::string::String>,
-    ///The commission percent to be claimed. Cannot be combined with `commissionAmount`.
+    /// The commission percent to be claimed. Cannot be combined with `commissionAmount`.
     pub commission_percentage: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<EndorsementsPatch>")]
     pub endorsements: ::std::option::Option<Endorsements>,
-    ///If `true`, fares with advance purchase requirements are excluded during pricing. Mutually exclusive with the `priceQuoteRecordIds` property within the fulfillment process.
+    /// If `true`, fares with advance purchase requirements are excluded during pricing. Mutually
+    /// exclusive with the `priceQuoteRecordIds` property within the fulfillment process.
     pub exclude_fare_focus_fares: ::std::option::Option<bool>,
-    ///The tour code to use during ticketing.
+    /// The tour code to use during ticketing.
     pub tour_code: ::std::option::Option<::std::string::String>,
     pub tour_code_overrides: ::std::option::Option<TourCodeOverridesOptionEnum>,
-    ///Lists references to the travelers within the `travelers` array for the purpose of name association during the fulfillment process. Mutually exclusive with the `priceQuoteRecordIds` property.
+    /// Lists references to the travelers within the `travelers` array for the purpose of name
+    /// association during the fulfillment process. Mutually exclusive with the
+    /// `priceQuoteRecordIds` property.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the desired validating airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the desired validating airline.
     pub validating_airline_code: ::std::option::Option<::std::string::String>,
 }

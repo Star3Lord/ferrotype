@@ -45,7 +45,8 @@ pub mod error {
     }
 }
 
-///Contains baggage allowance information (either its weight or the number of pieces) and associated flights.
+/// Contains baggage allowance information (either its weight or the number of pieces) and
+/// associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -55,15 +56,17 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillBaggageAllowance {
-    ///The total number of baggage pieces. Mutually exclusive with the `totalWeightInKilograms` property.
+    /// The total number of baggage pieces. Mutually exclusive with the `totalWeightInKilograms`
+    /// property.
     pub baggage_pieces: ::std::option::Option<i32>,
-    ///Lists flights associated with the brand code referenced by their `itemId`.
+    /// Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///The total weight of baggage measured in kilograms [kg]. Mutually exclusive with the `baggagePieces` property.
+    /// The total weight of baggage measured in kilograms [kg]. Mutually exclusive with the
+    /// `baggagePieces` property.
     pub total_weight_in_kilograms: ::std::option::Option<i32>,
 }
 
-///Contains a brand code to use for the ticketing operation.
+/// Contains a brand code to use for the ticketing operation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -73,13 +76,15 @@ pub struct FulfillBaggageAllowance {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillBrandedFare {
-    ///The desired brand code.
+    /// The desired brand code.
     pub brand_code: ::std::string::String,
-    ///Lists flights associated with the brand code referenced by their `itemId`.
+    /// Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
 
-///Identifies the type of the document to print during the fulfillment process. Can be `Invoice`, `Electronic Ticketing Receipt`, or `All` (prints both the invoice and the electronic ticketing receipt).
+/// Identifies the type of the document to print during the fulfillment process. Can be
+/// `Invoice`, `Electronic Ticketing Receipt`, or `All` (prints both the invoice and the
+/// electronic ticketing receipt).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FulfillDocumentsEnum {
@@ -148,7 +153,10 @@ impl ::std::default::Default for FulfillDocumentsEnum {
     }
 }
 
-///Identifies the type of error handling policy used by the Fulfill Flight Tickets service. Can be `ALLOW_PARTIAL_FULFILLMENT` (continues processing upon encountering any error from downline services during ticket issuance) or `HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR` (stops processing if the minimum connecting time between flights is not met).
+/// Identifies the type of error handling policy used by the Fulfill Flight Tickets service. Can
+/// be `ALLOW_PARTIAL_FULFILLMENT` (continues processing upon encountering any error from
+/// downline services during ticket issuance) or `HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR`
+/// (stops processing if the minimum connecting time between flights is not met).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FulfillErrorPolicyEnum {
@@ -217,7 +225,7 @@ impl ::std::default::Default for FulfillErrorPolicyEnum {
     }
 }
 
-///Contains details of a form of payment.
+/// Contains details of a form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -229,22 +237,28 @@ impl ::std::default::Default for FulfillErrorPolicyEnum {
 pub struct FulfillFormOfPayment {
     #[serde(flatten)]
     pub basic_form_of_payment: BasicFormOfPayment,
-    ///If `true`, the invoice form of payment free text description is preceded by a substring `INV/`. Use with `INVOICE` and invoice description.
+    /// If `true`, the invoice form of payment free text description is preceded by a substring
+    /// `INV/`. Use with `INVOICE` and invoice description.
     pub add_invoice_description_prefix: ::std::option::Option<bool>,
-    ///Lists all strong customer authentication details for a payment card. Use with `PAYMENTCARD`.
+    /// Lists all strong customer authentication details for a payment card. Use with `PAYMENTCARD`.
     pub authentications: ::std::option::Option<
         ::std::vec::Vec<FulfillStrongCustomerAuthentication>,
     >,
-    ///Details of the agency invoice selected as form of payment in free text format. Use with `INVOICE`.
+    /// Details of the agency invoice selected as form of payment in free text format. Use with
+    /// `INVOICE`.
     pub invoice_description: ::std::option::Option<::std::string::String>,
-    ///The manual approval code of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The manual approval code of a credit or debit card. Use with `PAYMENTCARD`.
     pub manual_approval_code: ::std::option::Option<::std::string::String>,
     pub type_: FulfillFormOfPaymentTypeEnum,
-    ///The customer account code of a virtual card. Use with `VIRTUAL_CARD`.
+    /// The customer account code of a virtual card. Use with `VIRTUAL_CARD`.
     pub virtual_card_code: ::std::option::Option<::std::string::String>,
 }
 
-///Identifies the type of the form of payment supported for fulfillment. Can be `CASH`, `CHECK`, `PAYMENTCARD`, `VIRTUAL_CARD`, `INVOICE`, `MISCELLANEOUS` (must be activated by the agency; requires a specific payment credit code), or `INSTALLMENTS` (applies only for BSP Brazil customers and refers to payment by means of card installments commonly referred to as "parcelado").
+/// Identifies the type of the form of payment supported for fulfillment. Can be `CASH`,
+/// `CHECK`, `PAYMENTCARD`, `VIRTUAL_CARD`, `INVOICE`, `MISCELLANEOUS` (must be activated by the
+/// agency; requires a specific payment credit code), or `INSTALLMENTS` (applies only for BSP
+/// Brazil customers and refers to payment by means of card installments commonly referred to as
+/// "parcelado").
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FulfillFormOfPaymentTypeEnum {
@@ -329,7 +343,9 @@ impl ::std::default::Default for FulfillFormOfPaymentTypeEnum {
     }
 }
 
-///Contains the automated Net Remit ticketing qualifiers. Net Remit is used to arrange the payment of an additional commission above the standard commission amount. This extra commission is payable by the validating carrier through the BSP settlement cycle.
+/// Contains the automated Net Remit ticketing qualifiers. Net Remit is used to arrange the
+/// payment of an additional commission above the standard commission amount. This extra
+/// commission is payable by the validating carrier through the BSP settlement cycle.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -339,25 +355,25 @@ impl ::std::default::Default for FulfillFormOfPaymentTypeEnum {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillNetRemit {
-    ///The cash amount of Net Remit.
+    /// The cash amount of Net Remit.
     pub cash_amount: ::std::option::Option<::std::string::String>,
-    ///The reference code used to indicate the Net Remit commercial contract.
+    /// The reference code used to indicate the Net Remit commercial contract.
     pub commercial_agreement_reference_code: ::std::option::Option<
         ::std::string::String,
     >,
-    ///The credit amount of Net Remit.
+    /// The credit amount of Net Remit.
     pub credit_amount: ::std::option::Option<::std::string::String>,
-    ///The amount of Net Remit discount.
+    /// The amount of Net Remit discount.
     pub discount_amount: ::std::option::Option<::std::string::String>,
-    ///The value code used to enter a manual Net Remit code.
+    /// The value code used to enter a manual Net Remit code.
     pub net_remit_code: ::std::option::Option<::std::string::String>,
-    ///The monetary amount of the total selling fare.
+    /// The monetary amount of the total selling fare.
     pub selling_fare_amount: ::std::option::Option<::std::string::String>,
-    ///The tour code to use during Net Remit ticketing.
+    /// The tour code to use during Net Remit ticketing.
     pub tour_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains all optional ticketing qualifiers to use during the fulfillment process.
+/// Contains all optional ticketing qualifiers to use during the fulfillment process.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -369,44 +385,51 @@ pub struct FulfillNetRemit {
 pub struct FulfillQualifiers {
     #[serde(flatten)]
     pub ticketing_qualifiers: TicketingQualifiers,
-    ///Lists baggage allowance details.
+    /// Lists baggage allowance details.
     pub baggage_allowance: ::std::option::Option<
         ::std::vec::Vec<FulfillBaggageAllowance>,
     >,
-    ///Lists desired brand codes. It is only possible to request one brand code per flight.
+    /// Lists desired brand codes. It is only possible to request one brand code per flight.
     pub branded_fares: ::std::option::Option<::std::vec::Vec<FulfillBrandedFare>>,
-    ///The eight-character discount approval code used by Korean customers.
+    /// The eight-character discount approval code used by Korean customers.
     pub discount_approval_code: ::std::option::Option<::std::string::String>,
-    ///Lists tax codes to exclude during Electronic Miscellaneous Document (EMD) issuance.
+    /// Lists tax codes to exclude during Electronic Miscellaneous Document (EMD) issuance.
     pub exempt_taxes: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///Lists the so-called future processing or future pricing lines (FP) with ticketing instructions to process a ticket in the near future.
+    /// Lists the so-called future processing or future pricing lines (FP) with ticketing
+    /// instructions to process a ticket in the near future.
     pub future_pricing_lines: ::std::option::Option<::std::vec::Vec<FutureProcessing>>,
-    ///If `true`, claims commission on the Net fare. Must be used in combination with `commissionPercentage`.
+    /// If `true`, claims commission on the Net fare. Must be used in combination with
+    /// `commissionPercentage`.
     pub is_net_fare_commission: ::std::option::Option<bool>,
     #[patch(name = "Option<FulfillNetRemitPatch>")]
     pub net_remit: ::std::option::Option<FulfillNetRemit>,
-    ///Lists penalties correlated with itinerary changes or cancellations.
+    /// Lists penalties correlated with itinerary changes or cancellations.
     pub penalties: ::std::option::Option<::std::vec::Vec<TicketPenalty>>,
-    ///Lists the Price Quote (PQ) records of fares with `recordTypeCode` equal to `PQ`, referenced by the `recordId` and obtained from the Get Booking response. Mutually exclusive with the `travelerIndices` and `excludeFareFocusFares` properties.
+    /// Lists the Price Quote (PQ) records of fares with `recordTypeCode` equal to `PQ`, referenced
+    /// by the `recordId` and obtained from the Get Booking response. Mutually exclusive with the
+    /// `travelerIndices` and `excludeFareFocusFares` properties.
     pub price_quote_record_ids: ::std::option::Option<
         ::std::vec::Vec<::std::string::String>,
     >,
-    ///If `true`, the Electronic Miscellaneous Document (EMD) will be fulfilled with taxes. If `false`, the Electronic Miscellaneous Document (EMD) will be fulfilled without taxes.
+    /// If `true`, the Electronic Miscellaneous Document (EMD) will be fulfilled with taxes. If
+    /// `false`, the Electronic Miscellaneous Document (EMD) will be fulfilled without taxes.
     pub price_with_taxes: ::std::option::Option<bool>,
     pub print_documents: ::std::option::Option<FulfillDocumentsEnum>,
-    ///If `true`, returns additional tags with fare flexibility information.
+    /// If `true`, returns additional tags with fare flexibility information.
     pub return_fare_flexibility_details: ::std::option::Option<bool>,
-    ///Lists a side trip sequence of flights referenced by flight `itemId` that follows after departure from a stopover point.
+    /// Lists a side trip sequence of flights referenced by flight `itemId` that follows after
+    /// departure from a stopover point.
     pub side_trip_flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///The Spanish large family discount level.
+    /// The Spanish large family discount level.
     pub spanish_large_family_discount_level: ::std::option::Option<i32>,
-    ///Lists desired fare basis codes with complete auto-pricing validation.
+    /// Lists desired fare basis codes with complete auto-pricing validation.
     pub specific_fares: ::std::option::Option<::std::vec::Vec<FulfillSpecificFare>>,
-    ///Lists ticket validity dates.
+    /// Lists ticket validity dates.
     pub validity_dates: ::std::option::Option<::std::vec::Vec<ValidityPeriod>>,
 }
 
-///Contains a desired fare basis code with complete auto-pricing validation and associated flights.
+/// Contains a desired fare basis code with complete auto-pricing validation and associated
+/// flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -416,13 +439,13 @@ pub struct FulfillQualifiers {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillSpecificFare {
-    ///The fare basis code.
+    /// The fare basis code.
     pub fare_basis_code: ::std::string::String,
-    ///Lists flights associated with the brand code referenced by their `itemId`.
+    /// Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
 
-///Contains strong customer authentication details for a payment card.
+/// Contains strong customer authentication details for a payment card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -432,11 +455,12 @@ pub struct FulfillSpecificFare {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillStrongCustomerAuthentication {
-    ///The channel in which a payment transaction was initiated. Can be `MO` (Mail Order), `TO` (Telephone Order), or `EC` (eCommerce).
+    /// The channel in which a payment transaction was initiated. Can be `MO` (Mail Order), `TO`
+    /// (Telephone Order), or `EC` (eCommerce).
     pub channel_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains required and optional elements to fulfill tickets and EMDs.
+/// Contains required and optional elements to fulfill tickets and EMDs.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -446,9 +470,10 @@ pub struct FulfillStrongCustomerAuthentication {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillTicketsRequest {
-    ///If `true`, uses the negotiated fare for ticketing when it is not possible to use the stored fare.
+    /// If `true`, uses the negotiated fare for ticketing when it is not possible to use the stored
+    /// fare.
     pub accept_negotiated_fare: ::std::option::Option<bool>,
-    ///If `true`, issues a ticket when the price increases during processing.
+    /// If `true`, issues a ticket when the price increases during processing.
     pub accept_price_changes: ::std::option::Option<bool>,
     #[patch(name = "Option<GenericAgencyPatch>")]
     pub agency: ::std::option::Option<GenericAgency>,
@@ -456,37 +481,44 @@ pub struct FulfillTicketsRequest {
         PriceQuoteHandlingMethodEnum,
     >,
     pub booking_source: ::std::option::Option<BookingSourceEnum>,
-    ///The maximum wait time in milliseconds applied to asynchronous updates during the ghost ticket validation process, which is performed to check if the newly issued tickets have been committed to the face of the PNR.
+    /// The maximum wait time in milliseconds applied to asynchronous updates during the ghost
+    /// ticket validation process, which is performed to check if the newly issued tickets have been
+    /// committed to the face of the PNR.
     pub commit_ticket_to_booking_wait_time: ::std::option::Option<i32>,
-    ///The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is the PNR Locator value.
+    /// The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is
+    /// the PNR Locator value.
     pub confirmation_id: ::std::string::String,
-    ///Lists printers or a printer profile to designate. It is possible to provide a single `PrinterAddress` object with a printer profile. Alternatively, the array may contain multiple `PrinterAddress` objects, but each of them must have the same printer type definition.
+    /// Lists printers or a printer profile to designate. It is possible to provide a single
+    /// `PrinterAddress` object with a printer profile. Alternatively, the array may contain
+    /// multiple `PrinterAddress` objects, but each of them must have the same printer type
+    /// definition.
     pub designate_printers: ::std::option::Option<::std::vec::Vec<PrinterAddress>>,
-    ///Lists the type of error handling policy used by the Fulfill Flight Tickets service.
+    /// Lists the type of error handling policy used by the Fulfill Flight Tickets service.
     pub error_handling_policy: ::std::option::Option<
         ::std::vec::Vec<FulfillErrorPolicyEnum>,
     >,
-    ///Lists the payment methods to use during the fulfillment process.
+    /// Lists the payment methods to use during the fulfillment process.
     pub forms_of_payment: ::std::option::Option<::std::vec::Vec<FulfillFormOfPayment>>,
-    ///Lists fulfillment details required to issue a document, such as a ticket or an EMD.
+    /// Lists fulfillment details required to issue a document, such as a ticket or an EMD.
     pub fulfillments: ::std::vec::Vec<FulfillmentDetails>,
-    ///If `true`, sends multiple tickets to commit to the PNR in a single batch after they have been issued.
+    /// If `true`, sends multiple tickets to commit to the PNR in a single batch after they have
+    /// been issued.
     pub generate_single_invoice: ::std::option::Option<bool>,
     pub notification_email: ::std::option::Option<NotificationEmailEnum>,
     pub price_quote_expiration_method: ::std::option::Option<
         PriceQuoteHandlingMethodEnum,
     >,
-    ///The entity that authorizes the changes in a Passenger Name Record.
+    /// The entity that authorizes the changes in a Passenger Name Record.
     pub received_from: ::std::option::Option<::std::string::String>,
-    ///If `true`, the service does not delete any existing accounting lines prior to ticketing.
+    /// If `true`, the service does not delete any existing accounting lines prior to ticketing.
     pub retain_accounting: ::std::option::Option<bool>,
-    ///The pseudo city code of the target destination for which the ticket exchange is requested.
+    /// The pseudo city code of the target destination for which the ticket exchange is requested.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///Lists information about the travelers.
+    /// Lists information about the travelers.
     pub travelers: ::std::option::Option<::std::vec::Vec<TravelerName>>,
 }
 
-///Contains ticketing details related to a given document.
+/// Contains ticketing details related to a given document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -496,7 +528,8 @@ pub struct FulfillTicketsRequest {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillmentDetails {
-    ///Lists ancillaries referenced by `itemId` obtained from the Get Booking response for which Electronic Miscellaneous Document (EMD) issuance is needed.
+    /// Lists ancillaries referenced by `itemId` obtained from the Get Booking response for which
+    /// Electronic Miscellaneous Document (EMD) issuance is needed.
     pub ancillary_ids: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
     #[patch(name = "Option<PaymentMethodPatch>")]
     pub payment: ::std::option::Option<PaymentMethod>,
@@ -506,7 +539,7 @@ pub struct FulfillmentDetails {
     pub ticketing_qualifiers: ::std::option::Option<FulfillQualifiers>,
 }
 
-///Contains details of a so-called future processing or future pricing line (FP).
+/// Contains details of a so-called future processing or future pricing line (FP).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -516,15 +549,18 @@ pub struct FulfillmentDetails {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FutureProcessing {
-    ///The number of the first FP line in a sequence.
+    /// The number of the first FP line in a sequence.
     pub first_line_number: i32,
-    ///The number of the last FP line in a sequence.
+    /// The number of the last FP line in a sequence.
     pub last_line_number: ::std::option::Option<i32>,
-    ///The item number of the traveler in the `travelers` array to whom the future processing or pricing is assigned.
+    /// The item number of the traveler in the `travelers` array to whom the future processing or
+    /// pricing is assigned.
     pub traveler_index: ::std::option::Option<i32>,
 }
 
-///Contains details of the Miscellaneous Intelligent Service Fee (MISF), applied for submitting a paperless service fee request using the amount stored in the travel journal record (TJR). May be combined with `formsOfPayment` details. Applicable to Canadian customers only.
+/// Contains details of the Miscellaneous Intelligent Service Fee (MISF), applied for submitting
+/// a paperless service fee request using the amount stored in the travel journal record (TJR).
+/// May be combined with `formsOfPayment` details. Applicable to Canadian customers only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -534,17 +570,18 @@ pub struct FutureProcessing {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct MiscellaneousServiceFee {
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The reference to the customer.
+    /// The reference to the customer.
     pub customer_reference: ::std::option::Option<::std::string::String>,
-    ///The description of the service fee.
+    /// The description of the service fee.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The override amount of the service fee.
+    /// The override amount of the service fee.
     pub override_amount: ::std::option::Option<::std::string::String>,
 }
 
-///Identifies how the service handles expired Price Quotes (PQ) or Price Quotes with a back date price.
+/// Identifies how the service handles expired Price Quotes (PQ) or Price Quotes with a back
+/// date price.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PriceQuoteHandlingMethodEnum {
@@ -610,7 +647,7 @@ impl ::std::default::Default for PriceQuoteHandlingMethodEnum {
     }
 }
 
-///Contains information about a penalty correlated with itinerary change or cancellation.
+/// Contains information about a penalty correlated with itinerary change or cancellation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -621,14 +658,17 @@ impl ::std::default::Default for PriceQuoteHandlingMethodEnum {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TicketPenalty {
     pub applicability: ::std::option::Option<FareRulePenaltyApplicabilityEnum>,
-    ///If `true`, requests changeable options. If `false`, only non-changeable options are requested. Mutually exclusive with the `maximumPenalty` property.
+    /// If `true`, requests changeable options. If `false`, only non-changeable options are
+    /// requested. Mutually exclusive with the `maximumPenalty` property.
     pub is_changeable: ::std::option::Option<bool>,
     #[patch(name = "Option<ValuePatch>")]
     pub maximum_penalty: ::std::option::Option<Value>,
     pub type_: TicketPenaltyTypeEnum,
 }
 
-///Identifies the penalty associated with the fare. Can be `Changeable` (changeable fare options), `Either or` (refundable or changeable fare options), or `Refundable` (refundable fare options).
+/// Identifies the penalty associated with the fare. Can be `Changeable` (changeable fare
+/// options), `Either or` (refundable or changeable fare options), or `Refundable` (refundable
+/// fare options).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TicketPenaltyTypeEnum {
@@ -695,7 +735,7 @@ impl ::std::default::Default for TicketPenaltyTypeEnum {
     }
 }
 
-///Contains details of the traveler's full name.
+/// Contains details of the traveler's full name.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -705,15 +745,15 @@ impl ::std::default::Default for TicketPenaltyTypeEnum {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TravelerName {
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::string::String,
-    ///The traveler's middle name.
+    /// The traveler's middle name.
     pub middle_name: ::std::option::Option<::std::string::String>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::string::String,
 }
 
-///Contains the ticket validity period and associated flights.
+/// Contains the ticket validity period and associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -723,10 +763,12 @@ pub struct TravelerName {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct ValidityPeriod {
-    ///The end date of the validity period in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The end date of the validity period in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub end_date: ::std::option::Option<::std::string::String>,
-    ///Lists flights associated with the brand code referenced by their `itemId`.
+    /// Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///The start date of the validity period in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// The start date of the validity period in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub start_date: ::std::option::Option<::std::string::String>,
 }

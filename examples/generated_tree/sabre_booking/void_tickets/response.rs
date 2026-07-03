@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains voided ticket information.
+/// Contains voided ticket information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -56,12 +56,13 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct VoidTicketsResponse {
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
     #[patch(name = "Option<VoidTicketsRequestPatch>")]
     pub request: ::std::option::Option<VoidTicketsRequest>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
-    ///Lists all successfully voided tickets.
+    /// Lists all successfully voided tickets.
     pub voided_tickets: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }

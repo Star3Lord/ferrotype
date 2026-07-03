@@ -42,7 +42,7 @@ pub mod error {
     }
 }
 
-///Identifies the payment method of the accounting item.
+/// Identifies the payment method of the accounting item.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AccountingFormOfPaymentTypeEnum {
@@ -121,7 +121,7 @@ impl ::std::default::Default for AccountingFormOfPaymentTypeEnum {
     }
 }
 
-///Identifies the ticket operation which triggered automatic accounting item creation.
+/// Identifies the ticket operation which triggered automatic accounting item creation.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AccountingItemCreationTypeEnum {
@@ -188,7 +188,7 @@ impl ::std::default::Default for AccountingItemCreationTypeEnum {
     }
 }
 
-///The application source that provides the ancillary service.
+/// The application source that provides the ancillary service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AncillarySourceEnum {
@@ -253,7 +253,7 @@ impl ::std::default::Default for AncillarySourceEnum {
     }
 }
 
-///Identifies the meaningful value describing the ancillary status.
+/// Identifies the meaningful value describing the ancillary status.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AncillaryStatusNameEnum {
@@ -340,7 +340,7 @@ impl ::std::default::Default for AncillaryStatusNameEnum {
     }
 }
 
-///Identifies the source of the booking. Defaults to `SABRE`.
+/// Identifies the source of the booking. Defaults to `SABRE`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BookingSourceEnum {
@@ -405,7 +405,7 @@ impl ::std::default::Default for BookingSourceEnum {
     }
 }
 
-///Identifies the policy for handling errors within the Cancel Booking service.
+/// Identifies the policy for handling errors within the Cancel Booking service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CancelErrorPolicyEnum {
@@ -470,7 +470,7 @@ impl ::std::default::Default for CancelErrorPolicyEnum {
     }
 }
 
-///Identifies the coupon status code based on the IATA PADIS Codeset 4405.
+/// Identifies the coupon status code based on the IATA PADIS Codeset 4405.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CouponStatusCodeEnum {
@@ -580,7 +580,7 @@ impl ::std::default::Default for CouponStatusCodeEnum {
     }
 }
 
-///Identifies descriptive status of the corresponding coupon status code.
+/// Identifies descriptive status of the corresponding coupon status code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CouponStatusEnum {
@@ -691,7 +691,9 @@ impl ::std::default::Default for CouponStatusEnum {
     }
 }
 
-///Identifies the passenger document subtype for `documentType` set to `FISCAL_ID`. Can be `RUC` (Taxpayer's Unique Registry in Ecuador), `CUIT/CUIL` (Argentina Unique Tax Identification Key), or `NIT` (Tax Identification Number in Bolivia).
+/// Identifies the passenger document subtype for `documentType` set to `FISCAL_ID`. Can be
+/// `RUC` (Taxpayer's Unique Registry in Ecuador), `CUIT/CUIL` (Argentina Unique Tax
+/// Identification Key), or `NIT` (Tax Identification Number in Bolivia).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DocumentSubTypeEnum {
@@ -760,7 +762,7 @@ impl ::std::default::Default for DocumentSubTypeEnum {
     }
 }
 
-///Identifies the type of passenger document.
+/// Identifies the type of passenger document.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DocumentTypeEnum {
@@ -887,7 +889,7 @@ impl ::std::default::Default for DocumentTypeEnum {
     }
 }
 
-///Identifies the type(s) of electronic documents to refund.
+/// Identifies the type(s) of electronic documents to refund.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DocumentsTypeEnum {
@@ -955,7 +957,8 @@ impl ::std::default::Default for DocumentsTypeEnum {
     }
 }
 
-///Identifies the type of Electronic Miscellaneous Document (EMD) or other document that must be issued for the selected subcode.
+/// Identifies the type of Electronic Miscellaneous Document (EMD) or other document that must
+/// be issued for the selected subcode.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ElectronicMiscellaneousDocumentTypeEnum {
@@ -1036,7 +1039,8 @@ impl ::std::default::Default for ElectronicMiscellaneousDocumentTypeEnum {
     }
 }
 
-///Identifies the type of employer ID. Can be `GST` (Indian Goods and Services Tax information) or `Unknown`.
+/// Identifies the type of employer ID. Can be `GST` (Indian Goods and Services Tax information)
+/// or `Unknown`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EmployerIdTypeEnum {
@@ -1100,7 +1104,10 @@ impl ::std::default::Default for EmployerIdTypeEnum {
     }
 }
 
-///Identifies the association type of the accounting item, which indicates to whom the fare is applied. Can be `Single Traveler` (fare amount applied to a singular passenger whose details are provided in `FormOfPayment`), `All Travelers` (fare amount applied to all passengers together as a group), or `Each Traveler` (fare amount applied to individual passengers).
+/// Identifies the association type of the accounting item, which indicates to whom the fare is
+/// applied. Can be `Single Traveler` (fare amount applied to a singular passenger whose details
+/// are provided in `FormOfPayment`), `All Travelers` (fare amount applied to all passengers
+/// together as a group), or `Each Traveler` (fare amount applied to individual passengers).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FareApplicationTypeEnum {
@@ -1169,7 +1176,7 @@ impl ::std::default::Default for FareApplicationTypeEnum {
     }
 }
 
-///Identifies the applicability type associated with a particular fare rule penalty.
+/// Identifies the applicability type associated with a particular fare rule penalty.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FareRulePenaltyApplicabilityEnum {
@@ -1236,7 +1243,11 @@ impl ::std::default::Default for FareRulePenaltyApplicabilityEnum {
     }
 }
 
-///Identifies the applicability of the ancillary item to the flights in the booking. Can be `Single` (an ancillary item applies to a single flight/sector of the booking), `Multiple` (an ancillary item applies to the portion of flights in the booking), or `Unknown` (applicability of the ancillary cannot be determined). This information is required when `electronicMiscellaneousDocumentType` has the value `OTHER_THAN_EMD`.
+/// Identifies the applicability of the ancillary item to the flights in the booking. Can be
+/// `Single` (an ancillary item applies to a single flight/sector of the booking), `Multiple`
+/// (an ancillary item applies to the portion of flights in the booking), or `Unknown`
+/// (applicability of the ancillary cannot be determined). This information is required when
+/// `electronicMiscellaneousDocumentType` has the value `OTHER_THAN_EMD`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FlightApplicabilityTypeEnum {
@@ -1302,7 +1313,7 @@ impl ::std::default::Default for FlightApplicabilityTypeEnum {
     }
 }
 
-///Identifies source type of the flight.
+/// Identifies source type of the flight.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FlightSourceEnum {
@@ -1371,7 +1382,7 @@ impl ::std::default::Default for FlightSourceEnum {
     }
 }
 
-///Identifies the trip type associated with the selected form of payment.
+/// Identifies the trip type associated with the selected form of payment.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FormOfPaymentTripTypeEnum {
@@ -1450,7 +1461,11 @@ impl ::std::default::Default for FormOfPaymentTripTypeEnum {
     }
 }
 
-///Identifies the type of payment method. The `MISCELLANEOUS` payment method must be activated on the agency level and requires a specific payment credit code. `INSTALLMENTS` is used for BSP Brazil customers only and refers to payment by means of card installments commonly referred to as "parcelado". `VIRTUAL_CARD`, `AGENCY_NAME`, `AGENCY_IATA`, `CORPORATE`, `COMPANY_NAME` are used for hotel bookings. `VOUCHER` is used for vehicle booking.
+/// Identifies the type of payment method. The `MISCELLANEOUS` payment method must be activated
+/// on the agency level and requires a specific payment credit code. `INSTALLMENTS` is used for
+/// BSP Brazil customers only and refers to payment by means of card installments commonly
+/// referred to as "parcelado". `VIRTUAL_CARD`, `AGENCY_NAME`, `AGENCY_IATA`, `CORPORATE`,
+/// `COMPANY_NAME` are used for hotel bookings. `VOUCHER` is used for vehicle booking.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FormOfPaymentTypeEnum {
@@ -1563,7 +1578,7 @@ impl ::std::default::Default for FormOfPaymentTypeEnum {
     }
 }
 
-///Identifies the use type associated with the selected form of payment.
+/// Identifies the use type associated with the selected form of payment.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FormOfPaymentUseTypeEnum {
@@ -1669,7 +1684,7 @@ impl ::std::default::Default for FormOfPaymentUseTypeEnum {
     }
 }
 
-///Identifies the gender of the traveler.
+/// Identifies the gender of the traveler.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum GenderEnum {
@@ -1750,7 +1765,7 @@ impl ::std::default::Default for GenderEnum {
     }
 }
 
-///Identifies the payment information type provided to the car vendor.
+/// Identifies the payment information type provided to the car vendor.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum GuaranteePaymentTypeEnum {
@@ -1816,7 +1831,7 @@ impl ::std::default::Default for GuaranteePaymentTypeEnum {
     }
 }
 
-///Identifies the OTA payment name.
+/// Identifies the OTA payment name.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum GuaranteeTypeNameEnum {
@@ -1897,7 +1912,7 @@ impl ::std::default::Default for GuaranteeTypeNameEnum {
     }
 }
 
-///Identifies the hotel payment policy.
+/// Identifies the hotel payment policy.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum HotelPaymentPolicyEnum {
@@ -1966,7 +1981,7 @@ impl ::std::default::Default for HotelPaymentPolicyEnum {
     }
 }
 
-///Identifies the source of the hotel booking.
+/// Identifies the source of the hotel booking.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum HotelSourceEnum {
@@ -2049,7 +2064,8 @@ impl ::std::default::Default for HotelSourceEnum {
     }
 }
 
-///Applicable to BSP France and Canada only. Identifies the journey type, which must be supplied if the refund is for a domestic flight. Possible values are `B`, `F`, or `M`.
+/// Applicable to BSP France and Canada only. Identifies the journey type, which must be
+/// supplied if the refund is for a domestic flight. Possible values are `B`, `F`, or `M`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum JourneyTypeCodeEnum {
@@ -2115,7 +2131,7 @@ impl ::std::default::Default for JourneyTypeCodeEnum {
     }
 }
 
-///Identifies the meal provided on the flight, matching accordingly to the meal type code.
+/// Identifies the meal provided on the flight, matching accordingly to the meal type code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum MealDescriptionEnum {
@@ -2234,7 +2250,7 @@ impl ::std::default::Default for MealDescriptionEnum {
     }
 }
 
-///Identifies the status of a nonelectronic ticket.
+/// Identifies the status of a nonelectronic ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NonElectronicTicketStatusEnum {
@@ -2300,7 +2316,10 @@ impl ::std::default::Default for NonElectronicTicketStatusEnum {
     }
 }
 
-///Identifies the method of e-mail notification. `DEFAULT` sends a default e-mail notification based on the agency/PCC configuration. `INVOICE` sends an e-mail with a copy of the eInvoice, `ETICKET` sends an e-mail with a text copy of the eTicket, and `ITINERARY` sends an e-mail with a text copy of the itinerary.
+/// Identifies the method of e-mail notification. `DEFAULT` sends a default e-mail notification
+/// based on the agency/PCC configuration. `INVOICE` sends an e-mail with a copy of the
+/// eInvoice, `ETICKET` sends an e-mail with a text copy of the eTicket, and `ITINERARY` sends
+/// an e-mail with a text copy of the itinerary.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NotificationEmailEnum {
@@ -2381,7 +2400,8 @@ impl ::std::default::Default for NotificationEmailEnum {
     }
 }
 
-///Identifies the type of the passenger's passport document. Applies to identity documents with the `documentType` parameter set to `PASSPORT`.
+/// Identifies the type of the passenger's passport document. Applies to identity documents with
+/// the `documentType` parameter set to `PASSPORT`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PassportTypeResponseEnum {
@@ -2486,7 +2506,7 @@ impl ::std::default::Default for PassportTypeResponseEnum {
     }
 }
 
-///Identifies a particular ATPCO Fare Category as the source of penalty information.
+/// Identifies a particular ATPCO Fare Category as the source of penalty information.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PenaltySourceEnum {
@@ -2558,7 +2578,7 @@ impl ::std::default::Default for PenaltySourceEnum {
     }
 }
 
-///Identifies the status code of a fare.
+/// Identifies the status code of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PricingStatusCodeEnum {
@@ -2621,7 +2641,7 @@ impl ::std::default::Default for PricingStatusCodeEnum {
     }
 }
 
-///Identifies the status name of a fare.
+/// Identifies the status name of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PricingStatusNameEnum {
@@ -2684,7 +2704,7 @@ impl ::std::default::Default for PricingStatusNameEnum {
     }
 }
 
-///Identifies pricing type code of a fare.
+/// Identifies pricing type code of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PricingTypeCodeEnum {
@@ -2750,7 +2770,7 @@ impl ::std::default::Default for PricingTypeCodeEnum {
     }
 }
 
-///Identifies the pricing type of a fare.
+/// Identifies the pricing type of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PricingTypeNameEnum {
@@ -2819,7 +2839,7 @@ impl ::std::default::Default for PricingTypeNameEnum {
     }
 }
 
-///Identifies the type of the loyalty program.
+/// Identifies the type of the loyalty program.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ProgramTypeEnum {
@@ -2892,7 +2912,9 @@ impl ::std::default::Default for ProgramTypeEnum {
     }
 }
 
-///Specifies the IATA-defined reason for the issuance code (RFIC) applicable to the Electronic Miscellaneous Document (EMD) that will be issued for the subcode identified in this record. The UNKNOWN option is used for the read-only purpose by getBooking API.
+/// Specifies the IATA-defined reason for the issuance code (RFIC) applicable to the Electronic
+/// Miscellaneous Document (EMD) that will be issued for the subcode identified in this record.
+/// The UNKNOWN option is used for the read-only purpose by getBooking API.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ReasonForIssuanceEnum {
@@ -2989,7 +3011,7 @@ impl ::std::default::Default for ReasonForIssuanceEnum {
     }
 }
 
-///Identifies the type associated with the particular remark.
+/// Identifies the type associated with the particular remark.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RemarkTypeEnum {
@@ -3102,7 +3124,7 @@ impl ::std::default::Default for RemarkTypeEnum {
     }
 }
 
-///Identifies the booking status of the item.
+/// Identifies the booking status of the item.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum StatusNameEnum {
@@ -3207,7 +3229,7 @@ impl ::std::default::Default for StatusNameEnum {
     }
 }
 
-///Indicates the type of tariff basis.
+/// Indicates the type of tariff basis.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TariffBasisTypeEnum {
@@ -3273,7 +3295,7 @@ impl ::std::default::Default for TariffBasisTypeEnum {
     }
 }
 
-///Identifies the current status of the ticket.
+/// Identifies the current status of the ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TicketStatusEnum {
@@ -3340,7 +3362,13 @@ impl ::std::default::Default for TicketStatusEnum {
     }
 }
 
-///Identifies the options that will be printed on the final ticket. Must be used in combination with `tourCode`. Can be `REPLACE_WITH_BT` (suppresses the fare amount and replaces it with `BT`), `REPLACE_WITH_IT` (suppresses the fare amount and replaces it with `IT`), `SUPPRESS_IT` (suppresses `IT`), or `SUPPRESS_IT_AND_FARE` (suppresses `IT` as well as the fare amount). `IT` stands for the inclusive tour ticket amount on the passenger coupon of a ticket, while `BT` indicates the bulk inclusive tour ticket amount on the passenger coupon of a ticket.
+/// Identifies the options that will be printed on the final ticket. Must be used in combination
+/// with `tourCode`. Can be `REPLACE_WITH_BT` (suppresses the fare amount and replaces it with
+/// `BT`), `REPLACE_WITH_IT` (suppresses the fare amount and replaces it with `IT`),
+/// `SUPPRESS_IT` (suppresses `IT`), or `SUPPRESS_IT_AND_FARE` (suppresses `IT` as well as the
+/// fare amount). `IT` stands for the inclusive tour ticket amount on the passenger coupon of a
+/// ticket, while `BT` indicates the bulk inclusive tour ticket amount on the passenger coupon
+/// of a ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TourCodeOverridesOptionEnum {
@@ -3413,7 +3441,7 @@ impl ::std::default::Default for TourCodeOverridesOptionEnum {
     }
 }
 
-///Identifies the type of the traveler.
+/// Identifies the type of the traveler.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TravelerTypeEnum {
@@ -3518,7 +3546,8 @@ impl ::std::default::Default for TravelerTypeEnum {
     }
 }
 
-///Identifies the name of the car type based on the second character of the [ACRISS](https://www.acriss.org/car-codes/) code.
+/// Identifies the name of the car type based on the second character of the
+/// [ACRISS](https://www.acriss.org/car-codes/) code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum VehicleTypeNameEnum {
@@ -3660,7 +3689,9 @@ impl ::std::default::Default for VehicleTypeNameEnum {
     }
 }
 
-///Identifies the type of the passenger’s visa document. Applies to identity documents with the `documentType` parameter set to `VISA`. If the visa document type cannot be determined, it is displayed as `Unknown`.
+/// Identifies the type of the passenger’s visa document. Applies to identity documents with the
+/// `documentType` parameter set to `VISA`. If the visa document type cannot be determined, it
+/// is displayed as `Unknown`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum VisaTypeResponseEnum {

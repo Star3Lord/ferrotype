@@ -44,7 +44,7 @@ pub mod create_pet {
         }
     }
 
-    ///`CreatePetRequest`
+    /// `CreatePetRequest`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -152,7 +152,7 @@ pub mod shared {
         }
     }
 
-    ///`Category`
+    /// `Category`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -167,7 +167,7 @@ pub mod shared {
         pub parent: ::std::option::Option<CategoryRef>,
     }
 
-    ///`CategoryRef`
+    /// `CategoryRef`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -180,7 +180,7 @@ pub mod shared {
         pub slug: ::std::option::Option<::std::string::String>,
     }
 
-    ///`Dog`
+    /// `Dog`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -195,7 +195,7 @@ pub mod shared {
         pub bark_loudness: ::std::option::Option<i32>,
     }
 
-    ///`Pet`
+    /// `Pet`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -214,7 +214,7 @@ pub mod shared {
         pub tag_count: ::std::option::Option<i32>,
     }
 
-    ///`PetStatus`
+    /// `PetStatus`
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
     pub enum PetStatus {

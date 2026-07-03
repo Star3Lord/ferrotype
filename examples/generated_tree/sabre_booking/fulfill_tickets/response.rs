@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains information about an electronic flight ticket or EMD issued for a traveler.
+/// Contains information about an electronic flight ticket or EMD issued for a traveler.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -56,25 +56,26 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillTicket {
-    ///The date the electronic flight ticket was issued in `YYYY-MM-DD` format.
+    /// The date the electronic flight ticket was issued in `YYYY-MM-DD` format.
     pub date: ::std::string::String,
-    ///If `true`, the ticket number has been committed to the PNR. Applicable to ATPCO bookings only.
+    /// If `true`, the ticket number has been committed to the PNR. Applicable to ATPCO bookings
+    /// only.
     pub is_committed: ::std::option::Option<bool>,
-    ///The electronic flight ticket number.
+    /// The electronic flight ticket number.
     pub number: ::std::string::String,
     pub payment: TotalValues,
-    ///The code of the ticket status.
+    /// The code of the ticket status.
     pub ticket_status_code: ::std::option::Option<::std::string::String>,
     pub ticket_status_name: ::std::option::Option<TicketStatusEnum>,
-    ///The pseudo city code of the agency which issued the ticket or EMD.
+    /// The pseudo city code of the agency which issued the ticket or EMD.
     pub ticketing_pcc: ::std::option::Option<::std::string::String>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub traveler_given_name: ::std::option::Option<::std::string::String>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub traveler_surname: ::std::option::Option<::std::string::String>,
 }
 
-///Contains information about issued tickets and EMDs.
+/// Contains information about issued tickets and EMDs.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -84,19 +85,20 @@ pub struct FulfillTicket {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FulfillTicketsResponse {
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
     #[patch(name = "Option<FulfillTicketsRequestPatch>")]
     pub request: ::std::option::Option<FulfillTicketsRequest>,
-    ///Lists all electronic flight tickets issued for the travelers.
+    /// Lists all electronic flight tickets issued for the travelers.
     pub tickets: ::std::option::Option<::std::vec::Vec<FulfillTicket>>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
-    ///Lists detailed warning information.
+    /// Lists detailed warning information.
     pub warnings: ::std::option::Option<::std::vec::Vec<Warning>>,
 }
 
-///Contains warning information.
+/// Contains warning information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -106,16 +108,19 @@ pub struct FulfillTicketsResponse {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Warning {
-    ///The category of the warning.
+    /// The category of the warning.
     pub category: ::std::string::String,
-    ///The detailed description of the warning.
+    /// The detailed description of the warning.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The field name of the request if the warning is related to a specific request or response parameter.
+    /// The field name of the request if the warning is related to a specific request or response
+    /// parameter.
     pub field_name: ::std::option::Option<::std::string::String>,
-    ///The field path of the request if the warning is related to a specific request or response parameter.
+    /// The field path of the request if the warning is related to a specific request or response
+    /// parameter.
     pub field_path: ::std::option::Option<::std::string::String>,
-    ///The field value of the request if the warning is related to a specific request or response parameter.
+    /// The field value of the request if the warning is related to a specific request or response
+    /// parameter.
     pub field_value: ::std::option::Option<::std::string::String>,
-    ///The type of the warning.
+    /// The type of the warning.
     pub type_: ::std::string::String,
 }

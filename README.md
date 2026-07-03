@@ -53,9 +53,11 @@ load (YAML/JSON)
   field type replacement, and hard-error selector validation.
 - **`src/condense.rs`** — the condensed emit style, as a token-verified
   AST transformation (see [below](#readable-output--emit-style)).
-- **`src/render.rs`** — the shared post-render passes both output modes
-  finish with: the condensed style's macro polish and the item-spacing
-  pass (a blank line between adjacent items, token-verified).
+- **`src/render.rs`** — the shared rendering passes both output modes
+  finish with: doc-comment normalization (stacked `/// ` lines, split,
+  spaced, soft-wrapped; schema-in-docs blocks exempt), the condensed
+  style's macro polish, and the item-spacing pass (a blank line between
+  adjacent items, token-verified).
 - **`src/postprocess.rs`** — synthesizes `impl Default` for enums typify
   can't default (untagged `oneOf` with no unit variant).
 - **`src/tree.rs`** — the folder-tree writer: splits the generated module
@@ -376,6 +378,16 @@ The pass is token-verified whitespace-only: the spaced output must
 re-parse to the identical token stream or rendering falls back to the
 packed form (`src/render.rs`, decision D16 in
 [docs/MIGRATION.md](docs/MIGRATION.md)).
+
+Doc comments are normalized the same way for both styles: the raw
+`#[doc]` strings typify carries (cramped `///text`, `/** ... */`
+blocks for multi-line descriptions, unwrapped spec-length lines)
+render as stacked `/// ` lines — one leading space, multi-line
+descriptions split line-per-line, and long lines soft-wrapped at word
+boundaries to 92 content characters without re-flowing the spec's own
+line structure. Doc blocks containing fenced code (the
+`with_schema_in_docs` `<details>` sections) pass through untouched
+(decision D17).
 
 Beyond spacing: by default every string enum is followed by ~50 lines
 of mechanical impls (`Display`, `FromStr`, the three `TryFrom` forms,

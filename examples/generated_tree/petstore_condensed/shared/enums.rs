@@ -6,7 +6,7 @@ use ::struct_patch::Patch;
 use super::super::support::impl_string_enum;
 pub use super::super::support::error;
 
-///`PetStatus`
+/// `PetStatus`
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PetStatus {

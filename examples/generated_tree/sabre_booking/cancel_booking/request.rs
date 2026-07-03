@@ -45,7 +45,7 @@ pub mod error {
     }
 }
 
-///Contains required and optional elements to cancel a booking.
+/// Contains required and optional elements to cancel a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -56,46 +56,56 @@ pub mod error {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CancelBookingRequest {
     pub booking_source: ::std::option::Option<BookingSourceEnum>,
-    ///If true, segments of all kinds will be cancelled from the reservation. Flights, Hotels, Cars, Trains, Cruises and all other segments included in the response are ignored.
+    /// If true, segments of all kinds will be cancelled from the reservation. Flights, Hotels,
+    /// Cars, Trains, Cruises and all other segments included in the response are ignored.
     pub cancel_all: ::std::option::Option<bool>,
-    ///Lists the cars which should be cancelled.
+    /// Lists the cars which should be cancelled.
     pub cars: ::std::option::Option<::std::vec::Vec<CarReference>>,
-    ///The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is the PNR Locator value.
+    /// The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is
+    /// the PNR Locator value.
     pub confirmation_id: ::std::string::String,
-    ///Lists the cruises which should be cancelled.
+    /// Lists the cruises which should be cancelled.
     pub cruises: ::std::option::Option<::std::vec::Vec<CruiseReference>>,
-    ///Lists printers or a printer profile to designate. It is possible to provide a single `PrinterAddress` object with a printer profile. Alternatively, the array may contain multiple `PrinterAddress` objects, but each of them must have the same printer type definition.
+    /// Lists printers or a printer profile to designate. It is possible to provide a single
+    /// `PrinterAddress` object with a printer profile. Alternatively, the array may contain
+    /// multiple `PrinterAddress` objects, but each of them must have the same printer type
+    /// definition.
     pub designate_printers: ::std::option::Option<::std::vec::Vec<PrinterAddress>>,
     pub error_handling_policy: ::std::option::Option<CancelErrorPolicyEnum>,
     pub flight_ticket_operation: ::std::option::Option<FlightTicketOperationEnum>,
-    ///Lists flights to cancel.
+    /// Lists flights to cancel.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///Lists the hotels which should be cancelled.
+    /// Lists the hotels which should be cancelled.
     pub hotels: ::std::option::Option<::std::vec::Vec<HotelReference>>,
     #[patch(name = "Option<NotificationPatch>")]
     pub notification: ::std::option::Option<Notification>,
-    ///Contains Id for a void or refund offer available based on checkFlightTicketsResponse for the tickets belonging to the requested confirmationId. Applicable only for NDC orders.
+    /// Contains Id for a void or refund offer available based on checkFlightTicketsResponse for the
+    /// tickets belonging to the requested confirmationId. Applicable only for NDC orders.
     pub offer_item_id: ::std::option::Option<::std::string::String>,
-    ///The entity that authorizes the changes in a Passenger Name Record.
+    /// The entity that authorizes the changes in a Passenger Name Record.
     pub received_from: ::std::option::Option<::std::string::String>,
     pub refund_documents_type: ::std::option::Option<DocumentsTypeEnum>,
-    ///The retention date of the booking. Used optionally to keep the booking active past the date of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set for purging.
+    /// The retention date of the booking. Used optionally to keep the booking active past the date
+    /// of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set
+    /// for purging.
     pub retention_end_date: ::std::option::Option<::std::string::String>,
-    ///The label associated with the retention date.
+    /// The label associated with the retention date.
     pub retention_label: ::std::option::Option<::std::string::String>,
-    ///If `true`, the response includes the current state of the booking.
+    /// If `true`, the response includes the current state of the booking.
     pub retrieve_booking: ::std::option::Option<bool>,
-    ///Lists the items which should be cancelled.
+    /// Lists the items which should be cancelled.
     pub segments: ::std::option::Option<::std::vec::Vec<Segment>>,
-    ///Used to specify whether the API should change context to a desired pseudo city code. Context is not reverted after the booking has been completed.
+    /// Used to specify whether the API should change context to a desired pseudo city code. Context
+    /// is not reverted after the booking has been completed.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///Lists the trains which should be cancelled.
+    /// Lists the trains which should be cancelled.
     pub trains: ::std::option::Option<::std::vec::Vec<TrainReference>>,
-    ///If `true`, nonelectronic tickets are included in the void process.
+    /// If `true`, nonelectronic tickets are included in the void process.
     pub void_non_electronic_tickets: ::std::option::Option<bool>,
 }
 
-///Identifies the policy for handling flight ticket operations within the Cancel Booking service.
+/// Identifies the policy for handling flight ticket operations within the Cancel Booking
+/// service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FlightTicketOperationEnum {
@@ -160,7 +170,8 @@ impl ::std::default::Default for FlightTicketOperationEnum {
     }
 }
 
-///Contains reference to the segment for cancellation, identified either by `sequence` or by `id`.
+/// Contains reference to the segment for cancellation, identified either by `sequence` or by
+/// `id`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -170,8 +181,8 @@ impl ::std::default::Default for FlightTicketOperationEnum {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Segment {
-    ///The unique item id for the segment to be cancelled.
+    /// The unique item id for the segment to be cancelled.
     pub id: ::std::option::Option<::std::string::String>,
-    ///Identifies the sequence of the segment number.
+    /// Identifies the sequence of the segment number.
     pub sequence: ::std::option::Option<i32>,
 }

@@ -46,7 +46,7 @@ pub mod error {
     }
 }
 
-///Contains booking information.
+/// Contains booking information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -58,18 +58,20 @@ pub mod error {
 pub struct CancelBookingResponse {
     #[patch(name = "Option<BookingPatch>")]
     pub booking: ::std::option::Option<Booking>,
-    ///Lists detailed error information. This array is not displayed in successful responses.
+    /// Lists detailed error information. This array is not displayed in successful responses.
     pub errors: ::std::option::Option<::std::vec::Vec<Error>>,
-    ///Lists all successfully refunded flight bookings.
+    /// Lists all successfully refunded flight bookings.
     pub flight_refunds: ::std::option::Option<::std::vec::Vec<FlightRefund>>,
-    ///Lists all successfully refunded tickets.
+    /// Lists all successfully refunded tickets.
     pub refunded_tickets: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
     #[patch(name = "Option<CancelBookingRequestPatch>")]
     pub request: ::std::option::Option<CancelBookingRequest>,
-    ///Lists information about cancellation eligibility and refundable amounts per ticket in the order of the request.
+    /// Lists information about cancellation eligibility and refundable amounts per ticket in the
+    /// order of the request.
     pub tickets: ::std::option::Option<::std::vec::Vec<Ticket>>,
-    ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
+    /// Provides the exact point in time when the response was generated. The timestamp is expressed
+    /// in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
-    ///Lists all successfully voided tickets.
+    /// Lists all successfully voided tickets.
     pub voided_tickets: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }

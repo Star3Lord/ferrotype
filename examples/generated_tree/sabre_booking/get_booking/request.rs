@@ -45,7 +45,9 @@ pub mod error {
     }
 }
 
-///Contains a set of additional features whose usage requires explicit indication to maintain backward compatibility. These functionalities will be seamlessly incorporated into a future major version of this API.
+/// Contains a set of additional features whose usage requires explicit indication to maintain
+/// backward compatibility. These functionalities will be seamlessly incorporated into a future
+/// major version of this API.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -57,11 +59,13 @@ pub mod error {
 pub struct ExtraFeatures {
     #[serde(flatten)]
     pub common_extra_features: CommonExtraFeatures,
-    ///If `true`, a lack of seat assignation to the corresponding traveler is marked as an empty `Seat` object. If `false`, empty objects are replaced with null values. Applies to NDC content only.
+    /// If `true`, a lack of seat assignation to the corresponding traveler is marked as an empty
+    /// `Seat` object. If `false`, empty objects are replaced with null values. Applies to NDC
+    /// content only.
     pub return_empty_seat_objects: ::std::option::Option<bool>,
 }
 
-///Contains both required and optional elements to make a booking request.
+/// Contains both required and optional elements to make a booking request.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -72,25 +76,30 @@ pub struct ExtraFeatures {
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct GetBookingRequest {
     pub booking_source: ::std::option::Option<BookingSourceEnum>,
-    ///The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is the PNR Locator value.
+    /// The booking reference ID as shown in the source supplier/vendor system. For `SABRE`, this is
+    /// the PNR Locator value.
     pub confirmation_id: ::std::string::String,
     #[patch(name = "Option<ExtraFeaturesPatch>")]
     pub extra_features: ::std::option::Option<ExtraFeatures>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::option::Option<::std::string::String>,
-    ///The middle name or the initial of the middle name of the traveler.
+    /// The middle name or the initial of the middle name of the traveler.
     pub middle_name: ::std::option::Option<::std::string::String>,
-    ///Lists the response sections which are returned by the service. If this list is empty or not provided, then the full structure is returned. By using this option, the application may exclude or simplify calls of downline APIs, which usually results in a significant performance boost.
+    /// Lists the response sections which are returned by the service. If this list is empty or not
+    /// provided, then the full structure is returned. By using this option, the application may
+    /// exclude or simplify calls of downline APIs, which usually results in a significant
+    /// performance boost.
     pub return_only: ::std::option::Option<::std::vec::Vec<ReturnOnlyEnum>>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
-    ///The pseudo city code of the target destination in which the booking retrieval is requested.
+    /// The pseudo city code of the target destination in which the booking retrieval is requested.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///If true, the application unmasks payment card information stored in the booking. To display this data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
+    /// If true, the application unmasks payment card information stored in the booking. To display
+    /// this data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
     pub unmask_payment_card_numbers: ::std::option::Option<bool>,
 }
 
-///Identifies the portion of data to be returned.
+/// Identifies the portion of data to be returned.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ReturnOnlyEnum {

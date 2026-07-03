@@ -364,6 +364,39 @@ the old engine as default, and record where the wall is.
   style; all goldens and the examples workspace's checked-in outputs
   were regenerated (the diff is insertion-only).
 
+- **D17 — rendering normalizes doc comments.** typify carries schema
+  descriptions as raw `#[doc = "..."]` strings, so prettyplease
+  rendered them cramped (`///text`, no space after the slashes), as
+  `/** ... */` block comments whenever the description held newlines,
+  and at whatever line length the spec author used (sabre has 150+
+  column description lines). `render::normalize_docs` — an AST pass
+  applied inside `render_body` before `prettyplease::unparse`, so both
+  single-file and tree output get it — rewrites the outer name-value
+  doc attributes on every item, struct field, and enum variant
+  (recursing into inline module bodies): multi-line strings split into
+  stacked single-line `#[doc]`s (adjacent doc attributes concatenate
+  with newlines in rustdoc — rendering-equivalent), every non-empty
+  line gets exactly one leading space, and lines longer than 92
+  content characters soft-wrap at word boundaries (≈100 rendered
+  columns at generated module depths; an unbreakable over-long word,
+  e.g. a URL, stands alone). Wrapping is per input line — text is
+  never re-flowed across the spec's own newlines, so deliberate line
+  structure like `` `HALT_ON_ERROR` - … `` item lists survives, and
+  markdown's single-newline collapsing keeps the soft-wrap
+  display-equivalent in rustdoc/hover. Two exemptions: doc blocks
+  containing a fenced code line (```` ``` ````) pass through
+  byte-untouched — the `with_schema_in_docs` `<details>` sections
+  depend on exact zero-leading-space alignment (pinned by
+  `examples/custom_pipeline.rs`) — and non-name-value forms
+  (`#[doc(hidden)]`) plus inner attributes are left alone. Unlike the
+  D16 spacing pass this deliberately changes tokens, so there is no
+  token-identity gate; the pass is pinned by unit tests (splitting,
+  spacing, wrap boundaries, fence skip, field/variant coverage) plus
+  an idempotence test, and the condensed style's quote-built docs
+  (support module, `impl_string_enum` definition) are already in
+  normalized shape, so the D14 pins hold with zero edits. All goldens
+  and the examples workspace regenerated.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

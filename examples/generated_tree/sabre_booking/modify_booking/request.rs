@@ -45,7 +45,7 @@ pub mod error {
     }
 }
 
-///Contains details of ancillary to be added or deleted.
+/// Contains details of ancillary to be added or deleted.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -55,60 +55,76 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AncillaryToModify {
-    ///The two-letter IATA designator code of the airline that owns the service. Applicable for ATPCO content only.
+    /// The two-letter IATA designator code of the airline that owns the service. Applicable for
+    /// ATPCO content only.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///The commercial name of the ancillary service. Applicable for ATPCO content only.
+    /// The commercial name of the ancillary service. Applicable for ATPCO content only.
     pub commercial_name: ::std::option::Option<::std::string::String>,
-    ///Freetext input describing the requested ancillary and its characteristics. Applicable for NDC content only.
+    /// Freetext input describing the requested ancillary and its characteristics. Applicable for
+    /// NDC content only.
     pub description: ::std::option::Option<::std::string::String>,
-    ///The electronic document number.
+    /// The electronic document number.
     pub electronic_miscellaneous_document_number: ::std::option::Option<
         ::std::string::String,
     >,
     pub electronic_miscellaneous_document_type: ::std::option::Option<
         ElectronicMiscellaneousDocumentTypeEnum,
     >,
-    ///The first travel date in ISO 8601 format applicable for the selected ancillary. Applicable for ATPCO content only.
+    /// The first travel date in ISO 8601 format applicable for the selected ancillary. Applicable
+    /// for ATPCO content only.
     pub first_travel_date: ::std::option::Option<::std::string::String>,
     pub flight_applicability_type: ::std::option::Option<FlightApplicabilityTypeEnum>,
-    ///Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a single ancillary item.
+    /// Lists flights referenced by flight `itemId`. Multiple flight IDs can be returned for a
+    /// single ancillary item.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///The two-letter type of ancillary service as per IATA standard. Applicable for ATPCO content only.
+    /// The two-letter type of ancillary service as per IATA standard. Applicable for ATPCO content
+    /// only.
     pub group_code: ::std::option::Option<::std::string::String>,
-    ///If `true`, the ancillary includes a commission.
+    /// If `true`, the ancillary includes a commission.
     pub is_commissionable: ::std::option::Option<bool>,
-    ///If `true`, the ancillary is refundable.
+    /// If `true`, the ancillary is refundable.
     pub is_refundable: ::std::option::Option<bool>,
-    ///The ID of an ancillary item.
+    /// The ID of an ancillary item.
     pub item_id: ::std::option::Option<::std::string::String>,
-    ///The last travel date in ISO 8601 format permitted for the selected ancillary. Applicable for ATPCO content only.
+    /// The last travel date in ISO 8601 format permitted for the selected ancillary. Applicable for
+    /// ATPCO content only.
     pub last_travel_date: ::std::option::Option<::std::string::String>,
-    ///The quantity of ancillary items to book. Applicable for ATPCO content only.
+    /// The quantity of ancillary items to book. Applicable for ATPCO content only.
     pub number_of_items: ::std::option::Option<i32>,
-    ///The ancillary availability offer item ID. Applicable for NDC content only.
+    /// The ancillary availability offer item ID. Applicable for NDC content only.
     pub offer_id: ::std::option::Option<::std::string::String>,
-    ///The latest date in ISO 8601 format before which the selected ancillary can be purchased. Applicable for ATPCO content only.
+    /// The latest date in ISO 8601 format before which the selected ancillary can be purchased.
+    /// Applicable for ATPCO content only.
     pub purchase_date_time: ::std::option::Option<::std::string::String>,
-    ///The reason for issuance code (RFIC) defined by IATA.
+    /// The reason for issuance code (RFIC) defined by IATA.
     pub reason_for_issuance_code: ::std::option::Option<::std::string::String>,
     pub reason_for_issuance_name: ::std::option::Option<ReasonForIssuanceEnum>,
     pub source: ::std::option::Option<AncillarySourceEnum>,
-    ///Defines the category of the special service associated with the selected ancillary service. Required when adding ancillaries from low-cost carriers, such as `U2` or `FR`.
+    /// Defines the category of the special service associated with the selected ancillary service.
+    /// Required when adding ancillaries from low-cost carriers, such as `U2` or `FR`.
     pub special_service_code: ::std::option::Option<::std::string::String>,
-    ///The two-letter status code used by vendors. It indicates the booking status.
+    /// The two-letter status code used by vendors. It indicates the booking status.
     pub status_code: ::std::option::Option<::std::string::String>,
     pub status_name: ::std::option::Option<AncillaryStatusNameEnum>,
-    ///The issuance subcode (`RFISC`) is an industry-defined or airline-defined code identifying a specific type of service. Industry-defined subcodes are available for all airlines to use, have standard definitions, and are maintained by ATPCO. Airline-defined subcodes are available for specific airlines only, and are defined and maintained by the airline utilizing the code. Applicable for ATPCO content only.
+    /// The issuance subcode (`RFISC`) is an industry-defined or airline-defined code identifying a
+    /// specific type of service. Industry-defined subcodes are available for all airlines to use,
+    /// have standard definitions, and are maintained by ATPCO. Airline-defined subcodes are
+    /// available for specific airlines only, and are defined and maintained by the airline
+    /// utilizing the code. Applicable for ATPCO content only.
     pub subcode: ::std::option::Option<::std::string::String>,
-    ///Lists tax information associated with the ancillary. For three-letter tax codes, remove the final 'A' character when passing a value under the `taxCode` parameter. Applicable for ATPCO content only.
+    /// Lists tax information associated with the ancillary. For three-letter tax codes, remove the
+    /// final 'A' character when passing a value under the `taxCode` parameter. Applicable for ATPCO
+    /// content only.
     pub taxes: ::std::option::Option<::std::vec::Vec<Tax>>,
     #[patch(name = "Option<AncillaryTotalValuesPatch>")]
     pub totals: ::std::option::Option<AncillaryTotalValues>,
-    ///The two-letter IATA designator code of the airline providing the service. Mutually exclusive with the `source` parameter. Applicable for ATPCO content only.
+    /// The two-letter IATA designator code of the airline providing the service. Mutually exclusive
+    /// with the `source` parameter. Applicable for ATPCO content only.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains details of the payment amount - the total amount to pay, the amount before tax, and the amount of tax.
+/// Contains details of the payment amount - the total amount to pay, the amount before tax, and
+/// the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -118,19 +134,22 @@ pub struct AncillaryToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AncillaryTotalValues {
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The amount of all applicable fees.
+    /// The amount of all applicable fees.
     pub fees: ::std::option::Option<::std::string::String>,
-    ///The subtotal before applying taxes and fees.
+    /// The subtotal before applying taxes and fees.
     pub subtotal: ::std::option::Option<::std::string::String>,
-    ///Tax information associated with the ancillary.
+    /// Tax information associated with the ancillary.
     pub taxes: ::std::option::Option<::std::string::String>,
-    ///The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
+    /// The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::option::Option<::std::string::String>,
 }
 
-///Contains the original booking details (within the `before` property) or the target booking details used after a finalized modification (within the `after` property). Based on the difference between the `before` and `after` properties, appropriate add, update, or delete operations are performed on the booking.
+/// Contains the original booking details (within the `before` property) or the target booking
+/// details used after a finalized modification (within the `after` property). Based on the
+/// difference between the `before` and `after` properties, appropriate add, update, or delete
+/// operations are performed on the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -140,35 +159,41 @@ pub struct AncillaryTotalValues {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct BookingToModify {
-    ///The customer identifier used by their travel agency, also known as the customer number or the DK number. Can be a six, seven, or 10-character string.
+    /// The customer identifier used by their travel agency, also known as the customer number or
+    /// the DK number. Can be a six, seven, or 10-character string.
     pub agency_customer_number: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<CreationDetailsToModifyPatch>")]
     pub creation_details: ::std::option::Option<CreationDetailsToModify>,
-    ///Lists details of saved fares. This service applies data from a Price Quote.
+    /// Lists details of saved fares. This service applies data from a Price Quote.
     pub fares: ::std::option::Option<::std::vec::Vec<FareToModify>>,
-    ///Lists all flights associated with the booking in chronological order.
+    /// Lists all flights associated with the booking in chronological order.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightToModify>>,
-    ///Lists the hotels which should be modified.
+    /// Lists the hotels which should be modified.
     pub hotels: ::std::option::Option<::std::vec::Vec<HotelToModify>>,
-    ///Lists Other Service Information (OSI) which should be modified.
+    /// Lists Other Service Information (OSI) which should be modified.
     pub other_services: ::std::option::Option<
         ::std::vec::Vec<CommonOtherServiceInformation>,
     >,
     #[patch(name = "Option<PaymentToModifyPatch>")]
     pub payments: ::std::option::Option<PaymentToModify>,
-    ///Lists all remarks stored in the booking. Note that the `FORM_OF_PAYMENT` remark type is not supported manually; these remarks are handled automatically when the `formsOfPayment` array is modified.
+    /// Lists all remarks stored in the booking. Note that the `FORM_OF_PAYMENT` remark type is not
+    /// supported manually; these remarks are handled automatically when the `formsOfPayment` array
+    /// is modified.
     pub remarks: ::std::option::Option<::std::vec::Vec<Remark>>,
-    ///The retention date of the booking. Used optionally to keep the booking active past the date of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set for purging.
+    /// The retention date of the booking. Used optionally to keep the booking active past the date
+    /// of the last itinerary item (flight, hotel, car, etc.). After this date, the booking is set
+    /// for purging.
     pub retention_end_date: ::std::option::Option<::std::string::String>,
-    ///The label associated with the retention date.
+    /// The label associated with the retention date.
     pub retention_label: ::std::option::Option<::std::string::String>,
-    ///Lists all special service request (SSR) messages sent to an airline. The messages may contain traveler preferences or mandatory/optional information directed to the airline.
+    /// Lists all special service request (SSR) messages sent to an airline. The messages may
+    /// contain traveler preferences or mandatory/optional information directed to the airline.
     pub special_services: ::std::option::Option<::std::vec::Vec<SpecialServiceToModify>>,
-    ///Lists personal information of the travelers.
+    /// Lists personal information of the travelers.
     pub travelers: ::std::option::Option<::std::vec::Vec<TravelerToModify>>,
 }
 
-///Contains creation information for the booking.
+/// Contains creation information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -178,11 +203,11 @@ pub struct BookingToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CreationDetailsToModify {
-    ///A unique identifier accredited by the International Air Transport Association (IATA).
+    /// A unique identifier accredited by the International Air Transport Association (IATA).
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
 }
 
-///Contains details of a specific fare to modify.
+/// Contains details of a specific fare to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -192,11 +217,11 @@ pub struct CreationDetailsToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FareToModify {
-    ///The ID of the fare source.
+    /// The ID of the fare source.
     pub record_id: ::std::option::Option<::std::string::String>,
 }
 
-///Contains flight details to modify for the given booking.
+/// Contains flight details to modify for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -206,13 +231,20 @@ pub struct FareToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FlightToModify {
-    ///Lists seats for the departing aircraft assigned to the travelers by matching the indices in the `travelers` array. Providing a null value instead of a `SeatToModify` object indicates that there is no seat assigned to the corresponding traveler.
+    /// Lists seats for the departing aircraft assigned to the travelers by matching the indices in
+    /// the `travelers` array. Providing a null value instead of a `SeatToModify` object indicates
+    /// that there is no seat assigned to the corresponding traveler.
     pub change_of_gauge_seats: ::std::option::Option<::std::vec::Vec<SeatToModify>>,
-    ///Lists seats assigned to the travelers by matching the indices in the `travelers` array. Providing a null value instead of a `SeatToModify` object indicates that there is no seat assigned to the corresponding traveler. To obtain full seat details for modification, we recommended sending a Get Booking call with the extra feature `returnEmptySeatObjects` parameter set to `false`. If combined with `changeOfGaugeSeats`, this array assigns seats on the first aircraft on a change of gauge or funnel flight.
+    /// Lists seats assigned to the travelers by matching the indices in the `travelers` array.
+    /// Providing a null value instead of a `SeatToModify` object indicates that there is no seat
+    /// assigned to the corresponding traveler. To obtain full seat details for modification, we
+    /// recommended sending a Get Booking call with the extra feature `returnEmptySeatObjects`
+    /// parameter set to `false`. If combined with `changeOfGaugeSeats`, this array assigns seats on
+    /// the first aircraft on a change of gauge or funnel flight.
     pub seats: ::std::option::Option<::std::vec::Vec<SeatToModify>>,
 }
 
-///Contains hotel information for the given booking which should be modified.
+/// Contains hotel information for the given booking which should be modified.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -224,27 +256,33 @@ pub struct FlightToModify {
 pub struct HotelDetailsToModify {
     #[patch(name = "Option<AssociatedFlightDetailsPatch>")]
     pub associated_flight_details: ::std::option::Option<AssociatedFlightDetails>,
-    ///A mandatory value to provide in case of changes to the room type, number of guests, and check-in or check-out dates outside of the original date range. Returned in the Hotel Price Check API response.
+    /// A mandatory value to provide in case of changes to the room type, number of guests, and
+    /// check-in or check-out dates outside of the original date range. Returned in the Hotel Price
+    /// Check API response.
     pub booking_key: ::std::option::Option<::std::string::String>,
-    ///The check-in date in `YYYY-MM-DD` format in the hotel's local time zone.
+    /// The check-in date in `YYYY-MM-DD` format in the hotel's local time zone.
     pub check_in_date: ::std::option::Option<::std::string::String>,
-    ///The checkout date in `YYYY-MM-DD` format in the hotel's local time zone.
+    /// The checkout date in `YYYY-MM-DD` format in the hotel's local time zone.
     pub check_out_date: ::std::option::Option<::std::string::String>,
-    ///A discount code that a company may provide to an agency. Usually tied to a negotiated rate code.
+    /// A discount code that a company may provide to an agency. Usually tied to a negotiated rate
+    /// code.
     pub corporate_discount_code: ::std::option::Option<i32>,
-    ///The index of the payment type in the `formsOfPayment` list. Forms of payment applicable to a hotel booking: `PAYMENTCARD`, `AGENCY_NAME`, `AGENCY_IATA`, `CORPORATE`, `COMPANY_NAME`, `VIRTUAL_CARD`.
+    /// The index of the payment type in the `formsOfPayment` list. Forms of payment applicable to a
+    /// hotel booking: `PAYMENTCARD`, `AGENCY_NAME`, `AGENCY_IATA`, `CORPORATE`, `COMPANY_NAME`,
+    /// `VIRTUAL_CARD`.
     pub form_of_payment_index: ::std::option::Option<i32>,
-    ///Specifies the lead traveler from the travelers list with whom the hotel booking is associated.
+    /// Specifies the lead traveler from the travelers list with whom the hotel booking is
+    /// associated.
     pub lead_traveler_index: i32,
-    ///The number of guests.
+    /// The number of guests.
     pub number_of_guests: i32,
     pub payment_policy: HotelPaymentPolicyEnum,
     pub room: RoomToModify,
-    ///Additional special requests put in by the traveler with regards to the hotel reservation.
+    /// Additional special requests put in by the traveler with regards to the hotel reservation.
     pub special_instructions: ::std::option::Option<::std::string::String>,
 }
 
-///Contains hotel reservation information identified by `itemId` and associated with a booking.
+/// Contains hotel reservation information identified by `itemId` and associated with a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -260,7 +298,7 @@ pub struct HotelToModify {
     pub hotel_details_to_modify: HotelDetailsToModify,
 }
 
-///Contains details of an identity document.
+/// Contains details of an identity document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -270,43 +308,50 @@ pub struct HotelToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct IdentityDocumentDetails {
-    ///The traveler's date of birth in the `YYYY-MM-DD` format.
+    /// The traveler's date of birth in the `YYYY-MM-DD` format.
     pub birth_date: ::std::option::Option<::std::string::String>,
-    ///The traveler's citizenship country provided as a two- or three-letter ISO 3166 code.
+    /// The traveler's citizenship country provided as a two- or three-letter ISO 3166 code.
     pub citizenship_country_code: ::std::option::Option<::std::string::String>,
-    ///The unique identifier of the document.
+    /// The unique identifier of the document.
     pub document_number: ::std::option::Option<::std::string::String>,
     pub document_type: DocumentTypeEnum,
-    ///The expiration date of the identity document in the `YYYY-MM-DD` format.
+    /// The expiration date of the identity document in the `YYYY-MM-DD` format.
     pub expiry_date: ::std::option::Option<::std::string::String>,
     pub gender: ::std::option::Option<GenderEnum>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::option::Option<::std::string::String>,
-    ///The two- or three-letter country code where the document is valid. Used with the `VISA` document type (NDC not supported).
+    /// The two- or three-letter country code where the document is valid. Used with the `VISA`
+    /// document type (NDC not supported).
     pub host_country_code: ::std::option::Option<::std::string::String>,
-    ///If `true`, the identity document applies to a lap child. Can only be used with `VISA`, `RESIDENCE_ADDRESS`, and `DESTINATION_ADDRESS` document types.
+    /// If `true`, the identity document applies to a lap child. Can only be used with `VISA`,
+    /// `RESIDENCE_ADDRESS`, and `DESTINATION_ADDRESS` document types.
     pub is_lap_child_document: ::std::option::Option<bool>,
-    ///If `true`, indicates the primary holder of a document issued for multiple travelers.
+    /// If `true`, indicates the primary holder of a document issued for multiple travelers.
     pub is_primary_document_holder: ::std::option::Option<bool>,
-    ///The date the identity document was issued on provided in the `YYYY-MM-DD` format. Mainly used with the `VISA` document type.
+    /// The date the identity document was issued on provided in the `YYYY-MM-DD` format. Mainly
+    /// used with the `VISA` document type.
     pub issue_date: ::std::option::Option<::std::string::String>,
-    ///The country issuing the passenger document provided as a two- or three-letter ISO 3166 code. Not applicable to the `VISA` document type.
+    /// The country issuing the passenger document provided as a two- or three-letter ISO 3166 code.
+    /// Not applicable to the `VISA` document type.
     pub issuing_country_code: ::std::option::Option<::std::string::String>,
-    ///The traveler's middle name (NDC not supported).
+    /// The traveler's middle name (NDC not supported).
     pub middle_name: ::std::option::Option<::std::string::String>,
-    ///The place of birth of the passenger. Mainly used with the `VISA` document type (NDC not supported).
+    /// The place of birth of the passenger. Mainly used with the `VISA` document type (NDC not
+    /// supported).
     pub place_of_birth: ::std::option::Option<::std::string::String>,
-    ///The country the `VISA` document was issued in. Used with the `VISA` document type (NDC not supported).
+    /// The country the `VISA` document was issued in. Used with the `VISA` document type (NDC not
+    /// supported).
     pub place_of_issue: ::std::option::Option<::std::string::String>,
-    ///The country the passenger resides in or their nationality country provided as a two- or three-letter ISO 3166 code.
+    /// The country the passenger resides in or their nationality country provided as a two- or
+    /// three-letter ISO 3166 code.
     pub residence_country_code: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<AddressPatch>")]
     pub residence_destination_address: ::std::option::Option<Address>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
 }
 
-///Contains required and optional elements to modify a booking.
+/// Contains required and optional elements to modify a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -318,24 +363,27 @@ pub struct IdentityDocumentDetails {
 pub struct ModifyBookingRequest {
     pub after: BookingToModify,
     pub before: BookingToModify,
-    ///The unique identifier of a booking, obtained by the means of the Get Booking method. Used to verify the state of the booking prior to a modification operation.
+    /// The unique identifier of a booking, obtained by the means of the Get Booking method. Used to
+    /// verify the state of the booking prior to a modification operation.
     pub booking_signature: ::std::string::String,
     pub booking_source: ::std::option::Option<BookingSourceEnum>,
-    ///The booking reference ID as shown in the source supplier/vendor system.
+    /// The booking reference ID as shown in the source supplier/vendor system.
     pub confirmation_id: ::std::string::String,
     #[patch(name = "Option<CommonExtraFeaturesPatch>")]
     pub extra_features: ::std::option::Option<CommonExtraFeatures>,
-    ///The entity that authorizes the changes in a booking.
+    /// The entity that authorizes the changes in a booking.
     pub received_from: ::std::option::Option<::std::string::String>,
-    ///If `true`, the response includes the current state of the booking.
+    /// If `true`, the response includes the current state of the booking.
     pub retrieve_booking: ::std::option::Option<bool>,
-    ///Specifies the desired pseudo city code value. The API does not revert context after completing the booking.
+    /// Specifies the desired pseudo city code value. The API does not revert context after
+    /// completing the booking.
     pub target_pcc: ::std::option::Option<::std::string::String>,
-    ///If `true`, unmasks payment card information during the `bookingSignature` verification step. To use unmasked data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
+    /// If `true`, unmasks payment card information during the `bookingSignature` verification step.
+    /// To use unmasked data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
     pub unmask_payment_card_numbers: ::std::option::Option<bool>,
 }
 
-///Contains details of the identity document to modify.
+/// Contains details of the identity document to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -347,11 +395,12 @@ pub struct ModifyBookingRequest {
 pub struct ModifyIdentityDocument {
     #[serde(flatten)]
     pub identity_document_details: IdentityDocumentDetails,
-    ///Lists flights associated with a document referenced by their `itemId`. A single identity document can be associated with multiple flight IDs.
+    /// Lists flights associated with a document referenced by their `itemId`. A single identity
+    /// document can be associated with multiple flight IDs.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
 
-///Contains payment information necessary to modify the booking.
+/// Contains payment information necessary to modify the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -361,11 +410,11 @@ pub struct ModifyIdentityDocument {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct PaymentToModify {
-    ///Lists payment methods associated with the booking.
+    /// Lists payment methods associated with the booking.
     pub forms_of_payment: ::std::option::Option<::std::vec::Vec<FormOfPayment>>,
 }
 
-///Contains details of a hotel room to modify.
+/// Contains details of a hotel room to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -375,13 +424,14 @@ pub struct PaymentToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct RoomToModify {
-    ///The inventory block code of the room. An ID returned by the hotel supplier for all unique room+rate combinations.
+    /// The inventory block code of the room. An ID returned by the hotel supplier for all unique
+    /// room+rate combinations.
     pub product_code: ::std::option::Option<::std::string::String>,
-    ///Lists indices of travelers from the `travelers` array to whom the room is assigned.
+    /// Lists indices of travelers from the `travelers` array to whom the room is assigned.
     pub traveler_indices: ::std::vec::Vec<i32>,
 }
 
-///Contains detailed information about a seat that should be modified.
+/// Contains detailed information about a seat that should be modified.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -391,13 +441,14 @@ pub struct RoomToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct SeatToModify {
-    ///The traveler's assigned seat number.
+    /// The traveler's assigned seat number.
     pub number: ::std::string::String,
-    ///The seat availability offer item ID. Applicable for NDC flights only.
+    /// The seat availability offer item ID. Applicable for NDC flights only.
     pub offer_item_id: ::std::option::Option<::std::string::String>,
 }
 
-///Contains the special service request (SSR) message sent to an airline. The message may contain traveler preferences or mandatory/optional information directed to the airline.
+/// Contains the special service request (SSR) message sent to an airline. The message may
+/// contain traveler preferences or mandatory/optional information directed to the airline.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -407,17 +458,24 @@ pub struct SeatToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct SpecialServiceToModify {
-    ///Defines the category of the special service request sent to the airline. Visit the official IATA website for the list of currently supported SSR code references. Some airline-specific codes may be missing within these IATA resources.
+    /// Defines the category of the special service request sent to the airline. Visit the official
+    /// IATA website for the list of currently supported SSR code references. Some airline-specific
+    /// codes may be missing within these IATA resources.
     pub code: ::std::string::String,
-    ///Lists flights referenced by their `itemId`. A single special service can be associated with multiple flights.
+    /// Lists flights referenced by their `itemId`. A single special service can be associated with
+    /// multiple flights.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
-    ///Miscellaneous free text information used in teletype messages sent to or from the airline. May contain additional special service details which are mandatory to distinguish product characteristics on the airline's side.
+    /// Miscellaneous free text information used in teletype messages sent to or from the airline.
+    /// May contain additional special service details which are mandatory to distinguish product
+    /// characteristics on the airline's side.
     pub message: ::std::option::Option<::std::string::String>,
-    ///Lists indices of travelers from the `travelers` array to whom the special service is assigned. For special services without explicit traveler assignation, this array should not be provided.
+    /// Lists indices of travelers from the `travelers` array to whom the special service is
+    /// assigned. For special services without explicit traveler assignation, this array should not
+    /// be provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
 
-///Contains traveler information.
+/// Contains traveler information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -427,32 +485,34 @@ pub struct SpecialServiceToModify {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TravelerToModify {
-    ///Lists ancillaries to be added or deleted.
+    /// Lists ancillaries to be added or deleted.
     pub ancillaries: ::std::option::Option<::std::vec::Vec<AncillaryToModify>>,
-    ///The date of birth of the traveler in `YYYY-MM-DD` format.
+    /// The date of birth of the traveler in `YYYY-MM-DD` format.
     pub birth_date: ::std::option::Option<::std::string::String>,
-    ///Lists all email addresses of the traveler.
+    /// Lists all email addresses of the traveler.
     pub emails: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///The traveler's first name.
+    /// The traveler's first name.
     pub given_name: ::std::option::Option<::std::string::String>,
-    ///Lists identity documents applicable to the traveler.
+    /// Lists identity documents applicable to the traveler.
     pub identity_documents: ::std::option::Option<
         ::std::vec::Vec<ModifyIdentityDocument>,
     >,
-    ///If `true`, the traveler is associated with a group booking.
+    /// If `true`, the traveler is associated with a group booking.
     pub is_grouped: ::std::option::Option<bool>,
-    ///Lists loyalty programs the traveler participates in.
+    /// Lists loyalty programs the traveler participates in.
     pub loyalty_programs: ::std::option::Option<::std::vec::Vec<LoyaltyProgram>>,
-    ///The traveler's middle name. Supported for NDC content only.
+    /// The traveler's middle name. Supported for NDC content only.
     pub middle_name: ::std::option::Option<::std::string::String>,
-    ///An additional code associated with the traveler (the so-called MAN number or statement information) used for accounting or identification purposes.
+    /// An additional code associated with the traveler (the so-called MAN number or statement
+    /// information) used for accounting or identification purposes.
     pub name_reference_code: ::std::option::Option<::std::string::String>,
-    ///Specifies the type (age) of the traveler. Used for flights and hotel bookings. Available values for hotel reservations are limited to `ADT` (for adult) and `CNN` (for child).
+    /// Specifies the type (age) of the traveler. Used for flights and hotel bookings. Available
+    /// values for hotel reservations are limited to `ADT` (for adult) and `CNN` (for child).
     pub passenger_code: ::std::option::Option<::std::string::String>,
-    ///Lists all phone numbers associated with the traveler.
+    /// Lists all phone numbers associated with the traveler.
     pub phones: ::std::option::Option<::std::vec::Vec<Phone>>,
-    ///Lists all remarks associated with the traveler.
+    /// Lists all remarks associated with the traveler.
     pub remarks: ::std::option::Option<::std::vec::Vec<Remark>>,
-    ///The traveler's last name.
+    /// The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
 }

@@ -61,7 +61,7 @@ pub mod error {
     }
 }
 
-///Contains basic address information.
+/// Contains basic address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -71,19 +71,20 @@ pub mod error {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Address {
-    ///The name of the city.
+    /// The name of the city.
     pub city: ::std::option::Option<::std::string::String>,
-    ///The two-letter [ISO 3166](https://www.iso.org/iso-3166-country-codes.html) country code.
+    /// The two-letter [ISO 3166](https://www.iso.org/iso-3166-country-codes.html) country code.
     pub country_code: ::std::option::Option<::std::string::String>,
-    ///The zip or postal code.
+    /// The zip or postal code.
     pub postal_code: ::std::option::Option<::std::string::String>,
-    ///The name or code of the state or province.
+    /// The name or code of the state or province.
     pub state_province: ::std::option::Option<::std::string::String>,
-    ///The street name and house number accompanied with the number of apartment, unit, or suite, if applicable.
+    /// The street name and house number accompanied with the number of apartment, unit, or suite,
+    /// if applicable.
     pub street: ::std::option::Option<::std::string::String>,
 }
 
-///Contains flight information used for cars bookings.
+/// Contains flight information used for cars bookings.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -93,13 +94,14 @@ pub struct Address {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct AssociatedArrivalFlight {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the marketing airline for the arrival flight.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the marketing airline for the arrival flight.
     pub arrival_airline_code: ::std::option::Option<::std::string::String>,
-    ///The flight number associated with the marketing carrier for the arrival flight.
+    /// The flight number associated with the marketing carrier for the arrival flight.
     pub arrival_flight_number: ::std::option::Option<i32>,
 }
 
-///Contains flight arrival and departure information used mainly for hotel bookings.
+/// Contains flight arrival and departure information used mainly for hotel bookings.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -111,17 +113,18 @@ pub struct AssociatedArrivalFlight {
 pub struct AssociatedFlightDetails {
     #[serde(flatten)]
     pub associated_arrival_flight: AssociatedArrivalFlight,
-    ///The scheduled time of arrival in `HH:MM` format.
+    /// The scheduled time of arrival in `HH:MM` format.
     pub arrival_time: ::std::option::Option<::std::string::String>,
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the marketing airline for the departure flight.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the marketing airline for the departure flight.
     pub departure_airline_code: ::std::option::Option<::std::string::String>,
-    ///The flight number associated with the marketing carrier for the departure flight.
+    /// The flight number associated with the marketing carrier for the departure flight.
     pub departure_flight_number: ::std::option::Option<i32>,
-    ///The scheduled time of departure in `HH:MM` format.
+    /// The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::option::Option<::std::string::String>,
 }
 
-///Contains a set of basic details related to the form of payment.
+/// Contains a set of basic details related to the form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -131,27 +134,28 @@ pub struct AssociatedFlightDetails {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct BasicFormOfPayment {
-    ///The airline plan code. Use with `INSTALLMENTS`.
+    /// The airline plan code. Use with `INSTALLMENTS`.
     pub airline_plan_code: ::std::option::Option<::std::string::String>,
-    ///The number of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The number of a credit or debit card. Use with `PAYMENTCARD`.
     pub card_number: ::std::option::Option<::std::string::String>,
-    ///The security code of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The security code of a credit or debit card. Use with `PAYMENTCARD`.
     pub card_security_code: ::std::option::Option<::std::string::String>,
-    ///The vendor code of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The vendor code of a credit or debit card. Use with `PAYMENTCARD`.
     pub card_type_code: ::std::option::Option<::std::string::String>,
-    ///The expiration date of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The expiration date of a credit or debit card. Use with `PAYMENTCARD`.
     pub expiry_date: ::std::option::Option<::std::string::String>,
-    ///The number of months by which your payment can be extended. Use with `PAYMENTCARD` or `MISCELLANEOUS`.
+    /// The number of months by which your payment can be extended. Use with `PAYMENTCARD` or
+    /// `MISCELLANEOUS`.
     pub extended_payment: ::std::option::Option<i32>,
-    ///The amount of the first installment. Use with `INSTALLMENTS`.
+    /// The amount of the first installment. Use with `INSTALLMENTS`.
     pub installment_amount: ::std::option::Option<::std::string::String>,
-    ///The miscellaneous credit code. Use with `MISCELLANEOUS`.
+    /// The miscellaneous credit code. Use with `MISCELLANEOUS`.
     pub miscellaneous_credit_code: ::std::option::Option<::std::string::String>,
-    ///The number of installments. Use with `INSTALLMENTS`.
+    /// The number of installments. Use with `INSTALLMENTS`.
     pub number_of_installments: ::std::option::Option<i32>,
 }
 
-///Contains car object reference by `itemId`.
+/// Contains car object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -161,11 +165,11 @@ pub struct BasicFormOfPayment {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CarReference {
-    ///The id of the given car reservation.
+    /// The id of the given car reservation.
     pub item_id: ::std::string::String,
 }
 
-///Contains information about the car rental location.
+/// Contains information about the car rental location.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -175,15 +179,15 @@ pub struct CarReference {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CarRentalSite {
-    ///The ID of the car rental location. Cannot be combined with other address-related qualifiers.
+    /// The ID of the car rental location. Cannot be combined with other address-related qualifiers.
     pub id: ::std::option::Option<::std::string::String>,
-    ///The name of the car rental location.
+    /// The name of the car rental location.
     pub name: ::std::option::Option<::std::string::String>,
-    ///The phone number of the car rental location involved in vehicle collection or delivery.
+    /// The phone number of the car rental location involved in vehicle collection or delivery.
     pub phone: ::std::option::Option<::std::string::String>,
 }
 
-///Contains payment card holder information.
+/// Contains payment card holder information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -195,17 +199,17 @@ pub struct CarRentalSite {
 pub struct CardHolder {
     #[patch(name = "Option<AddressPatch>")]
     pub address: ::std::option::Option<Address>,
-    ///The card holder's email address.
+    /// The card holder's email address.
     pub email: ::std::option::Option<::std::string::String>,
-    ///The card holder's first name.
+    /// The card holder's first name.
     pub given_name: ::std::string::String,
-    ///The formatted phone numbers of the card holder.
+    /// The formatted phone numbers of the card holder.
     pub phone: ::std::option::Option<::std::string::String>,
-    ///The card holder's last name.
+    /// The card holder's last name.
     pub surname: ::std::string::String,
 }
 
-///Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
+/// Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -215,15 +219,16 @@ pub struct CardHolder {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CommonOtherServiceInformation {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the issuing airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the issuing airline.
     pub airline_code: ::std::option::Option<::std::string::String>,
-    ///The text of the service information.
+    /// The text of the service information.
     pub service_message: ::std::option::Option<::std::string::String>,
-    ///Specifies the traveler from the `travelers` array whose name is associated with the ticket.
+    /// Specifies the traveler from the `travelers` array whose name is associated with the ticket.
     pub traveler_index: ::std::option::Option<i32>,
 }
 
-///Contains cruise object reference by `itemId`.
+/// Contains cruise object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -233,11 +238,11 @@ pub struct CommonOtherServiceInformation {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct CruiseReference {
-    ///The id of the given cruise reservation.
+    /// The id of the given cruise reservation.
     pub item_id: ::std::string::String,
 }
 
-///Contains coupon information of the corresponding flight for the given booking.
+/// Contains coupon information of the corresponding flight for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -253,7 +258,7 @@ pub struct FlightCoupon {
     pub coupon_status: CouponStatus,
 }
 
-///Contains flight object reference by `itemId`.
+/// Contains flight object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -263,11 +268,11 @@ pub struct FlightCoupon {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FlightReference {
-    ///The ID of a flight.
+    /// The ID of a flight.
     pub item_id: ::std::string::String,
 }
 
-///Contains details of a form of payment.
+/// Contains details of a form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -279,13 +284,15 @@ pub struct FlightReference {
 pub struct FormOfPayment {
     #[serde(flatten)]
     pub basic_form_of_payment: BasicFormOfPayment,
-    ///If `true`, the invoice form of payment free text description is preceded by a substring `INV/`. Use with `INVOICE` and invoice description.
+    /// If `true`, the invoice form of payment free text description is preceded by a substring
+    /// `INV/`. Use with `INVOICE` and invoice description.
     pub add_invoice_description_prefix: ::std::option::Option<bool>,
     #[patch(name = "Option<GenericAddressPatch>")]
     pub agency_address: ::std::option::Option<GenericAddress>,
-    ///The agency IATA number. Use with `AGENCY_IATA`. Used primarily for the hotel bookings.
+    /// The agency IATA number. Use with `AGENCY_IATA`. Used primarily for the hotel bookings.
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
-    ///Lists all strong customer authentication details for the payment card. For use with `PAYMENTCARD`.
+    /// Lists all strong customer authentication details for the payment card. For use with
+    /// `PAYMENTCARD`.
     pub authentications: ::std::option::Option<
         ::std::vec::Vec<StrongCustomerAuthentication>,
     >,
@@ -293,34 +300,38 @@ pub struct FormOfPayment {
     pub card_holder: ::std::option::Option<CardHolder>,
     #[patch(name = "Option<GenericAddressPatch>")]
     pub company_address: ::std::option::Option<GenericAddress>,
-    ///The corporate identifier. Use with `CORPORATE` or `PAYMENTCARD`.
+    /// The corporate identifier. Use with `CORPORATE` or `PAYMENTCARD`.
     pub corporate_id: ::std::option::Option<::std::string::String>,
-    ///Details of the docket selected as form of payment in free text format. Use with `DOCKET`.
+    /// Details of the docket selected as form of payment in free text format. Use with `DOCKET`.
     pub docket_description: ::std::option::Option<::std::string::String>,
-    ///The initials of the agent who issues the docket. Use with `DOCKET`.
+    /// The initials of the agent who issues the docket. Use with `DOCKET`.
     pub docket_issuing_agent_initials: ::std::option::Option<::std::string::String>,
-    ///The number of the docket (a free text document) selected as form of payment. Use with `DOCKET`.
+    /// The number of the docket (a free text document) selected as form of payment. Use with
+    /// `DOCKET`.
     pub docket_number: ::std::option::Option<::std::string::String>,
-    ///The prefix of the docket (a free text document) selected as form of payment. Use with `DOCKET`.
+    /// The prefix of the docket (a free text document) selected as form of payment. Use with
+    /// `DOCKET`.
     pub docket_prefix: ::std::option::Option<::std::string::String>,
-    ///Details of the Government Travel Request selected as form of payment in free text format. Use with `GOVERNMENT_TRAVEL_REQUEST`.
+    /// Details of the Government Travel Request selected as form of payment in free text format.
+    /// Use with `GOVERNMENT_TRAVEL_REQUEST`.
     pub government_travel_request_description: ::std::option::Option<
         ::std::string::String,
     >,
-    ///Details of the agency invoice selected as form of payment in free text format. Use with `INVOICE`.
+    /// Details of the agency invoice selected as form of payment in free text format. Use with
+    /// `INVOICE`.
     pub invoice_description: ::std::option::Option<::std::string::String>,
-    ///If `true`, the card selected as form of payment belongs to a travel agency.
+    /// If `true`, the card selected as form of payment belongs to a travel agency.
     pub is_agency_payment_card: ::std::option::Option<bool>,
     #[patch(name = "Option<ManualApprovalPatch>")]
     pub manual_approval: ::std::option::Option<ManualApproval>,
-    ///The net balance value. Use with `INSTALLMENTS`.
+    /// The net balance value. Use with `INSTALLMENTS`.
     pub net_balance: ::std::option::Option<::std::string::String>,
     pub trip_type: ::std::option::Option<FormOfPaymentTripTypeEnum>,
-    ///Lists trip types associated with the form of payment.
+    /// Lists trip types associated with the form of payment.
     pub trip_types: ::std::option::Option<::std::vec::Vec<FormOfPaymentTripTypeEnum>>,
     pub type_: FormOfPaymentTypeEnum,
     pub use_type: ::std::option::Option<FormOfPaymentUseTypeEnum>,
-    ///Lists use types associated with the form of payment.
+    /// Lists use types associated with the form of payment.
     pub use_types: ::std::option::Option<::std::vec::Vec<FormOfPaymentUseTypeEnum>>,
     #[patch(name = "Option<VirtualCardPatch>")]
     pub virtual_card: ::std::option::Option<VirtualCard>,
@@ -328,7 +339,7 @@ pub struct FormOfPayment {
     pub voucher: ::std::option::Option<Voucher>,
 }
 
-///Contains a detailed ticket arrangement for a future date.
+/// Contains a detailed ticket arrangement for a future date.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -338,19 +349,19 @@ pub struct FormOfPayment {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct FutureTicketingPolicy {
-    ///Free text comment.
+    /// Free text comment.
     pub comment: ::std::option::Option<::std::string::String>,
-    ///Used to specify a queue number.
+    /// Used to specify a queue number.
     pub queue_number: ::std::option::Option<::std::string::String>,
-    ///The ticketing date.
+    /// The ticketing date.
     pub ticketing_date: ::std::option::Option<::std::string::String>,
-    ///Used to specify a pseudocity code.
+    /// Used to specify a pseudocity code.
     pub ticketing_pcc: ::std::option::Option<::std::string::String>,
-    ///The ticketing time in `HH:MM` format.
+    /// The ticketing time in `HH:MM` format.
     pub ticketing_time: ::std::option::Option<::std::string::String>,
 }
 
-///Contains address information.
+/// Contains address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -362,13 +373,14 @@ pub struct FutureTicketingPolicy {
 pub struct GenericAddress {
     #[serde(flatten)]
     pub address: Address,
-    ///The full address provided as free text. Use this alternative address representation when a structured address is not available.
+    /// The full address provided as free text. Use this alternative address representation when a
+    /// structured address is not available.
     pub free_text: ::std::option::Option<::std::string::String>,
-    ///The name of the person or the company/organization.
+    /// The name of the person or the company/organization.
     pub name: ::std::option::Option<::std::string::String>,
 }
 
-///Contains hotel object reference by `itemId`.
+/// Contains hotel object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -378,11 +390,11 @@ pub struct GenericAddress {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct HotelReference {
-    ///The ID of a hotel reservation.
+    /// The ID of a hotel reservation.
     pub item_id: ::std::string::String,
 }
 
-///Contains details of the passenger's loyalty program, such as a frequent flyer card.
+/// Contains details of the passenger's loyalty program, such as a frequent flyer card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -392,18 +404,18 @@ pub struct HotelReference {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct LoyaltyProgram {
-    ///The traveler membership number for loyalty program such as the frequent flyer number.
+    /// The traveler membership number for loyalty program such as the frequent flyer number.
     pub program_number: ::std::string::String,
     pub program_type: ::std::option::Option<ProgramTypeEnum>,
-    ///The two-letter receiver code, such as IATA airline code.
+    /// The two-letter receiver code, such as IATA airline code.
     pub receiver_code: ::std::option::Option<::std::string::String>,
-    ///The two-letter code that issued the number such as the IATA airline code.
+    /// The two-letter code that issued the number such as the IATA airline code.
     pub supplier_code: ::std::option::Option<::std::string::String>,
-    ///The level reached by the traveler in the loyalty program.
+    /// The level reached by the traveler in the loyalty program.
     pub tier_level: ::std::option::Option<i32>,
 }
 
-///Contains manual approval details of a form of payment. Use with `PAYMENTCARD`.
+/// Contains manual approval details of a form of payment. Use with `PAYMENTCARD`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -413,21 +425,26 @@ pub struct LoyaltyProgram {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct ManualApproval {
-    ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the desired manual approval airline.
+    /// The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true)
+    /// designator code of the desired manual approval airline.
     pub airline_code: ::std::string::String,
-    ///The monetary cash amount of the manual approval.
+    /// The monetary cash amount of the manual approval.
     pub amount: ::std::string::String,
-    ///The manual approval code of a credit or debit card. Use with `PAYMENTCARD`.
+    /// The manual approval code of a credit or debit card. Use with `PAYMENTCARD`.
     pub code: ::std::string::String,
-    ///The [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) currency code.
+    /// The [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) currency code.
     pub currency_code: ::std::string::String,
-    ///The manual approval expiration date in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Time should be provided in UTC time zone.
+    /// The manual approval expiration date in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Time should be
+    /// provided in UTC time zone.
     pub expiry_date_time: ::std::string::String,
-    ///The manual approval request date in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Time should be provided in UTC time zone.
+    /// The manual approval request date in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Time should be
+    /// provided in UTC time zone.
     pub request_date_time: ::std::string::String,
 }
 
-///Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
+/// Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -439,13 +456,13 @@ pub struct ManualApproval {
 pub struct OtherServiceInformation {
     #[serde(flatten)]
     pub common_other_service_information: CommonOtherServiceInformation,
-    ///The two-character code of the hotel chain.
+    /// The two-character code of the hotel chain.
     pub chain_code: ::std::option::Option<::std::string::String>,
-    ///The two-letter code of the car rental vendor.
+    /// The two-letter code of the car rental vendor.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
 
-///Contains phone details.
+/// Contains phone details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -455,13 +472,14 @@ pub struct OtherServiceInformation {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Phone {
-    ///The type of the phone number. Available phone type codes are `H` - home, `B` - business, `C` - cell and `M` - mobile.
+    /// The type of the phone number. Available phone type codes are `H` - home, `B` - business, `C`
+    /// - cell and `M` - mobile.
     pub label: ::std::option::Option<::std::string::String>,
-    ///The formatted phone number of the traveler.
+    /// The formatted phone number of the traveler.
     pub number: ::std::string::String,
 }
 
-///Contains remark details stored within the booking.
+/// Contains remark details stored within the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -471,14 +489,14 @@ pub struct Phone {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Remark {
-    ///The character coding used for the `ALPHA_CODED` remark type.
+    /// The character coding used for the `ALPHA_CODED` remark type.
     pub alpha_code: ::std::option::Option<::std::string::String>,
-    ///The original text of the remark.
+    /// The original text of the remark.
     pub text: ::std::option::Option<::std::string::String>,
     pub type_: ::std::option::Option<RemarkTypeEnum>,
 }
 
-///Contains strong customer authentication details for the payment card.
+/// Contains strong customer authentication details for the payment card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -488,44 +506,65 @@ pub struct Remark {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct StrongCustomerAuthentication {
-    ///Indicates purchase amount.
+    /// Indicates purchase amount.
     pub amount: ::std::option::Option<::std::string::String>,
-    ///Determines how the card number was collected for the transaction. Can be `K` - keyed in for this transaction, or `S` - card on file (previously stored credentials).
+    /// Determines how the card number was collected for the transaction. Can be `K` - keyed in for
+    /// this transaction, or `S` - card on file (previously stored credentials).
     pub card_number_collection_code: ::std::option::Option<::std::string::String>,
-    ///Indicates which channel the transaction was initiated in. Can be `MO` - Mail Order, `TO` - Telephone Order, `EC` - ECOM, `FA` - Face to Face.
+    /// Indicates which channel the transaction was initiated in. Can be `MO` - Mail Order, `TO` -
+    /// Telephone Order, `EC` - ECOM, `FA` - Face to Face.
     pub channel_code: ::std::option::Option<::std::string::String>,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
-    ///The Electronic Commerce Indicator (ECI) is two alphanumeric code that is returned by the issuing banks and credit card specific networks.
+    /// The Electronic Commerce Indicator (ECI) is two alphanumeric code that is returned by the
+    /// issuing banks and credit card specific networks.
     pub electronic_commerce_indicator: ::std::option::Option<::std::string::String>,
-    ///Determines which exemption was used by the Payment Service Provider (PSP). Can be `SC` - Secure Corporate Exemption, `DA` - Delegated Authentication, `TR` - Transaction Risk Analysis Exemption, `TB` - Trusted Beneficiary Exemption, `LV` - Low Value Exemption.
+    /// Determines which exemption was used by the Payment Service Provider (PSP). Can be `SC` -
+    /// Secure Corporate Exemption, `DA` - Delegated Authentication, `TR` - Transaction Risk
+    /// Analysis Exemption, `TB` - Trusted Beneficiary Exemption, `LV` - Low Value Exemption.
     pub exemption_type_code: ::std::option::Option<::std::string::String>,
-    ///Indicates that authentication was attempted for a transaction, but there was an authentication outage in the authentication flow between the merchant, gateway 3-D Secure (3DS) server, and the Directory Server. This means an authentication request was not possible and an authentication response could not be received. This is not a formal exemption, but information for issuers to consider.
+    /// Indicates that authentication was attempted for a transaction, but there was an
+    /// authentication outage in the authentication flow between the merchant, gateway 3-D Secure
+    /// (3DS) server, and the Directory Server. This means an authentication request was not
+    /// possible and an authentication response could not be received. This is not a formal
+    /// exemption, but information for issuers to consider.
     pub issue_code: ::std::option::Option<::std::string::String>,
-    /**Describes the agreed mandate between the cardholder and the agent/third party. Can be one of the following values: `NA` - No agreement for future transactions, `NS` - Agreement for future no show or cancellation fee, `AC` - Agreement for any payments due after check in to cover charges during stay, `CO` - Any charges post checkout, `BP` - Agreement for pre-payment, deposit or balance payment, `FR` - Agreement for recurring payment (fixed date and fixed amount), `VR` - Agreement for recurring payment (fixed date and variable amount), `UR` - Agreement for recurring payment (non fixed date and variable amount). It is possible to enter more than one value using a comma as a separator e.g. NA, NS.
-*/
+    /// Describes the agreed mandate between the cardholder and the agent/third party. Can be one of
+    /// the following values: `NA` - No agreement for future transactions, `NS` - Agreement for
+    /// future no show or cancellation fee, `AC` - Agreement for any payments due after check in to
+    /// cover charges during stay, `CO` - Any charges post checkout, `BP` - Agreement for
+    /// pre-payment, deposit or balance payment, `FR` - Agreement for recurring payment (fixed date
+    /// and fixed amount), `VR` - Agreement for recurring payment (fixed date and variable amount),
+    /// `UR` - Agreement for recurring payment (non fixed date and variable amount). It is possible
+    /// to enter more than one value using a comma as a separator e.g. NA, NS.
     pub mandate_type_code: ::std::option::Option<::std::string::String>,
-    ///The name of the merchant containing up to 40 alphanumeric characters.
+    /// The name of the merchant containing up to 40 alphanumeric characters.
     pub merchant_name: ::std::option::Option<::std::string::String>,
-    ///The identifier of the authorization (Authorization Trace ID/Authorization Trans ID) request when performed by the booking agent. This value can be up to 16 alphanumeric and special characters, and is returned from the initial authorization response.
+    /// The identifier of the authorization (Authorization Trace ID/Authorization Trans ID) request
+    /// when performed by the booking agent. This value can be up to 16 alphanumeric and special
+    /// characters, and is returned from the initial authorization response.
     pub original_payment_reference: ::std::option::Option<::std::string::String>,
-    ///Indicates whether authentication was successful.
+    /// Indicates whether authentication was successful.
     pub result_code: ::std::option::Option<::std::string::String>,
-    ///The 3DS authentication value (MasterCard - AAV; Amex - AEVV; Visa - CAVV). A 20-byte value that has been Base64 encoded, giving a 28-byte result.
+    /// The 3DS authentication value (MasterCard - AAV; Amex - AEVV; Visa - CAVV). A 20-byte value
+    /// that has been Base64 encoded, giving a 28-byte result.
     pub secure_authentication_value: ::std::option::Option<::std::string::String>,
-    ///The 3DS transaction ID returned by the 3DS Directory Server. A 20 byte unsigned binary value.
+    /// The 3DS transaction ID returned by the 3DS Directory Server. A 20 byte unsigned binary
+    /// value.
     pub secure_transaction_id: ::std::option::Option<::std::string::String>,
-    ///The authentication value for tokens (e.g. TAVV). A 20-byte value that has been Base64 encoded, giving a 28-byte result.
+    /// The authentication value for tokens (e.g. TAVV). A 20-byte value that has been Base64
+    /// encoded, giving a 28-byte result.
     pub token_authentication_value: ::std::option::Option<::std::string::String>,
-    ///Identifies the SCA update date and time in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
+    /// Identifies the SCA update date and time in [ISO
+    /// 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub updated_date_time: ::std::option::Option<::std::string::String>,
-    ///Indicates whether the cardholder is enrolled in 3DS.
+    /// Indicates whether the cardholder is enrolled in 3DS.
     pub verification_result_code: ::std::option::Option<::std::string::String>,
-    ///The 3DS Program Protocol version. A 3 alphanumeric character value, without dots between.
+    /// The 3DS Program Protocol version. A 3 alphanumeric character value, without dots between.
     pub version: ::std::option::Option<::std::string::String>,
 }
 
-///Contains desired tax codes and their associated amounts.
+/// Contains desired tax codes and their associated amounts.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -535,13 +574,13 @@ pub struct StrongCustomerAuthentication {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Tax {
-    ///The monetary amount.
+    /// The monetary amount.
     pub amount: ::std::string::String,
-    ///The desired tax code. Must be combined with `amount`.
+    /// The desired tax code. Must be combined with `amount`.
     pub tax_code: ::std::string::String,
 }
 
-///Contains train object reference by `itemId`.
+/// Contains train object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -551,11 +590,11 @@ pub struct Tax {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TrainReference {
-    ///The id of the given train reservation.
+    /// The id of the given train reservation.
     pub item_id: ::std::string::String,
 }
 
-///Contains details of the traveler's employer.
+/// Contains details of the traveler's employer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -565,28 +604,29 @@ pub struct TrainReference {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct TravelersEmployer {
-    ///The name of the city.
+    /// The name of the city.
     pub city: ::std::option::Option<::std::string::String>,
-    ///The two- or three-letter ISO 3166-1 country code.
+    /// The two- or three-letter ISO 3166-1 country code.
     pub country_code: ::std::option::Option<::std::string::String>,
-    ///Lists all email addresses of the employer.
+    /// Lists all email addresses of the employer.
     pub emails: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-    ///The unique identifier of the employer.
+    /// The unique identifier of the employer.
     pub employer_id: ::std::option::Option<::std::string::String>,
-    ///The name of the employer.
+    /// The name of the employer.
     pub employer_name: ::std::option::Option<::std::string::String>,
     pub id_type: ::std::option::Option<EmployerIdTypeEnum>,
-    ///Lists all phone numbers associated with the employer.
+    /// Lists all phone numbers associated with the employer.
     pub phones: ::std::option::Option<::std::vec::Vec<Phone>>,
-    ///The zip or postal code.
+    /// The zip or postal code.
     pub postal_code: ::std::option::Option<::std::string::String>,
-    ///The name or code of the state or province.
+    /// The name or code of the state or province.
     pub state_province: ::std::option::Option<::std::string::String>,
-    ///The street name and house number accompanied with the number of apartment, unit, or suite, if applicable.
+    /// The street name and house number accompanied with the number of apartment, unit, or suite,
+    /// if applicable.
     pub street: ::std::option::Option<::std::string::String>,
 }
 
-///Contains monetary amount information.
+/// Contains monetary amount information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -596,13 +636,13 @@ pub struct TravelersEmployer {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Value {
-    ///The monetary amount.
+    /// The monetary amount.
     pub amount: ::std::string::String,
-    ///The three-letter ISO 4217 currency code.
+    /// The three-letter ISO 4217 currency code.
     pub currency_code: ::std::string::String,
 }
 
-///Contains virtual card information.
+/// Contains virtual card information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -612,27 +652,31 @@ pub struct Value {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct VirtualCard {
-    ///The agency email address.
+    /// The agency email address.
     pub agency_email: ::std::option::Option<::std::string::String>,
-    ///The customer account code of a virtual card. Use with `VIRTUAL_CARD`.
+    /// The customer account code of a virtual card. Use with `VIRTUAL_CARD`.
     pub customer_account_code: ::std::option::Option<::std::string::String>,
-    ///The hotel's fax number.
+    /// The hotel's fax number.
     pub hotel_fax: ::std::option::Option<::std::string::String>,
-    ///The full name of the hotel. Pass the value obtained from HotelPriceCheckRS/PriceCheckInfo/HotelInfo/@HotelName.
+    /// The full name of the hotel. Pass the value obtained from
+    /// HotelPriceCheckRS/PriceCheckInfo/HotelInfo/@HotelName.
     pub hotel_name: ::std::option::Option<::std::string::String>,
     #[patch(name = "Option<ValuePatch>")]
     pub rate_amount: ::std::option::Option<Value>,
-    ///The detailed description of the room provided by the hotel supplier. Pass the value obtained from HotelPriceCheckRS/PriceCheckInfo/HotelRateInfo/Rooms/Room/RoomDescription/Text.
+    /// The detailed description of the room provided by the hotel supplier. Pass the value obtained
+    /// from HotelPriceCheckRS/PriceCheckInfo/HotelRateInfo/Rooms/Room/RoomDescription/Text.
     pub room_description: ::std::option::Option<::std::string::String>,
-    ///The type of the room provided by the hotel supplier. Pass the value obtained from HotelPriceCheckRS/PriceCheckInfo/HotelRateInfo/Rooms/Room/RoomDescription/@Name.
+    /// The type of the room provided by the hotel supplier. Pass the value obtained from
+    /// HotelPriceCheckRS/PriceCheckInfo/HotelRateInfo/Rooms/Room/RoomDescription/@Name.
     pub room_type: ::std::option::Option<::std::string::String>,
-    ///Lists all extra charges that can be covered by the virtual card. If the card is used to cover room only please pass "Room Only" value.
+    /// Lists all extra charges that can be covered by the virtual card. If the card is used to
+    /// cover room only please pass "Room Only" value.
     pub virtual_card_charges: ::std::option::Option<
         ::std::vec::Vec<::std::string::String>,
     >,
 }
 
-///Contains voucher information.
+/// Contains voucher information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Patch)]
@@ -642,8 +686,8 @@ pub struct VirtualCard {
 #[patch(attribute(serde(default, rename_all = "camelCase")))]
 #[cfg_attr(feature = "schemars", patch(attribute(derive(schemars::JsonSchema))))]
 pub struct Voucher {
-    ///The billing number associated with the voucher.
+    /// The billing number associated with the voucher.
     pub billing_number: ::std::option::Option<::std::string::String>,
-    ///Abbreviated code that indicates the type of voucher.
+    /// Abbreviated code that indicates the type of voucher.
     pub type_: ::std::option::Option<::std::string::String>,
 }

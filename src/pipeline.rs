@@ -32,7 +32,8 @@ use typify::{TypeSpace, TypeSpaceSettings};
 
 use crate::partition::Partition;
 use crate::profile::StyleProfile;
-use crate::{Result, lower, postprocess};
+use crate::spec::Spec;
+use crate::{Result, postprocess};
 
 /// Pipeline checkpoint after loading: the spec is parsed and patch files
 /// plus [`patch_spec_with`](crate::Generator::patch_spec_with) hooks have
@@ -90,10 +91,13 @@ impl LoadedSpec {
     /// [`partition_by_operation`](crate::Generator::partition_by_operation)
     /// or
     /// [`split_request_response`](crate::Generator::split_request_response)
-    /// was enabled) and lower the spec to a JSON Schema
-    /// [`RootSchema`]. The partition must come first: lowering rewrites
-    /// the `#/components/schemas/` refs its reachability walk depends on.
-    pub fn lower(mut self) -> Result<LoweredSchema> {
+    /// was enabled), normalize the document into the typed [`Spec`]
+    /// model, and render the JSON Schema [`RootSchema`] the typify
+    /// engine consumes. The partition reads the raw document (its
+    /// reachability walk is keyed by `#/components/schemas/` refs); the
+    /// schema comes from [`Spec::to_draft07_root`], byte-identical to
+    /// the historical in-place lowering.
+    pub fn lower(self) -> Result<LoweredSchema> {
         let partition = if self.split_request_response {
             let partition = Partition::compute_split(&self.spec)?;
             partition.log_summary(&spec_label(&self.spec_path));
@@ -106,7 +110,8 @@ impl LoadedSpec {
             None
         };
 
-        let schema = lower::lowered_root_schema(&mut self.spec)?;
+        let spec_model = Spec::from_value(&self.spec)?;
+        let schema = spec_model.to_draft07_root()?;
         Ok(LoweredSchema {
             schema,
             partition,

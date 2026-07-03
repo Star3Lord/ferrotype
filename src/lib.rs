@@ -99,6 +99,7 @@ mod partition;
 mod pipeline;
 mod postprocess;
 mod profile;
+pub mod spec;
 mod tree;
 
 pub use generate::Generator;

@@ -1,9 +1,17 @@
-//! OpenAPI 3.x → JSON Schema (draft-07) lowering.
+//! OpenAPI 3.x → JSON Schema (draft-07) lowering — the legacy door.
 //!
 //! typify consumes JSON Schema, not OpenAPI. The differences that matter for
 //! type generation are small and mechanical, so we rewrite them in place on
 //! the parsed `serde_json::Value` tree rather than pulling in a full OpenAPI
 //! object model.
+//!
+//! Since migration step 1 (docs/MIGRATION.md) the generate pipeline no
+//! longer uses this module: it normalizes into the typed [`crate::spec`]
+//! model and renders draft-07 from there, byte-identically (guarded by
+//! `tests/spec_model.rs`). This module remains public and backs the `lower`
+//! CLI subcommand — the documented door for feeding *upstream* typify
+//! (`cargo typify`, `typify::import_types!`) without the rest of the
+//! pipeline.
 
 use anyhow::Context;
 use schemars::schema::RootSchema;

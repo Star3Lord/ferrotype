@@ -182,6 +182,15 @@ the old engine as default, and record where the wall is.
   nothing consumes them yet.** Parameters, request/response content types
   with schema refs, and security requirement names are parsed; the client
   emitter (Step 6) and partition-from-IR (Step 5) attach here later.
+- **D10 — two latent bugs of the string-surgery lowering are fixed, not
+  reproduced.** (1) A numeric (draft-07 / 3.1 style) `exclusiveMinimum` /
+  `exclusiveMaximum` was silently *deleted* by the old walker (its
+  `remove` ran before the boolean pattern-match); the model passes numeric
+  bounds through. (2) The old walker `remove`d any key named `nullable`
+  anywhere — including an object *property* named `nullable`, which would
+  have been silently dropped from generated types. Structural typing makes
+  that impossible. Neither fixture exercises either case, so the byte
+  guards are unaffected.
 - **D9 — byte-parity quirks reproduced intentionally.** Two worth naming:
   schema-`default` enum `Default` impls reference the variant as
   `TypeName::Variant` while first-unit-variant synthesis uses

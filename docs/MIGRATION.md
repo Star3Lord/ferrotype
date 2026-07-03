@@ -244,6 +244,55 @@ the old engine as default, and record where the wall is.
   only: the typify engine's Patch behavior stays the frozen fork's
   all-or-nothing unconditional-derive mechanism.
 
+- **D14 — readable output is an emit style resolved onto the IR, defaulting
+  to parity.** The fork's shape buries types: every string enum drags a
+  ~50-line `Display`/`FromStr`/`TryFrom<&str>`/`TryFrom<&String>`/
+  `TryFrom<String>`/`Default` ladder behind it, and every partition module
+  duplicates the `error` mod. `[style] emit-style = "expanded" | "condensed"`
+  (kebab-case, `StyleConfig::emit_style`) picks the layout; its single
+  consumer is the new `emit-style` pass, which materializes the choice as
+  `Ir::emit_style` so the emitter reads IR state, never config (the D13
+  pattern). Condensed hoists boilerplate instead of deleting it: one
+  `support` module per generation unit (its own `support.rs` in tree mode)
+  holds the single `error` mod plus a `macro_rules! impl_string_enum`
+  whose expansion is token-equivalent to the expanded impls (pinned by a
+  unit test against the hand-formatted rendering, and behaviorally by
+  `examples/petstore_tree_condensed` + the consumer round-trip suites);
+  each enum's ladder becomes one `impl_string_enum!(Name { Variant =>
+  "wire", … } default = Variant);` invocation; and each module that
+  duplicated `error` re-exports `support::error` instead, keeping every
+  historical `<module>::error::ConversionError` path resolving (the N
+  identical `ConversionError` types collapse into one — strictly more
+  code compiles, none breaks). Macro scoping is the standard
+  `pub(crate) use` re-export + per-module `use` import, path-anchored
+  (`self::`/`super::…`) at every depth and independent of textual order;
+  `self::error` inside expansions resolves via the invoking module's
+  re-export. Two deliberate calls: (1) **presets keep
+  `emit-style = "expanded"`** — the parity suite's byte-identity oracle
+  against the frozen fork stays meaningful with zero test contortion,
+  `profile = "api-client"` keeps meaning the fork recipe (no silent
+  output churn for build-script consumers), and consumers flip the key in
+  their `codegen.toml` (the examples workspace does); (2) the **D9
+  `Self::Variant` vs `TypeName::Variant` quirk is normalized away** in
+  condensed output (`$Type::$default` — semantically identical, and
+  condensed is by definition off the byte-parity path). Because
+  prettyplease flows macro tokens into an unreadable wall, rendering
+  gets a token-verified post-pass (`polish_rendered`): the macro
+  definition is substituted with a pinned hand-formatted rendering and
+  invocations are reflowed one pair per line, each reflow re-parsed and
+  token-compared before acceptance (a no-op for macro-free output, so
+  the typify engine and expanded style are byte-untouched — the full
+  suite passes unchanged). The condensed style additionally reserves the
+  top-level `support` module name (loud error on collision, matching
+  D11). One new mechanism was deliberately *not* built: an
+  `impls.rs`-per-module / end-of-file impl grouping third lever — the
+  macro + shared-support pair already removes the bulk (sabre tree:
+  ~36% fewer lines, `shared/enums.rs` −67%), and "not convoluted" was a
+  hard requirement. Newtype conversion chains are moot until the IR
+  engine emits newtype shapes (D5). IR-engine-only, like every
+  `StyleConfig` key: the typify engine and the frozen fork are
+  untouched.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —
@@ -251,7 +300,11 @@ the old engine as default, and record where the wall is.
   partitioned, split single-file, split folder-tree), verified by
   `tests/parity.rs` (8 engine-vs-engine tests + 4 golden-fence tests)
   and by external `diff` against the checked-in goldens. The
-  deliberate-improvements list is **empty**: no golden changed.
+  deliberate-improvements list is **empty**: no golden changed. (Still
+  true after D14: the condensed emit style is opt-in and off the parity
+  path; `tests/emit_style.rs` gives it its own golden fence —
+  `examples/generated_tree/petstore_condensed/` — plus emission-shape
+  and type-token-equivalence checks.)
 - **Unit coverage for fixture-silent semantics** (`tests/ir_unit.rs`,
   15 tests): untagged oneOf enums + Default synthesis, anyOf-null →
   `Option`, `nullable` wrapping, self/mutual cycle boxing, inline-schema

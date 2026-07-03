@@ -350,6 +350,67 @@ patch-free output compiles without the `struct-patch` dependency. The
 patch toggles are IR-engine-only: the typify engine keeps the frozen
 fork's all-or-nothing unconditional-derive mechanism.
 
+## Readable output / emit style (IR engine)
+
+By default every string enum is followed by ~50 lines of mechanical
+impls (`Display`, `FromStr`, the three `TryFrom` forms, `Default`), and
+every partition module carries its own copy of the `error` module —
+the shape the frozen fork emits, which the parity gate pins. That
+burying of types under boilerplate is what `emit-style` addresses:
+
+```toml
+[style]
+emit-style = "condensed"   # default: "expanded"
+```
+
+Under `condensed` (IR engine only):
+
+- **One `support` module per generation unit** (a `support.rs` file at
+  the tree root in `--output-dir` mode) holds the single `error`
+  module — one `ConversionError` type instead of an identical copy per
+  module — and the `impl_string_enum!` macro, whose definition is
+  emitted readably formatted and documents exactly the impls it
+  expands to.
+- **One invocation per enum** replaces the impl ladder. The variant →
+  wire-string mapping is right there, and `default = Variant` shows the
+  `Default` selection:
+
+```rust
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum FareRuleRestrictionEnum {
+    #[serde(rename = "CHANGEABLE")]
+    Changeable,
+    #[serde(rename = "REFUNDABLE")]
+    Refundable,
+    #[serde(rename = "CHANGEABLE_AND_REFUNDABLE")]
+    ChangeableAndRefundable,
+}
+impl_string_enum!(FareRuleRestrictionEnum {
+    Changeable => "CHANGEABLE",
+    Refundable => "REFUNDABLE",
+    ChangeableAndRefundable => "CHANGEABLE_AND_REFUNDABLE",
+} default = Changeable);
+```
+
+- **Every module that used to duplicate `pub mod error { ... }`**
+  re-exports the shared one (`pub use super::…::support::error;`), so
+  `<module>::error::ConversionError` paths in consumer code keep
+  resolving.
+
+Capabilities are identical: the macro expands to exactly the impls the
+expanded style writes out (same trait surface, same error paths — the
+capability-equivalence tests and the checked-in
+`examples/generated_tree/petstore_condensed/` golden pin this), and the
+type items themselves are token-identical between styles. On the Sabre
+tree the condensed style is ~36% fewer lines overall and ~67% fewer in
+`shared/enums.rs`.
+
+`emit-style` defaults to `expanded` in every preset so the parity gate
+against the frozen fork keeps its meaning; flipping to condensed is a
+consumer choice in `codegen.toml` (see decision D14 in
+[docs/MIGRATION.md](docs/MIGRATION.md)). The typify engine has no
+equivalent knob.
+
 From the library, `Generator::style(|s| ...)` is the code-level hook
 (isomorphic to the file: `style.patch`, `TypeOverride::patch`, and
 friends are plain fields) and `Generator::ir_pass(...)` appends custom

@@ -415,6 +415,34 @@ the old engine as default, and record where the wall is.
   normalized shape, so the D14 pins hold with zero edits. All goldens
   and the examples workspace regenerated.
 
+- **D18 — custom type mappings are config keys over fork/upstream
+  knobs.** Two additions to the style surface. (1) `[style] formats`
+  maps `"<instance-type>/<format>"` keys to Rust type paths
+  (`"string/decimal" = "::rust_decimal::Decimal"`), backed by a new
+  fork knob `with_format_type(instance_type, format, rust_type)` that
+  generalizes the three dedicated date/date-time/uuid overrides:
+  string (known and unknown formats), integer, and number conversions
+  all consult one resolution point (`TypeSpaceSettings::format_type`),
+  where the generic map wins and the `date`/`date-time`/`uuid` keys
+  act as sugar for their `string/…` entries. The fork addition is
+  additive and rebase-friendly — with no entries set, output and
+  upstream test goldens are byte-unchanged. (2) `[types."Name"]
+  replace = "::path::To::Type"` (plus optional kebab-case
+  `replace-impls`) maps a named schema onto an existing Rust type via
+  upstream typify's `with_replacement` — deliberately not reinvented.
+  Both mapped paths are emitted verbatim and assumed to implement
+  `Serialize`/`Deserialize` for the wire shape. Validation: a replaced
+  schema generates no AST item, so `replace` selectors are exempt from
+  the AST-match requirement and instead verified by the replacement
+  path appearing in the output tokens (a replace nothing references is
+  a hard error); combining `replace` with `patch`/`derives-add`/
+  `module` is a config error (nothing is generated to patch, derive
+  on, or place), as is `replace-impls` without `replace` and a
+  malformed `formats` key; fields holding a replaced type never get
+  deep-patch annotations (typify only annotates generated struct
+  entries — pinned by test). No preset uses the new keys, so all
+  goldens are byte-unchanged.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

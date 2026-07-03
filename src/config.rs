@@ -204,6 +204,30 @@ pub struct DeriveLists {
     pub newtypes: Vec<String>,
 }
 
+/// A trait the replacement type named by [`TypeOverride::replace`]
+/// provides, mapped onto [`typify::TypeSpaceImpl`]. Advisory: it informs
+/// typify's impl bookkeeping (consumed by downstream tooling), not the
+/// emitted code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ReplaceImpl {
+    FromStr,
+    FromStringIrrefutable,
+    Display,
+    Default,
+}
+
+impl ReplaceImpl {
+    fn to_typify(self) -> typify::TypeSpaceImpl {
+        match self {
+            ReplaceImpl::FromStr => typify::TypeSpaceImpl::FromStr,
+            ReplaceImpl::FromStringIrrefutable => typify::TypeSpaceImpl::FromStringIrrefutable,
+            ReplaceImpl::Display => typify::TypeSpaceImpl::Display,
+            ReplaceImpl::Default => typify::TypeSpaceImpl::Default,
+        }
+    }
+}
+
 /// Per-type override, keyed by schema name (the
 /// `components.schemas` / `definitions` key; the generated Rust name is
 /// accepted too).
@@ -222,6 +246,20 @@ pub struct TypeOverride {
     /// re-enables it under a global `patch = false`. Struct types only —
     /// targeting anything else is a hard error.
     pub patch: Option<bool>,
+    /// Replace this schema's generated type with an existing Rust type,
+    /// verbatim (mapped to the fork's `with_replacement`): nothing is
+    /// generated for the schema and every reference names the given
+    /// path instead. The type must implement `Serialize`/`Deserialize`
+    /// for the schema's wire shape. Cannot be combined with `patch` /
+    /// `derives-add` / `module` on the same selector — nothing is
+    /// generated to patch, derive on, or place.
+    pub replace: Option<String>,
+    /// Traits the [`Self::replace`] type provides (kebab-case:
+    /// `"from-str"`, `"from-string-irrefutable"`, `"display"`,
+    /// `"default"`). Empty or omitted means none are assumed. Only
+    /// meaningful together with `replace`.
+    #[serde(default)]
+    pub replace_impls: Vec<ReplaceImpl>,
 }
 
 /// Per-field override, keyed by `Type.field` (schema name + wire name;
@@ -259,6 +297,18 @@ pub struct StyleConfig {
     pub date_time: Option<String>,
     /// → `with_uuid_type`; `None` keeps upstream's `uuid` mapping.
     pub uuid: Option<String>,
+    /// → `with_format_type`: map `"<instance-type>/<format>"` keys
+    /// (instance types `string`, `integer`, `number` — the instance
+    /// type keeps `"string/int64"` distinct from `"integer/int64"`) to
+    /// Rust type paths emitted verbatim, e.g.
+    /// `"string/decimal" = "::rust_decimal::Decimal"`. An entry wins
+    /// over typify's built-in format handling and over the
+    /// [`Self::date`] / [`Self::date_time`] / [`Self::uuid`] sugar keys
+    /// for the same format. Mapped types must implement
+    /// `Serialize`/`Deserialize` for the wire format. Malformed keys
+    /// (no `/`) are hard errors at generation time.
+    #[serde(default)]
+    pub formats: BTreeMap<String, String>,
     /// → `with_struct_rename_all`: struct-level `rename_all` case, with
     /// covered per-field renames elided.
     pub rename_all: Option<String>,
@@ -332,6 +382,7 @@ impl Default for StyleConfig {
             date: None,
             date_time: None,
             uuid: None,
+            formats: BTreeMap::new(),
             rename_all: None,
             allof: AllOfMode::Merge,
             enum_default: EnumDefaultMode::SchemaOnly,
@@ -395,6 +446,7 @@ impl StyleConfig {
             date: Some("::std::string::String".to_string()),
             date_time: Some("::std::string::String".to_string()),
             uuid: Some("::std::string::String".to_string()),
+            formats: BTreeMap::new(),
             rename_all: Some("camelCase".to_string()),
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
@@ -482,6 +534,20 @@ impl StyleConfig {
         if let Some(uuid) = &self.uuid {
             settings.with_uuid_type(uuid);
         }
+        // Key shape is validated with a clean error in
+        // `Overrides::resolve` (always run by `Generator::load`); a
+        // malformed key reaching this point is a programming error in
+        // directly-supplied style data and fails loudly, like
+        // `imports` statements do.
+        for (key, rust_type) in &self.formats {
+            let (instance_type, format) = key.split_once('/').unwrap_or_else(|| {
+                panic!(
+                    "style formats key {key:?} must be \"<instance-type>/<format>\", \
+                     e.g. \"string/date-time\"",
+                )
+            });
+            settings.with_format_type(instance_type, format, rust_type);
+        }
         if let Some(case) = &self.rename_all {
             settings.with_struct_rename_all(case);
         }
@@ -529,6 +595,13 @@ impl StyleConfig {
             );
         }
         for (selector, override_) in &self.types {
+            if let Some(replace) = &override_.replace {
+                settings.with_replacement(
+                    typify::rust_type_ident(selector),
+                    replace,
+                    override_.replace_impls.iter().map(|impl_| impl_.to_typify()),
+                );
+            }
             if override_.derives_add.is_empty() {
                 continue;
             }
@@ -602,6 +675,7 @@ fn merge_style_table(mut config: StyleConfig, table: toml::Table) -> Result<Styl
             "date" => set!(date),
             "date-time" => set!(date_time),
             "uuid" => set!(uuid),
+            "formats" => set!(formats),
             "rename-all" => set!(rename_all),
             "allof" => set!(allof),
             "enum-default" => set!(enum_default),

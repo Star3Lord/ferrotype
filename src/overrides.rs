@@ -37,6 +37,9 @@ struct TypePlan {
     /// The config selector (for error messages).
     selector: String,
     patch: Option<bool>,
+    /// The `replace` path: the schema generates no item; references
+    /// name this type instead.
+    replace: Option<String>,
 }
 
 /// Resolved per-field plan, keyed by (Rust type name, Rust field name).
@@ -58,10 +61,37 @@ pub(crate) struct Overrides {
 
 impl Overrides {
     /// Translate the config's schema-name-keyed overrides into Rust
-    /// names and validate combinations that can never work.
+    /// names and validate combinations that can never work (including
+    /// the `[style] formats` key shape — this is the chokepoint every
+    /// generation path passes through).
     pub(crate) fn resolve(style: &StyleConfig) -> Result<Self> {
+        for key in style.formats.keys() {
+            if !key.contains('/') {
+                bail!(
+                    "style formats key {key:?} must be \"<instance-type>/<format>\", \
+                     e.g. \"string/date-time\" or \"integer/int64\"",
+                );
+            }
+        }
+
         let mut types: BTreeMap<String, TypePlan> = BTreeMap::new();
         for (selector, override_) in &style.types {
+            if override_.replace.is_some()
+                && (override_.patch.is_some()
+                    || !override_.derives_add.is_empty()
+                    || override_.module.is_some())
+            {
+                bail!(
+                    "type override {selector:?} combines `replace` with \
+                     `patch`/`derives-add`/`module`; a replaced schema generates no \
+                     type to patch, derive on, or place",
+                );
+            }
+            if override_.replace.is_none() && !override_.replace_impls.is_empty() {
+                bail!(
+                    "type override {selector:?} sets `replace-impls` without `replace`",
+                );
+            }
             let rust_name = typify::rust_type_ident(selector);
             let plan = types.entry(rust_name).or_default();
             if !plan.selector.is_empty() && plan.selector != *selector {
@@ -73,6 +103,7 @@ impl Overrides {
             }
             plan.selector = selector.clone();
             plan.patch = override_.patch;
+            plan.replace = override_.replace.clone();
         }
 
         let mut fields: BTreeMap<(String, String), FieldPlan> = BTreeMap::new();
@@ -158,10 +189,53 @@ impl Overrides {
         };
         cx.walk_items(&mut file.items)?;
 
+        // A replaced schema deliberately generates no item, so the
+        // AST-match requirement below cannot apply; its validation is
+        // that the replacement path actually appears in the output —
+        // a replace entry no reference consumes (schema absent or
+        // unreferenced) is a configuration bug like any other
+        // unmatched selector.
+        let rendered = self
+            .types
+            .values()
+            .any(|plan| plan.replace.is_some())
+            .then(|| file.to_token_stream().to_string());
+
         // Unmatched selectors are configuration bugs; refuse loudly.
         // (Every `[types]` entry lands in the plan, whatever mix of
         // overrides it carries.)
         for (rust_name, plan) in &self.types {
+            if let Some(replace) = &plan.replace {
+                let replacement_tokens = syn::parse_str::<syn::Type>(replace)
+                    .with_context(|| {
+                        format!(
+                            "type override {:?}: `replace` value {replace:?} is not a \
+                             valid Rust type",
+                            plan.selector,
+                        )
+                    })?
+                    .to_token_stream()
+                    .to_string();
+                if cx.matched_types.contains_key(rust_name) {
+                    bail!(
+                        "type override {:?} sets `replace`, but a type named \
+                         `{rust_name}` was still generated",
+                        plan.selector,
+                    );
+                }
+                if !rendered
+                    .as_deref()
+                    .is_some_and(|source| source.contains(&replacement_tokens))
+                {
+                    bail!(
+                        "type override {:?} replaces `{rust_name}` with {replace:?}, but \
+                         the replacement type appears nowhere in the generated output \
+                         (schema missing from the spec, or referenced by nothing)",
+                        plan.selector,
+                    );
+                }
+                continue;
+            }
             let Some(kind) = cx.matched_types.get(rust_name) else {
                 bail!(
                     "type override selector {:?} matched nothing (no generated type \

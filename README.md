@@ -327,9 +327,32 @@ deep-patch = "all-option-structs"
 # (api-client default: true).
 patch = true
 
+# Map schema `type`+`format` pairs to arbitrary Rust types (the fork's
+# `with_format_type`): instance types string/integer/number, any format.
+# An entry wins over typify's built-in format handling and over the
+# `date` / `date-time` / `uuid` sugar keys for the same format. The
+# mapped path is emitted verbatim and must implement
+# Serialize/Deserialize for the wire shape.
+[style.formats]
+"string/date-time" = "::time::OffsetDateTime"
+"string/decimal" = "::rust_decimal::Decimal"
+"integer/int64" = "::my_crate::BigInt"
+
 [types."Agency"]
 derives-add = ["Eq"]
 module = "shared/common"
+
+# Map a named schema to an existing Rust type instead of generating a
+# struct (upstream typify's `with_replacement`): nothing is emitted for
+# the schema and every reference names the path — which, again, must
+# implement Serialize/Deserialize. `replace-impls` optionally declares
+# traits the type provides ("display", "from-str",
+# "from-string-irrefutable", "default"). Cannot be combined with
+# `patch`/`derives-add`/`module` (nothing is generated to patch,
+# derive on, or place).
+[types."Money"]
+replace = "::my_crate::Money"
+replace-impls = ["display", "from-str"]
 
 # Per-type override of the [style] patch baseline: this type loses its
 # `Patch` derive and `NotificationPatch` companion, and every
@@ -367,6 +390,11 @@ a non-struct, or a forced `deep-patch = true` whose owner or target
 type is not patchable). When no struct keeps patch support, the
 `use ::struct_patch::Patch;` preamble import is dropped too, so fully
 patch-free output compiles without the `struct-patch` dependency.
+A `replace` entry generates no AST item, so its validation is that the
+replacement path actually appears in the output — a replace on a schema
+nothing references is an error like any other unmatched selector — and
+fields holding a replaced type never receive deep-patch annotations
+(the replacement has no generated `Patch` companion).
 
 ## Readable output / emit style
 

@@ -1,0 +1,15 @@
+description: |
+  DISCREPANCIES.md §1 - FlightTicket.flightCoupons is absent on voided
+  tickets (ticketStatusName "Voided" / ticketStatusCode "TV"); Sabre's
+  live getBooking response returns only allCoupons in that case. Strip
+  flightCoupons from the spec's `required` list so the generated type
+  uses Option<Vec<FlightReferenceCoupon>> and deserializes those
+  tickets without erroring. The schema's per-array minItems/maxItems
+  still apply when flightCoupons IS present.
+ops:
+  - op: test
+    path: /components/schemas/FlightTicket/required
+    value: [number, date, airlineCode, travelerIndex, flightCoupons, payment]
+  - op: replace
+    path: /components/schemas/FlightTicket/required
+    value: [number, date, airlineCode, travelerIndex, payment]

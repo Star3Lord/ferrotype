@@ -1,0 +1,117 @@
+# A small OpenAPI spec exercising the typify-fork features end-to-end:
+# allOf inheritance (Dog extends Pet), camelCase wire names, non-required
+# arrays, defaulted bools/strings, string formats (date-time/uuid), enums,
+# nested Option<Struct> fields (deep patches), and two operations sharing
+# types (module partitioning).
+openapi: 3.0.0
+info:
+  title: Petstore
+  version: 1.0.0
+paths:
+  /pets:
+    post:
+      operationId: createPet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePetRequest"
+      responses:
+        "200":
+          description: The created pet.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+  /pets/{petId}:
+    get:
+      operationId: getPet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: A single pet.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+components:
+  schemas:
+    CreatePetRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/Category"
+        photoUrls:
+          type: array
+          items:
+            type: string
+        wantsNewsletter:
+          type: boolean
+          default: false
+        receivedFrom:
+          type: string
+          default: WebStore
+        idempotencyKey:
+          type: string
+          pattern: "^[A-Za-z0-9-]{8,64}$"
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/PetStatus"
+        category:
+          $ref: "#/components/schemas/Category"
+        tagCount:
+          type: integer
+          format: int32
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+    PetStatus:
+      type: string
+      enum:
+        - available
+        - pending
+        - sold
+    Category:
+      type: object
+      properties:
+        name:
+          type: string
+        parent:
+          $ref: "#/components/schemas/CategoryRef"
+    CategoryRef:
+      type: object
+      properties:
+        slug:
+          type: string
+    Dog:
+      # allOf inheritance with sibling properties: under the ApiClient
+      # profile this composes as `#[serde(flatten)] pub pet: Pet` plus the
+      # inline `barkLoudness` field.
+      type: object
+      properties:
+        barkLoudness:
+          type: integer
+          format: int32
+      allOf:
+        - $ref: "#/components/schemas/Pet"

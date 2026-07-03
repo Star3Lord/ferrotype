@@ -1,0 +1,11 @@
+# The condensed emit style over the api-client preset (IR engine only):
+# string-enum conversion ladders become one `impl_string_enum!` line per
+# enum and the per-module `error` mods collapse into one shared
+# `support` module. Used to regenerate the checked-in
+# examples/generated_tree/petstore_condensed/ golden — see the header
+# of examples/petstore_tree_condensed.rs.
+
+profile = "api-client"
+
+[style]
+emit-style = "condensed"

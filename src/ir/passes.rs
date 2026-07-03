@@ -37,6 +37,7 @@ pub trait Pass {
 pub fn standard_pipeline() -> Vec<Box<dyn Pass>> {
     vec![
         Box::new(ResolveAliasPass),
+        Box::new(PatchabilityPass),
         Box::new(OptionalityPass),
         Box::new(FieldOverridePass),
         Box::new(SerdeSurfacePass),
@@ -87,6 +88,64 @@ impl Pass for ResolveAliasPass {
                 }
                 _ => {}
             }
+        }
+        Ok(())
+    }
+}
+
+/// Resolve each type's [`TypeDef::patchable`](super::TypeDef) flag —
+/// the single consumer of the `patch` config keys (`[style] patch` and
+/// `[types."Name"] patch`; docs/MIGRATION.md D13). Patchability spans
+/// two emission concerns (the `Patch` derive + `patch(...)` attrs in
+/// `DeriveAttrPass`, the field annotations in `DeepPatchPass`, plus the
+/// `struct_patch` import in `ImportsPass`), so it is materialized here
+/// as IR state once and those passes read the flag, never the config.
+///
+/// Only struct shapes can be patchable (`struct_patch` derives on
+/// structs): non-structs resolve to `false`, and an explicit per-type
+/// `patch` override targeting a non-struct is a hard error, as is an
+/// unmatched selector.
+struct PatchabilityPass;
+
+impl Pass for PatchabilityPass {
+    fn name(&self) -> &'static str {
+        "patchability"
+    }
+
+    fn run(&self, ir: &mut Ir, cx: &PassCx<'_>) -> Result<()> {
+        let mut overrides: BTreeMap<&str, bool> = BTreeMap::new();
+        for (selector, override_) in &cx.style.types {
+            let Some(enabled) = override_.patch else {
+                continue;
+            };
+            let def = ir.types.iter().find(|def| {
+                def.schema_key.as_deref() == Some(selector.as_str()) || def.name == *selector
+            });
+            let Some(def) = def else {
+                bail!("type override selector {selector:?} matched nothing");
+            };
+            if !matches!(def.shape, Shape::Struct(_)) {
+                bail!(
+                    "type override `[types.\"{selector}\"] patch = {enabled}` targets \
+                     `{}`, which is not a struct; struct_patch machinery applies to \
+                     structs only",
+                    def.name,
+                );
+            }
+            overrides.insert(selector.as_str(), enabled);
+        }
+
+        for def in &mut ir.types {
+            if !matches!(def.shape, Shape::Struct(_)) {
+                def.patchable = false;
+                continue;
+            }
+            let forced = def
+                .schema_key
+                .as_deref()
+                .and_then(|key| overrides.get(key))
+                .or_else(|| overrides.get(def.name.as_str()));
+            def.patchable = forced.copied().unwrap_or(cx.style.patch);
         }
         Ok(())
     }
@@ -244,9 +303,27 @@ fn rename_all_covers(rust_field: &str, wire_name: &str, case: &str) -> bool {
     transformed == wire_name
 }
 
+/// Is this derive entry the `struct_patch` `Patch` derive? Matches the
+/// bare name and any path form ending in `::Patch` (the preset emits
+/// bare `Patch` resolved by a `use ::struct_patch::Patch;` import).
+fn is_patch_derive(derive: &str) -> bool {
+    derive == "Patch" || derive.ends_with("::Patch")
+}
+
+/// Is this attribute line rooted at the `patch` helper attribute (the
+/// inert `#[patch(...)]` attrs consumed by the `Patch` derive)?
+fn is_patch_attr(attr: &str) -> bool {
+    attr.trim_start()
+        .strip_prefix("patch")
+        .is_some_and(|rest| rest.trim_start().starts_with('('))
+}
+
 /// Fill ordered derive lists and positioned attribute lines from the
 /// config (`[style.derives]`, `[style.attrs]`, conditionals, and
-/// per-type `derives-add`).
+/// per-type `derives-add`). Structs whose `patchable` flag resolved to
+/// `false` (see `PatchabilityPass`) get every patch-related entry
+/// filtered out: the `Patch` derive (unconditional or cfg-gated) and
+/// all `patch(...)` attribute lines.
 struct DeriveAttrPass;
 
 impl Pass for DeriveAttrPass {
@@ -285,6 +362,9 @@ impl Pass for DeriveAttrPass {
             let matches_kind = |kinds: KindFilter| {
                 (is_struct && kinds.matches_struct()) || (is_enum && kinds.matches_enum())
             };
+            // Patchability is struct-scoped (`PatchabilityPass`): a
+            // non-patchable struct sheds all patch machinery here.
+            let strip_patch = is_struct && !def.patchable;
 
             let configured = if is_struct {
                 &cx.style.derives.structs
@@ -315,10 +395,13 @@ impl Pass for DeriveAttrPass {
                     }
                 }
             }
+            if strip_patch {
+                derives.retain(|derive| !is_patch_derive(derive));
+            }
             def.derives = derives;
 
             for entry in &cx.style.attrs {
-                if !matches_kind(entry.kinds) {
+                if !matches_kind(entry.kinds) || (strip_patch && is_patch_attr(&entry.attr)) {
                     continue;
                 }
                 match entry.position {
@@ -331,13 +414,13 @@ impl Pass for DeriveAttrPass {
                 }
             }
             for entry in &cx.style.conditional_derives {
-                if matches_kind(entry.kinds) {
+                if matches_kind(entry.kinds) && !(strip_patch && is_patch_derive(&entry.derive)) {
                     def.cond_derives
                         .push((entry.feature.clone(), entry.derive.clone()));
                 }
             }
             for entry in &cx.style.conditional_attrs {
-                if !matches_kind(entry.kinds) {
+                if !matches_kind(entry.kinds) || (strip_patch && is_patch_attr(&entry.attr)) {
                     continue;
                 }
                 match entry.position {
@@ -399,6 +482,15 @@ impl Pass for ImplSynthPass {
 /// Annotate `Option<{Struct}>` (and `Option<Box<{Struct}>>`) fields with
 /// `#[patch(name = "Option<InnerPatch>")]`, honoring per-field
 /// overrides. Flatten bases and `Vec` fields never qualify.
+///
+/// Cross-type consistency with `PatchabilityPass` (docs/MIGRATION.md
+/// D13): an annotation is emitted only when *both* sides are patchable —
+/// the owner, because `#[patch(...)]` field attrs require the struct's
+/// own `Patch` derive; the inner type, because the annotation names its
+/// `{Inner}Patch` companion, which only patchable structs generate.
+/// Fields failing either check are pruned silently under the style-level
+/// policy, and are hard errors when a `[fields."Type.field"]
+/// deep-patch = true` override explicitly demands the annotation.
 struct DeepPatchPass;
 
 impl Pass for DeepPatchPass {
@@ -407,11 +499,18 @@ impl Pass for DeepPatchPass {
     }
 
     fn run(&self, ir: &mut Ir, cx: &PassCx<'_>) -> Result<()> {
-        // Struct-shaped type names (post alias resolution).
+        // Struct-shaped type names (post alias resolution), and the
+        // patchable subset — only those grow a `{Name}Patch` companion.
         let struct_names: std::collections::BTreeSet<String> = ir
             .types
             .iter()
             .filter(|def| matches!(def.shape, Shape::Struct(_)))
+            .map(|def| def.name.clone())
+            .collect();
+        let patchable_structs: std::collections::BTreeSet<String> = ir
+            .types
+            .iter()
+            .filter(|def| matches!(def.shape, Shape::Struct(_)) && def.patchable)
             .map(|def| def.name.clone())
             .collect();
 
@@ -435,6 +534,8 @@ impl Pass for DeepPatchPass {
                 .cloned()
                 .chain(std::iter::once(def.name.clone()))
                 .collect();
+            let owner_patchable = def.patchable;
+            let owner_name = def.name.clone();
             let Shape::Struct(shape) = &mut def.shape else {
                 continue;
             };
@@ -467,9 +568,32 @@ impl Pass for DeepPatchPass {
                     Some(&enabled) => enabled,
                     None => cx.style.deep_patch == DeepPatchMode::AllOptionStructs,
                 };
-                if enabled {
-                    field.patch_type = Some(format!("Option<{inner}Patch>"));
+                if !enabled {
+                    continue;
                 }
+                if !owner_patchable {
+                    if force == Some(&true) {
+                        bail!(
+                            "field override `{owner_name}.{}` forces deep-patch = true, \
+                             but `{owner_name}` has patch disabled — `#[patch(name = ...)]` \
+                             field attributes require the owning struct's `Patch` derive",
+                            field.wire_name,
+                        );
+                    }
+                    continue;
+                }
+                if !patchable_structs.contains(inner) {
+                    if force == Some(&true) {
+                        bail!(
+                            "field override `{owner_name}.{}` forces deep-patch = true, \
+                             but the field's type `{inner}` has patch disabled — its \
+                             `{inner}Patch` companion will not be generated",
+                            field.wire_name,
+                        );
+                    }
+                    continue;
+                }
+                field.patch_type = Some(format!("Option<{inner}Patch>"));
             }
         }
         Ok(())
@@ -558,6 +682,13 @@ impl Pass for PartitionPass {
 /// globs, including the cross-role bridges) and record which modules
 /// must materialize even when empty. Reuses
 /// [`Partition::module_imports`] — the import *policy* has one home.
+///
+/// One patch-aware refinement (reading `TypeDef::patchable` state, not
+/// config — docs/MIGRATION.md D13): when the output *has* structs but
+/// none of them is patchable, `use` statements rooted at `struct_patch`
+/// are dropped from every preamble, so fully patch-free output compiles
+/// without the `struct-patch` dependency. When patch is untouched (or
+/// any struct keeps it) the preambles are unchanged, preserving parity.
 struct ImportsPass;
 
 impl Pass for ImportsPass {
@@ -566,7 +697,28 @@ impl Pass for ImportsPass {
     }
 
     fn run(&self, ir: &mut Ir, cx: &PassCx<'_>) -> Result<()> {
-        let trait_imports = parse_imports(&cx.style.imports)?;
+        let has_structs = ir
+            .types
+            .iter()
+            .any(|def| matches!(def.shape, Shape::Struct(_)));
+        let any_patchable = ir
+            .types
+            .iter()
+            .any(|def| matches!(def.shape, Shape::Struct(_)) && def.patchable);
+        let filtered: Vec<String>;
+        let imports: &[String] = if has_structs && !any_patchable {
+            filtered = cx
+                .style
+                .imports
+                .iter()
+                .filter(|statement| !is_struct_patch_import(statement))
+                .cloned()
+                .collect();
+            &filtered
+        } else {
+            &cx.style.imports
+        };
+        let trait_imports = parse_imports(imports)?;
 
         match cx.partition {
             Some(partition) => {
@@ -584,6 +736,19 @@ impl Pass for ImportsPass {
             }
         }
         Ok(())
+    }
+}
+
+/// Is this `use` statement rooted at the `struct_patch` crate?
+/// (Unparsable statements are kept — [`parse_imports`] reports them.)
+fn is_struct_patch_import(statement: &str) -> bool {
+    let Ok(item) = syn::parse_str::<syn::ItemUse>(statement) else {
+        return false;
+    };
+    match &item.tree {
+        syn::UseTree::Path(path) => path.ident == "struct_patch",
+        syn::UseTree::Name(name) => name.ident == "struct_patch",
+        _ => false,
     }
 }
 

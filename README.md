@@ -84,7 +84,10 @@ pub struct CancelBookingRequest {
 
 Consumers of the generated code need `serde`, `serde_with`, and
 `struct-patch` as dependencies, plus an optional `schemars` Cargo feature
-for the cfg-gated `JsonSchema` derives.
+for the cfg-gated `JsonSchema` derives. (On the IR engine the
+`struct_patch` machinery itself is optional, globally or per type — see
+[Style as data](#style-as-data-ir-engine); the typify engine keeps the
+all-or-nothing shape above.)
 
 ## Request/response splitting and folder output
 
@@ -309,10 +312,22 @@ profile = "api-client"
 [style]
 rename-all = "camelCase"
 deep-patch = "all-option-structs"
+# struct_patch support is optional: `false` strips the `Patch` derive,
+# every `#[patch(...)]` attribute, and all deep-patch annotations
+# (api-client default: true).
+patch = true
 
 [types."Agency"]
 derives-add = ["Eq"]
 module = "shared/common"
+
+# Per-type override of the [style] patch baseline: this type loses its
+# `Patch` derive and `NotificationPatch` companion, and every
+# `#[patch(name = "Option<NotificationPatch>")]` annotation on fields
+# of *other* types referencing it is pruned too. (`patch = true`
+# re-enables one type when the global baseline is `false`.)
+[types."Notification"]
+patch = false
 
 [fields."CancelBookingRequest.notification"]
 deep-patch = true
@@ -326,11 +341,23 @@ cargo run -- generate --spec spec.yaml --profile api-client --engine ir \
     --config codegen.toml --split-request-response --output-dir src/generated
 ```
 
-Unmatched `[types]`/`[fields]` selectors are hard errors. From the
-library, `Generator::style(|s| ...)` is the code-level hook and
-`Generator::ir_pass(...)` appends custom IR passes after the built-in
-pipeline. Every config key is consumed by exactly one named pass
-(`docs/MIGRATION.md` maps them).
+Unmatched `[types]`/`[fields]` selectors are hard errors, as are
+contradictions the generated code could not satisfy (`patch = false` on
+a non-struct, or a forced `deep-patch = true` whose owner or target
+type is not patchable). When no struct keeps patch support, the
+`use ::struct_patch::Patch;` preamble import is dropped too, so fully
+patch-free output compiles without the `struct-patch` dependency. The
+patch toggles are IR-engine-only: the typify engine keeps the frozen
+fork's all-or-nothing unconditional-derive mechanism.
+
+From the library, `Generator::style(|s| ...)` is the code-level hook
+(isomorphic to the file: `style.patch`, `TypeOverride::patch`, and
+friends are plain fields) and `Generator::ir_pass(...)` appends custom
+IR passes after the built-in pipeline. Every config key is consumed by
+exactly one named pass (`docs/MIGRATION.md` maps them); the `patch`
+keys are resolved once by the `patchability` pass into a per-type IR
+flag that the `derives-attrs`, `deep-patch`, and `imports` passes read
+(decision D13).
 
 ## Relationship to the typify fork
 

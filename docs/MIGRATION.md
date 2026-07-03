@@ -86,8 +86,8 @@ Modules (all inside the existing crate — see D2):
   compose/merge, oneOf/anyOf, string enums, inline naming, cycle boxing,
   collision handling.
 - `src/ir/passes/` — `Pass` trait + built-in passes (naming, type map,
-  optionality, serde surface, derives/attrs, impl synthesis, deep patch,
-  partition, imports).
+  patchability, optionality, serde surface, derives/attrs, impl
+  synthesis, deep patch, partition, imports).
 - `src/ir/emit.rs` — `Ir → syn::File` (single file) and file-map planning
   for tree output; reuses `tree.rs` for writing.
 - `src/config.rs` — `StyleConfig` (the data form of a style profile),
@@ -214,6 +214,35 @@ the old engine as default, and record where the wall is.
   (2) one release of soak with both engines available, (3) regenerate
   goldens through IR at the flip so the `@generated` provenance is
   honest.
+- **D13 — patchability is resolved once into IR state, not consumed by
+  the passes that act on it.** `struct_patch` support became optional
+  and per-type (`[style] patch = true|false`, `[types."Name"] patch`,
+  both mirrored on `StyleConfig`/`TypeOverride` for `style()` hooks).
+  Patchability inherently spans two emission decisions — the `Patch`
+  derive + `patch(...)` attribute lines (`derives-attrs` pass) and the
+  `#[patch(name = "Option<{Inner}Patch>")]` field annotations
+  (`deep-patch` pass) — which collides with the one-key-one-pass rule
+  (R3). Resolution: a new early `patchability` pass is the single
+  consumer of the `patch` keys; it materializes a `patchable` flag on
+  every IR `TypeDef` (structs only — explicitly targeting a non-struct
+  is a hard error), and downstream passes read that IR state, never the
+  config. The alternative — one monolithic patch pass owning all patch
+  emission — was rejected because it would carve the `Patch` derive and
+  `patch(...)` attrs out of the declarative `derives`/`attrs` lists
+  into pass-private knowledge, making the api-client preset no longer
+  the whole truth about the output. Cross-type consistency is enforced
+  where each side lives: `derives-attrs` strips derive + attrs on
+  non-patchable owners; `deep-patch` prunes annotations when *either*
+  the owner (its derive is gone) or the inner type (its `{Inner}Patch`
+  companion won't exist) is non-patchable, and hard-errors when a
+  forced `deep-patch = true` override demands an impossible annotation;
+  `imports` drops `struct_patch`-rooted `use` statements when structs
+  exist but none is patchable (so fully patch-free output doesn't
+  require the dependency), and leaves the preamble untouched otherwise
+  — with everything patchable (the default), output is byte-identical
+  to before, and the parity gate + goldens are unaffected. IR-engine
+  only: the typify engine's Patch behavior stays the frozen fork's
+  all-or-nothing unconditional-derive mechanism.
 
 ## Results (2026-07-03)
 

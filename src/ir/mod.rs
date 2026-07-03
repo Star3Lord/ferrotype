@@ -195,6 +195,14 @@ pub struct TypeDef {
     /// `deny_unknown_fields`), filled by `SerdeSurfacePass`.
     pub serde_options: Vec<String>,
     pub impls: Vec<ImplSynth>,
+    /// Whether this type may carry `struct_patch` machinery (the `Patch`
+    /// derive, `patch(...)` attrs, deep-patch field annotations, and the
+    /// `{Name}Patch` companion they imply). Resolved by
+    /// `PatchabilityPass` from the `patch` config keys — meaningful for
+    /// struct shapes only, `false` on everything else after resolution.
+    /// Read (never re-derived from config) by `DeriveAttrPass`,
+    /// `DeepPatchPass`, and `ImportsPass`.
+    pub patchable: bool,
     /// Slash-separated module path, filled by `PartitionPass`; `None`
     /// means the flat (unpartitioned) top level.
     pub module: Option<String>,
@@ -222,6 +230,7 @@ impl TypeDef {
             cond_attrs_post: Vec::new(),
             serde_options: Vec::new(),
             impls: Vec::new(),
+            patchable: true,
             module: None,
         }
     }

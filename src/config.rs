@@ -169,7 +169,8 @@ pub struct DeriveLists {
 }
 
 /// Per-type override, keyed by schema name. Consumed by
-/// `DeriveAttrPass` (`derives_add`) and `PartitionPass` (`module`).
+/// `DeriveAttrPass` (`derives_add`), `PartitionPass` (`module`), and
+/// `PatchabilityPass` (`patch`).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct TypeOverride {
@@ -178,6 +179,11 @@ pub struct TypeOverride {
     pub derives_add: Vec<String>,
     /// Force the type into this module (slash-separated path).
     pub module: Option<String>,
+    /// Override the style-level [`StyleConfig::patch`] baseline for this
+    /// type: `false` strips the type's `struct_patch` machinery, `true`
+    /// re-enables it under a global `patch = false`. Struct types only —
+    /// targeting anything else is a hard error.
+    pub patch: Option<bool>,
 }
 
 /// Per-field override, keyed by `Type.field` (schema name + wire name).
@@ -219,6 +225,14 @@ pub struct StyleConfig {
     /// `skip_serializing_if = "Option::is_none"` pair on `Option<T>`
     /// fields (a struct-level `skip_serializing_none` attr is assumed).
     pub elide_option_defaults: bool,
+    /// `PatchabilityPass`: the `struct_patch` baseline. `true` (the
+    /// default) lets structs carry whatever patch machinery the style
+    /// data declares (the `Patch` derive and `patch(...)` attrs in
+    /// [`Self::derives`]/[`Self::attrs`]/[`Self::conditional_attrs`],
+    /// plus `DeepPatchPass` annotations); `false` strips all of it —
+    /// per-type `[types."Name"] patch = true|false` overrides the
+    /// baseline either way. See docs/MIGRATION.md D13.
+    pub patch: bool,
     /// `DeepPatchPass`.
     pub deep_patch: DeepPatchMode,
     /// `ImplSynthPass`: synthesize `impl Default` for untagged enums
@@ -264,6 +278,7 @@ impl Default for StyleConfig {
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::SchemaOnly,
             elide_option_defaults: false,
+            patch: true,
             deep_patch: DeepPatchMode::Off,
             untagged_enum_defaults: false,
             derives: DeriveLists::default(),
@@ -304,6 +319,7 @@ impl StyleConfig {
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
             elide_option_defaults: true,
+            patch: true,
             deep_patch: DeepPatchMode::AllOptionStructs,
             untagged_enum_defaults: true,
             derives: DeriveLists {
@@ -452,6 +468,7 @@ fn merge_style_table(mut config: StyleConfig, table: toml::Table) -> Result<Styl
             "allof" => set!(allof),
             "enum-default" => set!(enum_default),
             "elide-option-defaults" => set!(elide_option_defaults),
+            "patch" => set!(patch),
             "deep-patch" => set!(deep_patch),
             "untagged-enum-defaults" => set!(untagged_enum_defaults),
             "derives" => set!(derives),

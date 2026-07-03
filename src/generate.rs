@@ -1,0 +1,161 @@
+//! The end-to-end pipeline: load → patch → partition → lower → typify →
+//! post-process → format → write.
+
+use std::path::{Path, PathBuf};
+
+use serde_json::Value;
+use typify::TypeSpaceSettings;
+
+use crate::pipeline::LoadedSpec;
+use crate::profile::StyleProfile;
+use crate::{Result, load};
+
+/// A registered [`Generator::customize`] hook.
+type SettingsHook = Box<dyn Fn(&mut TypeSpaceSettings)>;
+/// A registered [`Generator::patch_spec_with`] hook.
+type SpecHook = Box<dyn Fn(&mut Value)>;
+
+/// Builder for a single codegen run. See the crate docs for an example.
+pub struct Generator {
+    spec_path: PathBuf,
+    patches_dir: Option<PathBuf>,
+    profile: StyleProfile,
+    partition_by_operation: bool,
+    split_request_response: bool,
+    customize: Vec<SettingsHook>,
+    patch_spec: Vec<SpecHook>,
+}
+
+impl Generator {
+    /// Start a run for the OpenAPI document at `spec_path` (YAML or JSON).
+    pub fn new(spec_path: impl Into<PathBuf>) -> Self {
+        Self {
+            spec_path: spec_path.into(),
+            patches_dir: None,
+            profile: StyleProfile::default(),
+            partition_by_operation: false,
+            split_request_response: false,
+            customize: Vec::new(),
+            patch_spec: Vec::new(),
+        }
+    }
+
+    /// Apply every RFC 6902 patch file under `dir` (lexicographic order)
+    /// to the parsed spec before any other processing. See
+    /// [`crate::apply_patches_dir`] for the file format.
+    pub fn patches_dir(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.patches_dir = Some(dir.into());
+        self
+    }
+
+    /// Select the style profile (default: [`StyleProfile::Typify`]).
+    pub fn profile(mut self, profile: StyleProfile) -> Self {
+        self.profile = profile;
+        self
+    }
+
+    /// When `true`, group generated types into one `pub mod
+    /// <snake_operation_id>` block per OpenAPI operation, with types
+    /// reachable from several operations in `pub mod shared`. When `false`
+    /// (the default) everything is emitted as a flat stream of items.
+    pub fn partition_by_operation(mut self, enabled: bool) -> Self {
+        self.partition_by_operation = enabled;
+        self
+    }
+
+    /// When `true`, partition each operation's types further into
+    /// `request` / `response` submodules (`pub mod <op> { pub mod request
+    /// { ... } pub mod response { ... } }`), with cross-operation types
+    /// classified into `shared::{request, response, enums, common}` —
+    /// see [`crate::Partition::compute_split`] for the exact policy.
+    /// Implies [`Self::partition_by_operation`]. Combine with
+    /// [`Self::generate_to_dir`] to write the module tree as a directory
+    /// of files.
+    pub fn split_request_response(mut self, enabled: bool) -> Self {
+        self.split_request_response = enabled;
+        self
+    }
+
+    /// Tweak the [`TypeSpaceSettings`] after the profile has been applied.
+    /// May be called multiple times; hooks run in registration order. This
+    /// is the granular escape hatch — every knob of the typify fork is
+    /// reachable here.
+    pub fn customize(mut self, hook: impl Fn(&mut TypeSpaceSettings) + 'static) -> Self {
+        self.customize.push(Box::new(hook));
+        self
+    }
+
+    /// Mutate the parsed spec in Rust, after file patches but before any
+    /// lowering. The escape hatch for edits RFC 6902 can't express cleanly
+    /// (e.g. renaming a schema and rewriting every `$ref` to it).
+    pub fn patch_spec_with(mut self, hook: impl Fn(&mut Value) + 'static) -> Self {
+        self.patch_spec.push(Box::new(hook));
+        self
+    }
+
+    /// Start the staged pipeline: parse the spec and apply patch files and
+    /// [`Self::patch_spec_with`] hooks, then stop. The returned
+    /// [`LoadedSpec`] exposes the parsed document for arbitrary edits and
+    /// continues via [`LoadedSpec::lower`] →
+    /// [`LoweredSchema::build_types`](crate::LoweredSchema::build_types) →
+    /// [`GeneratedTypes::into_file`](crate::GeneratedTypes::into_file) /
+    /// [`render`](crate::GeneratedTypes::render), with every intermediate
+    /// artifact (spec, partition, settings, type space, AST) open for
+    /// inspection and mutation between stages. See [`LoadedSpec`] for the
+    /// stage-by-stage walkthrough.
+    pub fn load(&self) -> Result<LoadedSpec> {
+        let mut spec = load::load_spec(&self.spec_path)?;
+
+        if let Some(dir) = &self.patches_dir {
+            load::apply_patches_dir(&mut spec, dir)?;
+        }
+        for hook in &self.patch_spec {
+            hook(&mut spec);
+        }
+
+        let mut settings = TypeSpaceSettings::default();
+        self.profile.apply(&mut settings);
+        for hook in &self.customize {
+            hook(&mut settings);
+        }
+
+        Ok(LoadedSpec {
+            spec,
+            settings,
+            profile: self.profile,
+            partition_by_operation: self.partition_by_operation,
+            split_request_response: self.split_request_response,
+            spec_path: self.spec_path.clone(),
+        })
+    }
+
+    /// Run the pipeline and return formatted Rust source.
+    ///
+    /// Equivalent to driving the staged pipeline straight through with no
+    /// between-stage customization.
+    pub fn generate_to_string(&self) -> Result<String> {
+        self.load()?.lower()?.build_types()?.render()
+    }
+
+    /// Run the pipeline and write the result to `path`, creating parent
+    /// directories as needed. The write is idempotent: when the file
+    /// already holds identical content its bytes and mtime are left
+    /// untouched, so downstream builds don't churn.
+    pub fn generate_to_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        let contents = self.generate_to_string()?;
+        crate::tree::write_if_changed(path.as_ref(), &contents)
+    }
+
+    /// Run the pipeline and write the result as a directory tree rooted
+    /// at `dir`: one file per partition module (`<mod>.rs`, or
+    /// `<mod>/mod.rs` plus one file per nested partition when
+    /// [`Self::split_request_response`] is on) and a root `mod.rs`
+    /// declaring them. See [`crate::write_file_tree`] for the exact
+    /// splitting, header, idempotency, and stale-file-cleanup rules.
+    pub fn generate_to_dir(&self, dir: impl AsRef<Path>) -> Result<()> {
+        self.load()?
+            .lower()?
+            .build_types()?
+            .render_to_dir(dir)
+    }
+}

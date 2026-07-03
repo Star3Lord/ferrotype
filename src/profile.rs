@@ -79,6 +79,14 @@ fn api_client(settings: &mut TypeSpaceSettings) {
         .with_defaulted_field_optionality(DefaultedFieldOptionality::AlwaysOption)
         .with_elide_option_field_defaults(true);
 
+    // Doc comments carry only the schema description (IDE hovers stay
+    // readable), and string newtypes get the AsRef/Display/From<&str>
+    // convenience surface. Both were fork defaults once; they are plain
+    // opt-in knobs now that the fork's defaults match upstream.
+    settings
+        .with_schema_in_docs(false)
+        .with_string_newtype_conveniences(true);
+
     // Plain strings for date/uuid formats rather than chrono / uuid types;
     // the RFC 3339 / ISO-8601 wire format is preserved either way.
     settings

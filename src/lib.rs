@@ -110,7 +110,7 @@ pub use partition::{
 };
 pub use pipeline::{GeneratedTypes, LoadedSpec, LoweredSchema, render_file};
 pub use profile::StyleProfile;
-pub use tree::write_file_tree;
+pub use tree::{plan_file_tree, write_file_tree};
 
 /// Everything here can fail with a plain [`anyhow::Error`]; codegen is a
 /// build-time tool and callers want the full context chain, not a typed

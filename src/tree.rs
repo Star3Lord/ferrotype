@@ -62,6 +62,24 @@ pub fn write_file_tree(
     dir: impl AsRef<Path>,
 ) -> Result<()> {
     let dir = dir.as_ref();
+    let files = plan_file_tree(file, spec_path);
+
+    let mut written: BTreeSet<PathBuf> = BTreeSet::new();
+    for (rel_path, contents) in files {
+        write_if_changed(&dir.join(&rel_path), &contents)?;
+        written.insert(rel_path);
+    }
+
+    remove_stale_generated(dir, Path::new(""), &written)
+}
+
+/// Plan the directory-tree output of [`write_file_tree`] without touching
+/// the filesystem: the map of `dir`-relative paths to the exact file
+/// contents (header + formatted source) that would be written.
+pub fn plan_file_tree(
+    file: &syn::File,
+    spec_path: impl AsRef<Path>,
+) -> BTreeMap<PathBuf, String> {
     let header = generated_header(spec_path);
 
     // Plan the file set: relative path → items. The root mod.rs keeps
@@ -79,19 +97,18 @@ pub fn write_file_tree(
     }
     files.insert(PathBuf::from("mod.rs"), root_items);
 
-    let mut written: BTreeSet<PathBuf> = BTreeSet::new();
-    for (rel_path, items) in files {
-        let file = syn::File {
-            shebang: None,
-            attrs: Vec::new(),
-            items,
-        };
-        let contents = format!("{header}{}", prettyplease::unparse(&file));
-        write_if_changed(&dir.join(&rel_path), &contents)?;
-        written.insert(rel_path);
-    }
-
-    remove_stale_generated(dir, Path::new(""), &written)
+    files
+        .into_iter()
+        .map(|(rel_path, items)| {
+            let file = syn::File {
+                shebang: None,
+                attrs: Vec::new(),
+                items,
+            };
+            let contents = format!("{header}{}", prettyplease::unparse(&file));
+            (rel_path, contents)
+        })
+        .collect()
 }
 
 /// Plan the file(s) for `module` under `parent` (a `dir`-relative

@@ -92,7 +92,9 @@
 //! openapi-codegen lower --spec specs/petstore.yaml --output petstore.schema.json
 //! ```
 
+pub mod config;
 mod generate;
+pub mod ir;
 mod load;
 mod lower;
 mod partition;
@@ -102,7 +104,8 @@ mod profile;
 pub mod spec;
 mod tree;
 
-pub use generate::Generator;
+pub use config::StyleConfig;
+pub use generate::{Engine, Generator};
 pub use load::{apply_patches_dir, load_spec};
 pub use lower::{lower_to_json_schema, lowered_root_schema};
 pub use partition::{

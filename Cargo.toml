@@ -47,3 +47,5 @@ struct-patch = { version = "0.10", default-features = false, features = [
     "nesting",
     "none_as_default",
 ] }
+toml = "1.1.2"
+unicode-ident = "1.0.24"

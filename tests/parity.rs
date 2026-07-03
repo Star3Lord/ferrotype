@@ -12,7 +12,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use openapi_codegen::{Generator, StyleProfile, plan_file_tree};
+use openapi_codegen::{Engine, Generator, StyleProfile, plan_file_tree};
 
 const PETSTORE_SPEC: &str = "specs/petstore.yaml";
 const SABRE_SPEC: &str = "specs/sabre-booking/spec.openapi.yaml";
@@ -139,8 +139,6 @@ fn normalized_tokens(label: &str, source: &str) -> String {
 
 /// Assert the parity contract between two single-file outputs: normalized
 /// token equality (the contract), reporting byte equality alongside.
-/// Consumed by the engine-vs-engine tests (step 2).
-#[allow(dead_code)]
 fn assert_parity(label: &str, expected: &str, actual: &str) {
     let expected_tokens = normalized_tokens(&format!("{label} (expected)"), expected);
     let actual_tokens = normalized_tokens(&format!("{label} (actual)"), actual);
@@ -218,4 +216,73 @@ fn golden_sabre_tree() {
     let planned = typify_tree(SABRE_SPEC, Some(SABRE_PATCHES));
     let golden = read_golden_tree("examples/generated_tree/sabre_booking");
     assert_tree_parity("sabre tree vs golden", &golden, &planned, assert_bytes);
+}
+
+// ─── Step 2: the IR engine vs the frozen fork ───────────────────────────────
+
+/// Single-file output of the IR engine.
+fn ir_single(spec: &str, patches: Option<&str>, mode: Mode) -> String {
+    generator(spec, patches, mode)
+        .engine(Engine::Ir)
+        .generate_to_string()
+        .unwrap()
+}
+
+/// Folder-tree output of the IR engine, planned in memory.
+fn ir_tree(spec: &str, patches: Option<&str>) -> BTreeMap<PathBuf, String> {
+    let file = generator(spec, patches, Mode::Split)
+        .engine(Engine::Ir)
+        .generate_to_syn_file()
+        .unwrap();
+    plan_file_tree(&file, spec)
+}
+
+fn engine_parity_single(name: &str, spec: &str, patches: Option<&str>, mode: Mode) {
+    let expected = typify_single(spec, patches, mode);
+    let actual = ir_single(spec, patches, mode);
+    assert_parity(&format!("{name} ({mode:?})"), &expected, &actual);
+}
+
+#[test]
+fn ir_petstore_flat() {
+    engine_parity_single("petstore", PETSTORE_SPEC, None, Mode::Flat);
+}
+
+#[test]
+fn ir_petstore_partitioned() {
+    engine_parity_single("petstore", PETSTORE_SPEC, None, Mode::Partitioned);
+}
+
+#[test]
+fn ir_petstore_split() {
+    engine_parity_single("petstore", PETSTORE_SPEC, None, Mode::Split);
+}
+
+#[test]
+fn ir_petstore_tree() {
+    let expected = typify_tree(PETSTORE_SPEC, None);
+    let actual = ir_tree(PETSTORE_SPEC, None);
+    assert_tree_parity("petstore tree", &expected, &actual, assert_parity);
+}
+
+#[test]
+fn ir_sabre_flat() {
+    engine_parity_single("sabre", SABRE_SPEC, Some(SABRE_PATCHES), Mode::Flat);
+}
+
+#[test]
+fn ir_sabre_partitioned() {
+    engine_parity_single("sabre", SABRE_SPEC, Some(SABRE_PATCHES), Mode::Partitioned);
+}
+
+#[test]
+fn ir_sabre_split() {
+    engine_parity_single("sabre", SABRE_SPEC, Some(SABRE_PATCHES), Mode::Split);
+}
+
+#[test]
+fn ir_sabre_tree() {
+    let expected = typify_tree(SABRE_SPEC, Some(SABRE_PATCHES));
+    let actual = ir_tree(SABRE_SPEC, Some(SABRE_PATCHES));
+    assert_tree_parity("sabre tree", &expected, &actual, assert_parity);
 }

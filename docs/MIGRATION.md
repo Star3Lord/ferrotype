@@ -1,9 +1,16 @@
 # Migration: typify-fork engine → owned Spec → IR → passes → emitter
 
-**Status:** in progress (living document; decision log at the bottom)
+**Status:** REVERSED — the IR engine was built, gated, audited, and then
+retired in favor of building on typify (decision D15 at the bottom; the
+`ir-migration` branch preserves the full implementation). Steps 0–2
+below and decisions D1–D14 are the historical record of the build-out;
+the features the IR engine pioneered (style-as-data, per-type/per-field
+overrides, condensed emission) survive, re-implemented over the typify
+engine.
 **Date started:** 2026-07-03
-**Branches:** `ir-migration` in this repo and in `../typify` (fork frozen at
-tag `fork-freeze-20260703`)
+**Branches:** `ir-migration` in this repo (the IR implementation);
+`typify-base` (the reversal); `ergonomic-codegen` in `../typify` (the
+fork, unfrozen)
 **Parent design:** [ARCHITECTURE.md](ARCHITECTURE.md). This document records
 the *actual* plan as re-derived against the code, plus every deviation.
 
@@ -292,6 +299,50 @@ the old engine as default, and record where the wall is.
   engine emits newtype shapes (D5). IR-engine-only, like every
   `StyleConfig` key: the typify engine and the frozen fork are
   untouched.
+
+- **D15 — the migration is reversed: typify is the base; the IR engine
+  is retired.** The [SPEC_COVERAGE.md](SPEC_COVERAGE.md) audit gave the
+  empirical verdict: the IR engine failed 5 of 7 structurally diverse
+  real-world specs and produced six silently-wrong lowerings — its
+  schema-semantics core would need to re-earn, construct by construct,
+  what typify's years of accumulated corpus already guarantee (it is
+  what progenitor runs GitHub's spec through). Re-weighing the original
+  motivation for the IR (upstream's announced rewrite invalidating the
+  fork): the `typify2` branch turns out to be an early-stage prototype,
+  stale for months and unable to name nested types yet, so "v1 is
+  doomed ground" was overweighted — and the fork's actual rebase
+  liability was concentrated in two default-behavior changes whose
+  golden churn (~110k lines) has since been eliminated by restoring
+  upstream defaults behind opt-in knobs. The reversal keeps everything
+  the IR migration got right, re-homed:
+  - the typed `Spec` model (step 1) stays — the typify path consumes
+    its draft-07 render, and it remains the seam for operations, 3.1,
+    and discriminators;
+  - `StyleConfig` / `codegen.toml` / presets (M4) stay as THE style
+    surface, now mapped onto `TypeSpaceSettings`
+    (`config.rs::apply_to_settings`); `plain`-profile modes the IR
+    hard-errored on (validating newtypes, bare optionality, D3/D4)
+    now simply work, because typify implements them;
+  - per-type patch opt-out and per-field deep-patch (D13) ride the
+    fork's `with_deep_patch_filter` at the source plus a
+    post-generation AST strip (`overrides.rs`), with the same
+    hard-error validation semantics;
+  - the condensed emit style (D14) becomes a token-verified AST
+    transformation over typify output (`condense.rs`): a ladder is
+    replaced only after the macro expansion is verified token-equal
+    to the impls removed, so it degrades to expanded instead of ever
+    changing behavior — the checked-in condensed golden reproduces
+    byte-for-byte;
+  - the parity harness's golden fence survives as `tests/goldens.rs`
+    (the engine-vs-engine half retired with the engine); the
+    patch-config and emit-style suites were ported unchanged in
+    substance and pass against the typify path.
+  The fork is unfrozen and rebase-clean: with no knobs set its output
+  is byte-identical to upstream `main` (upstream test goldens
+  unchanged), so upstream syncs conflict only on real feature hunks.
+  Client generation (step 6) attaches to `Spec`'s operations data on
+  the typify base; `docs/SPEC_COVERAGE.md` stands as the record of why
+  owning schema semantics was the wrong debt to take on.
 
 ## Results (2026-07-03)
 

@@ -1,4 +1,4 @@
-# The condensed emit style over the api-client preset (IR engine only):
+# The condensed emit style over the api-client preset:
 # string-enum conversion ladders become one `impl_string_enum!` line per
 # enum and the per-module `error` mods collapse into one shared
 # `support` module. Used to regenerate the checked-in

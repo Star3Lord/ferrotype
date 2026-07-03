@@ -53,11 +53,19 @@ fn synthesize_in_items(items: &mut Vec<syn::Item>) {
         }
     }
 
-    // Pass 2: synthesize for enums lacking one.
+    // Pass 2: synthesize for untagged (payload-carrying) enums lacking
+    // one. All-unit enums are deliberately skipped: those are the
+    // `enum-default` style key's territory (typify's
+    // `with_enum_first_variant_default` knob), and synthesizing here
+    // would override a `schema-only` policy.
     let mut synthesized = Vec::new();
     for item in items.iter() {
         if let syn::Item::Enum(item_enum) = item
             && !has_default_impl.contains(&item_enum.ident.to_string())
+            && item_enum
+                .variants
+                .iter()
+                .any(|variant| !matches!(variant.fields, syn::Fields::Unit))
             && let Some(default_impl) = default_impl_for_enum(item_enum)
         {
             synthesized.push(default_impl);

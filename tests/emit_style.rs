@@ -1,4 +1,4 @@
-//! The condensed emit style (IR engine; docs/MIGRATION.md D14):
+//! The condensed emit style (docs/MIGRATION.md D14):
 //! `[style] emit-style = "condensed"` trades the per-enum conversion
 //! ladder and per-module `error` mods for one `support` module and one
 //! `impl_string_enum!` invocation per enum.
@@ -28,14 +28,14 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use openapi_codegen::config::EmitStyle;
-use openapi_codegen::{Engine, Generator, StyleConfig, StyleProfile, plan_file_tree};
+use openapi_codegen::{Generator, StyleConfig, StyleProfile, plan_file_tree};
 
 const PETSTORE_SPEC: &str = "specs/petstore.yaml";
 
 fn petstore(condensed: bool) -> Generator {
     let generator = Generator::new(PETSTORE_SPEC)
         .profile(StyleProfile::ApiClient)
-        .engine(Engine::Ir);
+        ;
     if condensed {
         generator.style(|style| style.emit_style = EmitStyle::Condensed)
     } else {
@@ -150,7 +150,7 @@ fn schema_default_and_no_default_render_the_right_clause() {
     // `enum-default = "schema-only"` → no default clause at all.
     let out = Generator::new(&path)
         .profile(StyleProfile::ApiClient)
-        .engine(Engine::Ir)
+        
         .style(|style| {
             style.emit_style = EmitStyle::Condensed;
             style.enum_default = openapi_codegen::config::EnumDefaultMode::SchemaOnly;
@@ -195,7 +195,7 @@ fn condensed_reserves_the_support_module_name() {
         "{:#}",
         Generator::new(&path)
             .profile(StyleProfile::ApiClient)
-            .engine(Engine::Ir)
+            
             .style(|style| style.emit_style = EmitStyle::Condensed)
             .partition_by_operation(true)
             .generate_to_string()

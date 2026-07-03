@@ -56,12 +56,8 @@ struct GenerateArgs {
     #[arg(long, value_enum, default_value_t = StyleProfile::Typify)]
     profile: StyleProfile,
 
-    /// Generation engine: the typify fork (default) or the owned IR
-    /// pipeline (`api-client` profile only; see docs/MIGRATION.md).
-    #[arg(long, value_enum, default_value_t = openapi_codegen::Engine::Typify)]
-    engine: openapi_codegen::Engine,
-
-    /// A codegen.toml overriding the profile preset (IR engine only).
+    /// A codegen.toml overriding the profile preset: any `[style]` key
+    /// plus `[types]` / `[fields]` per-type and per-field overrides.
     #[arg(long, value_name = "PATH")]
     config: Option<PathBuf>,
 
@@ -107,7 +103,6 @@ fn main() -> anyhow::Result<()> {
 fn generate(args: GenerateArgs) -> anyhow::Result<()> {
     let mut generator = Generator::new(&args.spec)
         .profile(args.profile)
-        .engine(args.engine)
         .partition_by_operation(args.partition_by_operation)
         .split_request_response(args.split_request_response);
     if let Some(dir) = &args.patches_dir {

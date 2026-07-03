@@ -70,8 +70,10 @@ fn main() {
     assert!(module_body(&out, "create_pet").contains("pub struct Dog"));
     assert!(!module_body(&out, "shared").contains("pub struct Dog"));
 
-    // The settings tweak embedded JSON schemas in the doc comments.
-    assert!(out.contains("# JSON schema"));
+    // The settings tweak embedded JSON schemas in the doc comments
+    // (the ApiClient style turns them off; upstream's `<details>` block
+    // comes back when re-enabled).
+    assert!(out.contains("<details><summary>JSON schema</summary>"));
 
     // The AST edit landed in the output.
     assert!(out.contains("pub const GENERATED_BY: &str = \"custom_pipeline\";"));

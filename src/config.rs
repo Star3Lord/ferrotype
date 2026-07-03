@@ -1,26 +1,28 @@
-//! Style as data: the configuration consumed by the IR engine's passes.
+//! Style as data: the declarative configuration that drives generation.
 //!
-//! A [`StyleConfig`] is the declarative form of a style profile. The
-//! built-in presets ([`StyleConfig::api_client`]) reproduce the
-//! [`crate::StyleProfile`] knob recipes as data; a `codegen.toml` file
-//! ([`StyleConfig::from_toml_str`]) can override any of it, plus add
-//! per-type and per-field overrides. The standing rule (R3 in
-//! ARCHITECTURE.md): every key here is consumed by exactly one named pass
-//! — the doc comment on each field names it.
+//! A [`StyleConfig`] is the data form of a style profile. The built-in
+//! presets ([`StyleConfig::api_client`], [`StyleConfig::plain`])
+//! reproduce the [`crate::StyleProfile`] recipes; a `codegen.toml` file
+//! ([`StyleConfig::from_toml_str`]) can override any of it and add
+//! per-type / per-field overrides.
 //!
-//! The typify engine does not read this; its style surface remains
-//! [`typify::TypeSpaceSettings`] via [`crate::StyleProfile::apply`].
+//! Everything here is applied to the typify fork through
+//! [`StyleConfig::apply_to_settings`] (the knob mapping is documented on
+//! each field) plus a handful of post-generation AST passes for the
+//! decisions typify has no knob for (per-type patch stripping, per-field
+//! type overrides, condensed emission — see [`crate::postprocess`] and
+//! [`crate::condense`]). [`crate::Generator::customize`] remains the
+//! escape hatch below this layer.
 
 use std::collections::BTreeMap;
 
 use anyhow::{Context, bail};
 use serde::Deserialize;
+use typify::TypeSpaceSettings;
 
 use crate::Result;
 
 /// Which generated type kinds an attribute/derive entry applies to.
-/// (`newtypes` is accepted for config-compat but nothing emits newtype
-/// shapes yet; see docs/MIGRATION.md D5.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum KindFilter {
@@ -31,11 +33,13 @@ pub enum KindFilter {
 }
 
 impl KindFilter {
-    pub(crate) fn matches_struct(self) -> bool {
-        matches!(self, KindFilter::All | KindFilter::Structs)
-    }
-    pub(crate) fn matches_enum(self) -> bool {
-        matches!(self, KindFilter::All | KindFilter::Enums)
+    fn to_typify(self) -> typify::TypeKindFilter {
+        match self {
+            KindFilter::All => typify::TypeKindFilter::ALL,
+            KindFilter::Structs => typify::TypeKindFilter::STRUCTS,
+            KindFilter::Enums => typify::TypeKindFilter::ENUMS,
+            KindFilter::Newtypes => typify::TypeKindFilter::NEWTYPES,
+        }
     }
 }
 
@@ -48,7 +52,17 @@ pub enum AttrPosition {
     AfterDerive,
 }
 
-/// An unconditional attribute line. Consumed by `DeriveAttrPass`.
+impl AttrPosition {
+    fn to_typify(self) -> typify::AttrPosition {
+        match self {
+            AttrPosition::BeforeDerive => typify::AttrPosition::BeforeDerive,
+            AttrPosition::AfterDerive => typify::AttrPosition::AfterDerive,
+        }
+    }
+}
+
+/// An unconditional attribute line, mapped to
+/// [`TypeSpaceSettings::with_unconditional_attr_at`].
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttrEntry {
@@ -62,8 +76,8 @@ pub struct AttrEntry {
     pub kinds: KindFilter,
 }
 
-/// A `#[cfg_attr(feature = <feature>, derive(<derive>))]` line.
-/// Consumed by `DeriveAttrPass`.
+/// A `#[cfg_attr(feature = <feature>, derive(<derive>))]` line, mapped
+/// to [`TypeSpaceSettings::with_conditional_derive_for`].
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CondDeriveEntry {
@@ -73,8 +87,8 @@ pub struct CondDeriveEntry {
     pub kinds: KindFilter,
 }
 
-/// A `#[cfg_attr(feature = <feature>, <attr>)]` line. Consumed by
-/// `DeriveAttrPass`.
+/// A `#[cfg_attr(feature = <feature>, <attr>)]` line, mapped to
+/// [`TypeSpaceSettings::with_conditional_attr_at`].
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CondAttrEntry {
@@ -90,80 +104,80 @@ fn kind_all() -> KindFilter {
     KindFilter::All
 }
 
-/// When is a non-required field `Option<T>`? Consumed by
-/// `OptionalityPass`.
+/// When is a non-required field `Option<T>`? Mapped to the fork's three
+/// optionality knobs (`with_array_optionality`,
+/// `with_default_bool_optionality`, `with_defaulted_field_optionality`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum OptionalFields {
+    /// Upstream typify shapes (the default): non-required arrays stay
+    /// `Vec<T>` + `serde(default)`, defaulted scalars stay bare with
+    /// `defaults::` helper fns.
+    #[default]
+    Bare,
     /// Every non-required field is `Option<T>` — schema defaults do not
     /// collapse the wrapper (the house style).
-    #[default]
     AlwaysOption,
-    /// Typify-flavored bare shapes (`Vec<T>` + `serde(default)`,
-    /// defaulted scalars bare with `defaults::` helper fns) — requires
-    /// helper-fn synthesis the IR emitter does not implement yet.
-    /// Selecting it is a loud error (docs/MIGRATION.md D4).
-    Bare,
 }
 
-/// What to do with string/integer constraints. Consumed by the lowering
-/// (`ir::lower`).
+/// What to do with string/integer constraints. Mapped to
+/// `with_unconstrained_string` / `with_unconstrained_int`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ConstraintMode {
-    /// Ignore constraints: plain `String` / plain integers.
+    /// Validating newtypes / `NonZero*` mapping (upstream typify's
+    /// default).
     #[default]
-    Plain,
-    /// Validating newtypes (upstream typify's default) — not implemented
-    /// by the IR engine (docs/MIGRATION.md D3/D4); loud error.
     Validate,
+    /// Ignore constraints: plain `String` / plain integers.
+    Plain,
 }
 
-/// `allOf` handling. Consumed by the lowering (`ir::lower`).
+/// `allOf` handling. Mapped to `with_allof_strategy`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AllOfMode {
+    /// Merge subschema properties into one flat struct (upstream
+    /// typify's default).
+    #[default]
+    Merge,
     /// `$ref` bases become `#[serde(flatten)]` fields (single-inheritance
     /// composition); falls back to merge when the shape doesn't compose.
-    #[default]
     Compose,
-    /// Merge subschema properties into one flat struct.
-    Merge,
 }
 
-/// Enum `Default` synthesis. Consumed by `ImplSynthPass`.
+/// Enum `Default` synthesis. Mapped to
+/// `with_enum_first_variant_default`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EnumDefaultMode {
+    /// Only schema-level defaults produce `impl Default` (upstream).
+    #[default]
+    SchemaOnly,
     /// Enums without a schema-level default get `impl Default` selecting
     /// the first unit variant; schema-level defaults are always honored.
-    #[default]
     FirstUnitVariant,
-    /// Only schema-level defaults produce `impl Default`.
-    SchemaOnly,
 }
 
-/// Deep-patch annotation policy. Consumed by `DeepPatchPass`.
+/// Deep-patch annotation policy, resolved together with the `patch`
+/// keys into the fork's `with_deep_patch_filter` closure.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum DeepPatchMode {
+    #[default]
+    Off,
     /// Annotate every `Option<Struct>` (incl. `Option<Box<Struct>>`)
     /// field with `#[patch(name = "Option<InnerPatch>")]`.
-    #[default]
     AllOptionStructs,
-    Off,
 }
 
 /// How mechanical impls and shared helpers are laid out in the output.
-/// Consumed by `EmitStylePass` (which materializes it onto the IR for
-/// the emitter). See docs/MIGRATION.md D14 and "Readable output" in the
-/// README.
+/// Consumed by [`crate::condense`] as a post-generation AST pass.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EmitStyle {
     /// Every impl written out per type and an `error` module duplicated
-    /// into every partition module — byte-identical to the frozen
-    /// typify fork (the parity-gate shape). The default.
+    /// into every partition module — typify's native shape. The default.
     #[default]
     Expanded,
     /// One `support` module per generation unit holding the shared
@@ -174,9 +188,11 @@ pub enum EmitStyle {
     Condensed,
 }
 
-/// Ordered derive lists per type kind. Consumed by `DeriveAttrPass`.
-/// An empty list means "upstream base set" (`::serde::Serialize`,
-/// `::serde::Deserialize`, `Debug`, `Clone`, lexicographically sorted).
+/// Ordered derive lists per type kind, mapped to
+/// `with_unconditional_derive_for` (insertion order preserved — this is
+/// how derive-list ordering is controlled). An empty list means the
+/// upstream base set (`::serde::Serialize`, `::serde::Deserialize`,
+/// `Debug`, `Clone`, lexicographically sorted).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct DeriveLists {
@@ -188,16 +204,18 @@ pub struct DeriveLists {
     pub newtypes: Vec<String>,
 }
 
-/// Per-type override, keyed by schema name. Consumed by
-/// `DeriveAttrPass` (`derives_add`), `PartitionPass` (`module`), and
-/// `PatchabilityPass` (`patch`).
+/// Per-type override, keyed by schema name (the
+/// `components.schemas` / `definitions` key; the generated Rust name is
+/// accepted too).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct TypeOverride {
-    /// Extra derives appended after the profile's ordered list.
+    /// Extra derives appended after the profile's ordered list (mapped
+    /// to the fork's per-type `with_patch` mechanism).
     #[serde(default)]
     pub derives_add: Vec<String>,
-    /// Force the type into this module (slash-separated path).
+    /// Force the type into this module (slash-separated path) in
+    /// partitioned output.
     pub module: Option<String>,
     /// Override the style-level [`StyleConfig::patch`] baseline for this
     /// type: `false` strips the type's `struct_patch` machinery, `true`
@@ -206,74 +224,91 @@ pub struct TypeOverride {
     pub patch: Option<bool>,
 }
 
-/// Per-field override, keyed by `Type.field` (schema name + wire name).
-/// Consumed by `DeepPatchPass` (`deep_patch`) and `TypeOverridePass`
-/// (`type`).
+/// Per-field override, keyed by `Type.field` (schema name + wire name;
+/// generated Rust names are accepted too).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct FieldOverride {
+    /// Force the deep-patch annotation on (`true`) or off (`false`) for
+    /// this field, overriding [`StyleConfig::deep_patch`]. Forcing `true`
+    /// on a field that cannot carry the annotation (not an
+    /// `Option<Struct>`, or the inner type's Patch companion is stripped)
+    /// is a hard error.
     pub deep_patch: Option<bool>,
-    /// Replace the field's Rust type with this path, verbatim.
+    /// Replace the field's Rust type with this path, verbatim (the
+    /// `Option<...>` wrapper, when present, is preserved).
     #[serde(rename = "type")]
     pub type_path: Option<String>,
 }
 
-/// The declarative style configuration driving the IR engine.
+/// The declarative style configuration. Field defaults mean "upstream
+/// typify behavior"; [`StyleConfig::api_client`] is the house-style
+/// preset.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", default)]
 pub struct StyleConfig {
-    /// `OptionalityPass`.
+    /// → optionality knobs (see [`OptionalFields`]).
     pub optional_fields: OptionalFields,
-    /// `ir::lower`: constrained strings.
+    /// → `with_unconstrained_string`.
     pub constrained_strings: ConstraintMode,
-    /// `ir::lower`: integer bounds (`NonZero*` mapping upstream).
+    /// → `with_unconstrained_int`.
     pub integers: ConstraintMode,
-    /// `ir::lower`: Rust type for `format: date` strings.
+    /// → `with_date_type`; `None` keeps upstream's `chrono` mapping.
     pub date: Option<String>,
-    /// `ir::lower`: Rust type for `format: date-time` strings.
+    /// → `with_date_time_type`.
     pub date_time: Option<String>,
-    /// `ir::lower`: Rust type for `format: uuid` strings.
+    /// → `with_uuid_type`; `None` keeps upstream's `uuid` mapping.
     pub uuid: Option<String>,
-    /// `SerdeSurfacePass`: struct-level `rename_all` case, with
+    /// → `with_struct_rename_all`: struct-level `rename_all` case, with
     /// covered per-field renames elided.
     pub rename_all: Option<String>,
-    /// `ir::lower`.
+    /// → `with_allof_strategy`.
     pub allof: AllOfMode,
-    /// `ImplSynthPass`.
+    /// → `with_enum_first_variant_default`.
     pub enum_default: EnumDefaultMode,
-    /// `SerdeSurfacePass`: drop the `default` +
+    /// → `with_elide_option_field_defaults`: drop the `default` +
     /// `skip_serializing_if = "Option::is_none"` pair on `Option<T>`
     /// fields (a struct-level `skip_serializing_none` attr is assumed).
     pub elide_option_defaults: bool,
-    /// `PatchabilityPass`: the `struct_patch` baseline. `true` (the
-    /// default) lets structs carry whatever patch machinery the style
-    /// data declares (the `Patch` derive and `patch(...)` attrs in
-    /// [`Self::derives`]/[`Self::attrs`]/[`Self::conditional_attrs`],
-    /// plus `DeepPatchPass` annotations); `false` strips all of it —
-    /// per-type `[types."Name"] patch = true|false` overrides the
-    /// baseline either way. See docs/MIGRATION.md D13.
+    /// → `with_schema_in_docs`: embed the full JSON Schema `<details>`
+    /// block in doc comments (upstream default `true`).
+    pub schema_in_docs: bool,
+    /// → `with_string_newtype_conveniences`: `AsRef<str>` / `Display` /
+    /// `From<&str>` on string newtypes.
+    pub string_newtype_conveniences: bool,
+    /// The `struct_patch` baseline. `true` (the default) lets structs
+    /// carry whatever patch machinery the style data declares (the
+    /// `Patch` derive and `patch(...)` attrs in [`Self::derives`] /
+    /// [`Self::attrs`] / [`Self::conditional_attrs`], plus deep-patch
+    /// annotations); `false` strips all of it — per-type
+    /// `[types."Name"] patch = true|false` overrides the baseline either
+    /// way. Resolved by [`crate::patch_plan::PatchPlan`].
     pub patch: bool,
-    /// `DeepPatchPass`.
+    /// Deep-patch annotation policy (see [`DeepPatchMode`]); resolved
+    /// into the fork's `with_deep_patch_filter` closure together with
+    /// the `patch` keys.
     pub deep_patch: DeepPatchMode,
-    /// `EmitStylePass`: expanded (typify-parity) or condensed
-    /// (macro + shared `support` module) output layout.
+    /// Output layout: expanded (typify's native shape) or condensed
+    /// (macro + shared `support` module); see [`crate::condense`].
     pub emit_style: EmitStyle,
-    /// `ImplSynthPass`: synthesize `impl Default` for untagged enums
-    /// with no unit variant (the `postprocess.rs` behavior).
+    /// Synthesize `impl Default` for untagged enums with no unit
+    /// variant (post-generation AST pass; required whenever structs
+    /// derive `Default` and may hold such an enum in a required field).
     pub untagged_enum_defaults: bool,
-    /// `DeriveAttrPass`.
+    /// → `with_unconditional_derive_for`, in order, per kind.
     pub derives: DeriveLists,
-    /// `DeriveAttrPass`.
+    /// → `with_unconditional_attr_at`.
     #[serde(default)]
     pub attrs: Vec<AttrEntry>,
-    /// `DeriveAttrPass`.
+    /// → `with_conditional_derive_for`.
     #[serde(default)]
     pub conditional_derives: Vec<CondDeriveEntry>,
-    /// `DeriveAttrPass`.
+    /// → `with_conditional_attr_at`.
     #[serde(default)]
     pub conditional_attrs: Vec<CondAttrEntry>,
-    /// `ImportsPass`: full `use ...;` statements injected at the top of
-    /// every generated module so bare derive paths resolve.
+    /// Full `use ...;` statements injected at the top of every generated
+    /// module so bare derive paths resolve (the flat-output preamble and
+    /// the partition-mode per-module imports).
     #[serde(default)]
     pub imports: Vec<String>,
     /// Per-type overrides, keyed by schema name. Unmatched keys are
@@ -287,20 +322,22 @@ pub struct StyleConfig {
 }
 
 impl Default for StyleConfig {
-    /// The plain baseline: upstream-ish shapes with no house styling.
+    /// The `plain` baseline: upstream typify behavior, no house styling.
     /// (Presets and `codegen.toml` build on top of this.)
     fn default() -> Self {
         StyleConfig {
-            optional_fields: OptionalFields::AlwaysOption,
-            constrained_strings: ConstraintMode::Plain,
-            integers: ConstraintMode::Plain,
+            optional_fields: OptionalFields::Bare,
+            constrained_strings: ConstraintMode::Validate,
+            integers: ConstraintMode::Validate,
             date: None,
             date_time: None,
             uuid: None,
             rename_all: None,
-            allof: AllOfMode::Compose,
+            allof: AllOfMode::Merge,
             enum_default: EnumDefaultMode::SchemaOnly,
             elide_option_defaults: false,
+            schema_in_docs: true,
+            string_newtype_conveniences: false,
             patch: true,
             deep_patch: DeepPatchMode::Off,
             emit_style: EmitStyle::Expanded,
@@ -309,7 +346,7 @@ impl Default for StyleConfig {
             attrs: Vec::new(),
             conditional_derives: Vec::new(),
             conditional_attrs: Vec::new(),
-            imports: vec!["use ::serde::{Deserialize, Serialize};".to_string()],
+            imports: Vec::new(),
             types: BTreeMap::new(),
             fields: BTreeMap::new(),
         }
@@ -317,9 +354,15 @@ impl Default for StyleConfig {
 }
 
 impl StyleConfig {
-    /// The `api-client` preset: the data form of
-    /// [`crate::StyleProfile::ApiClient`] (see `profile.rs` for the
-    /// knob-based original this reproduces).
+    /// The `plain` preset: upstream typify output, unchanged. Alias of
+    /// [`Default::default`], named for symmetry with
+    /// [`Self::api_client`].
+    pub fn plain() -> Self {
+        Self::default()
+    }
+
+    /// The `api-client` preset: the ergonomic hand-written-client shape
+    /// (see [`crate::StyleProfile::ApiClient`] for the full description).
     pub fn api_client() -> Self {
         let struct_derives = [
             "Debug",
@@ -331,6 +374,19 @@ impl StyleConfig {
             "Patch",
         ];
         let enum_derives = ["Debug", "Clone", "PartialEq", "Serialize", "Deserialize"];
+        // Newtypes come out of typify for named scalar definitions.
+        // `Default` and `PartialEq` let structs holding them as required
+        // fields derive `Default` / `PartialEq` themselves. Registering
+        // any unconditional newtype derive switches typify to the
+        // verbatim-order path, so the historical base set is restated.
+        let newtype_derives = [
+            "Debug",
+            "Clone",
+            "Default",
+            "PartialEq",
+            "::serde::Serialize",
+            "::serde::Deserialize",
+        ];
 
         StyleConfig {
             optional_fields: OptionalFields::AlwaysOption,
@@ -343,6 +399,8 @@ impl StyleConfig {
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
             elide_option_defaults: true,
+            schema_in_docs: false,
+            string_newtype_conveniences: true,
             patch: true,
             deep_patch: DeepPatchMode::AllOptionStructs,
             emit_style: EmitStyle::Expanded,
@@ -350,7 +408,7 @@ impl StyleConfig {
             derives: DeriveLists {
                 structs: struct_derives.iter().map(|s| s.to_string()).collect(),
                 enums: enum_derives.iter().map(|s| s.to_string()).collect(),
-                newtypes: Vec::new(),
+                newtypes: newtype_derives.iter().map(|s| s.to_string()).collect(),
             },
             attrs: vec![
                 AttrEntry {
@@ -397,6 +455,91 @@ impl StyleConfig {
         }
     }
 
+    /// Apply every typify-knob-backed key to `settings`. The keys typify
+    /// has no knob for — the `patch`/`deep-patch` resolution, `emit-style`,
+    /// `untagged-enum-defaults`, `imports`, and the `[types]`/`[fields]`
+    /// overrides — are consumed by [`crate::patch_plan::PatchPlan`] and
+    /// the post-generation passes instead.
+    pub fn apply_to_settings(&self, settings: &mut TypeSpaceSettings) {
+        if self.optional_fields == OptionalFields::AlwaysOption {
+            settings
+                .with_array_optionality(typify::ArrayOptionality::OptionalIfNotRequired)
+                .with_default_bool_optionality(typify::DefaultBoolOptionality::AlwaysOption)
+                .with_defaulted_field_optionality(typify::DefaultedFieldOptionality::AlwaysOption);
+        }
+        if self.constrained_strings == ConstraintMode::Plain {
+            settings.with_unconstrained_string(true);
+        }
+        if self.integers == ConstraintMode::Plain {
+            settings.with_unconstrained_int(true);
+        }
+        if let Some(date) = &self.date {
+            settings.with_date_type(date);
+        }
+        if let Some(date_time) = &self.date_time {
+            settings.with_date_time_type(date_time);
+        }
+        if let Some(uuid) = &self.uuid {
+            settings.with_uuid_type(uuid);
+        }
+        if let Some(case) = &self.rename_all {
+            settings.with_struct_rename_all(case);
+        }
+        if self.allof == AllOfMode::Compose {
+            settings.with_allof_strategy(typify::AllOfStrategy::Compose);
+        }
+        if self.enum_default == EnumDefaultMode::FirstUnitVariant {
+            settings.with_enum_first_variant_default(true);
+        }
+        if self.elide_option_defaults {
+            settings.with_elide_option_field_defaults(true);
+        }
+        settings.with_schema_in_docs(self.schema_in_docs);
+        settings.with_string_newtype_conveniences(self.string_newtype_conveniences);
+
+        for derive in &self.derives.structs {
+            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::STRUCTS);
+        }
+        for derive in &self.derives.enums {
+            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::ENUMS);
+        }
+        for derive in &self.derives.newtypes {
+            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::NEWTYPES);
+        }
+        for entry in &self.attrs {
+            settings.with_unconditional_attr_at(
+                &entry.attr,
+                entry.position.to_typify(),
+                entry.kinds.to_typify(),
+            );
+        }
+        for entry in &self.conditional_derives {
+            settings.with_conditional_derive_for(
+                &entry.feature,
+                &entry.derive,
+                entry.kinds.to_typify(),
+            );
+        }
+        for entry in &self.conditional_attrs {
+            settings.with_conditional_attr_at(
+                &entry.feature,
+                &entry.attr,
+                entry.position.to_typify(),
+                entry.kinds.to_typify(),
+            );
+        }
+        for (selector, override_) in &self.types {
+            if override_.derives_add.is_empty() {
+                continue;
+            }
+            let mut patch = typify::TypeSpacePatch::default();
+            for derive in &override_.derives_add {
+                patch.with_derive(derive);
+            }
+            settings.with_patch(typify::rust_type_ident(selector), &patch);
+        }
+    }
+
     /// Parse a `codegen.toml` document. The file overrides the given
     /// base preset key-by-key: scalar keys replace, list/table keys
     /// replace wholesale when present (no per-element merging), and
@@ -419,17 +562,12 @@ impl StyleConfig {
 
         let mut config = match parsed.profile.as_deref() {
             Some("api-client") => StyleConfig::api_client(),
-            Some("plain") => StyleConfig::default(),
+            Some("plain") => StyleConfig::plain(),
             Some(other) => bail!("unknown profile {other:?} in codegen.toml"),
             None => base,
         };
 
         if let Some(style) = parsed.style {
-            // Deserialize the [style] table over the preset: serialize
-            // the preset's fields that the table doesn't mention would
-            // require per-key merging; instead we deserialize the table
-            // into a full StyleConfig using the preset as serde defaults
-            // via a manual merge of present keys.
             config = merge_style_table(config, style)?;
         }
         config.types.extend(parsed.types);
@@ -442,31 +580,6 @@ impl StyleConfig {
         let raw = std::fs::read_to_string(path)
             .with_context(|| format!("failed to read config {}", path.display()))?;
         Self::from_toml_str(&raw, base).with_context(|| format!("in {}", path.display()))
-    }
-
-    /// Validate mode combinations the IR engine does not implement yet
-    /// (docs/MIGRATION.md D4). Called once by the engine before lowering.
-    pub(crate) fn validate_supported(&self) -> Result<()> {
-        if self.optional_fields == OptionalFields::Bare {
-            bail!(
-                "style key `optional-fields = \"bare\"` requires defaults-helper \
-                 synthesis the IR engine does not implement yet; use the typify \
-                 engine for bare-field shapes (docs/MIGRATION.md D4)",
-            );
-        }
-        for (key, mode) in [
-            ("constrained-strings", self.constrained_strings),
-            ("integers", self.integers),
-        ] {
-            if mode == ConstraintMode::Validate {
-                bail!(
-                    "style key `{key} = \"validate\"` (validating newtypes) is not \
-                     implemented by the IR engine; use the typify engine \
-                     (docs/MIGRATION.md D3/D4)",
-                );
-            }
-        }
-        Ok(())
     }
 }
 
@@ -493,6 +606,8 @@ fn merge_style_table(mut config: StyleConfig, table: toml::Table) -> Result<Styl
             "allof" => set!(allof),
             "enum-default" => set!(enum_default),
             "elide-option-defaults" => set!(elide_option_defaults),
+            "schema-in-docs" => set!(schema_in_docs),
+            "string-newtype-conveniences" => set!(string_newtype_conveniences),
             "patch" => set!(patch),
             "deep-patch" => set!(deep_patch),
             "emit-style" => set!(emit_style),

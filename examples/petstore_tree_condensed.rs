@@ -1,5 +1,5 @@
 //! Exercises the petstore folder tree generated with
-//! `emit-style = "condensed"` (IR engine): same module layout and trait
+//! `emit-style = "condensed"`: same module layout and trait
 //! surface as `petstore_tree`, but string-enum conversion ladders are
 //! one `impl_string_enum!` invocation each and the per-module `error`
 //! mods are re-exports of the shared `support::error`.
@@ -14,7 +14,7 @@
 //!
 //! ```text
 //! cargo run -- generate --spec specs/petstore.yaml --profile api-client \
-//!     --engine ir --config examples/codegen-condensed.toml \
+//!     --config examples/codegen-condensed.toml \
 //!     --split-request-response \
 //!     --output-dir examples/generated_tree/petstore_condensed
 //! ```

@@ -2,11 +2,15 @@
 //!
 //! This crate drives the local [typify fork](../../typify/FORK_FEATURES.md)
 //! end-to-end: it loads an OpenAPI 3.x document (YAML or JSON), optionally
-//! applies RFC 6902 patch files, lowers the OpenAPI-specific constructs to
-//! plain JSON Schema, runs typify with a configurable style profile, and
-//! writes formatted Rust — as one flat module, partitioned into one
-//! module per OpenAPI operation with a `shared` module for common types,
-//! or — with [`Generator::split_request_response`] — partitioned into
+//! applies RFC 6902 patch files, normalizes the document into a typed
+//! [`spec::Spec`] model and lowers it to plain JSON Schema, runs typify
+//! with a declarative style ([`StyleConfig`]), applies the styling
+//! decisions typify has no knob for as verified AST post-passes
+//! (per-type patch stripping, per-field type overrides, the condensed
+//! emit layout), and writes formatted Rust — as one flat module,
+//! partitioned into one module per OpenAPI operation with a `shared`
+//! module for common types, or — with
+//! [`Generator::split_request_response`] — partitioned into
 //! per-operation `request`/`response` submodules with a role-classified
 //! `shared::{request, response, enums, common}` subtree (see
 //! [`Partition::compute_split`] for the classification policy).
@@ -30,9 +34,29 @@
 //! std::fs::write("src/generated/petstore.rs", rust_source).unwrap();
 //! ```
 //!
-//! Granular control beyond the profile presets goes through
-//! [`Generator::customize`], which exposes the underlying
-//! [`typify::TypeSpaceSettings`].
+//! # Granular control
+//!
+//! Style is data: profiles are [`StyleConfig`] presets, a `codegen.toml`
+//! ([`Generator::config_file`]) overrides any key and adds per-type /
+//! per-field overrides, and [`Generator::style`] is the same surface in
+//! code:
+//!
+//! ```toml
+//! profile = "api-client"
+//!
+//! [style]
+//! emit-style = "condensed"
+//! patch = true
+//!
+//! [types."CategoryRef"]
+//! patch = false               # no Patch derive/companion for this type
+//!
+//! [fields."Pet.category"]
+//! deep-patch = false          # shallow Option<Option<...>> for this field
+//! ```
+//!
+//! Below the data layer, [`Generator::customize`] exposes the underlying
+//! [`typify::TypeSpaceSettings`] directly.
 //!
 //! # Staged pipeline (step-by-step control)
 //!
@@ -76,9 +100,9 @@
 //! openapi-codegen generate --spec specs/petstore.yaml --profile api-client \
 //!     --partition-by-operation --output src/generated/petstore.rs
 //!
-//! # request/response splitting + folder-tree output
+//! # request/response splitting + folder-tree output + config file
 //! openapi-codegen generate --spec specs/petstore.yaml --profile api-client \
-//!     --split-request-response --output-dir src/generated/petstore
+//!     --config codegen.toml --split-request-response --output-dir src/generated/petstore
 //! ```
 //!
 //! # Macro use
@@ -92,11 +116,12 @@
 //! openapi-codegen lower --spec specs/petstore.yaml --output petstore.schema.json
 //! ```
 
+mod condense;
 pub mod config;
 mod generate;
-pub mod ir;
 mod load;
 mod lower;
+mod overrides;
 mod partition;
 mod pipeline;
 mod postprocess;
@@ -105,7 +130,7 @@ pub mod spec;
 mod tree;
 
 pub use config::StyleConfig;
-pub use generate::{Engine, Generator};
+pub use generate::Generator;
 pub use load::{apply_patches_dir, load_spec};
 pub use lower::{lower_to_json_schema, lowered_root_schema};
 pub use partition::{

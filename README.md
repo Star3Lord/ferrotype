@@ -5,19 +5,17 @@ Generate ergonomic Rust types from OpenAPI specs. Point it at an OpenAPI
 fields, `camelCase` serde renames, `#[serde(flatten)]` inheritance,
 `struct_patch` deep patches — partitioned into one module per operation.
 
-Two interchangeable engines run the back half of the pipeline (see
-[docs/MIGRATION.md](docs/MIGRATION.md)):
-
-- **`typify` (default)** — the local
-  [typify fork](../typify/FORK_FEATURES.md), styled through its
-  `TypeSpaceSettings` knobs. Frozen at tag `fork-freeze-20260703`.
-- **`ir`** (`--engine ir` / `Generator::engine(Engine::Ir)`) — the owned
-  `Spec → IR → passes → emitter` pipeline, styled through declarative
-  [`StyleConfig`] data (a `codegen.toml` and/or built-in profile presets).
-  Byte-identical to the typify engine on the checked-in fixtures across
-  every output mode (`tests/parity.rs` is the gate), with per-type and
-  per-field overrides the knob surface never had. Supports the
-  `api-client` profile; the `typify` profile *means* the typify engine.
+The schema-to-Rust core is the local
+[typify fork](../typify/FORK_FEATURES.md) (battle-tested upstream
+semantics plus opt-in ergonomic knobs, kept rebase-clean against
+upstream `main`). Everything typify doesn't own lives here, as data and
+verified AST passes: declarative style ([`StyleConfig`], a
+`codegen.toml`, built-in profile presets), per-type and per-field
+overrides (patch opt-out, deep-patch control, type replacement, module
+placement), the condensed emit layout, operation partitioning, and the
+folder-tree writer. (An experimental in-house IR engine was built,
+audited, and retired in favor of this split — see
+[docs/MIGRATION.md](docs/MIGRATION.md), decision D15.)
 
 ## Pipeline
 
@@ -26,10 +24,9 @@ load (YAML/JSON)
   → patch (RFC 6902 files + Rust hooks)
   → partition (operation reachability → per-op modules + shared)
   → Spec (typed normalization; keeps discriminator/examples)
-      ├─ engine typify: Spec → draft-07 → typify fork (knob profiles)
-      │                  → post-process (Default impls for untagged oneOf)
-      └─ engine ir:     Spec → IR → ordered passes (style as data)
-                         → emitter
+  → draft-07 render → typify fork (StyleConfig → TypeSpaceSettings)
+  → AST post-passes (per-type/per-field overrides, patch stripping,
+     Default synthesis for untagged oneOf, condensed emit style)
   → format (prettyplease) → write (idempotent)
 ```
 
@@ -44,10 +41,18 @@ load (YAML/JSON)
   produces nested `<op>/{request,response}` +
   `shared/{request,response,enums,common}` module paths (see
   [below](#requestresponse-splitting-and-folder-output)).
-- **`src/lower.rs`** — rewrites `#/components/schemas/` refs, converts
-  `nullable: true` to `anyOf [.., null]`, infers missing `type` from
-  `format`, normalizes exclusive bounds, and strips OpenAPI-only metadata.
-- **`src/profile.rs`** — named presets of typify-fork settings.
+- **`src/spec/`** — the typed `Spec` model: dialect-tolerant
+  normalization (3.0.x + Swagger-2.0-converted), preserving
+  `discriminator`/`examples`/operations for future consumers; renders the
+  draft-07 document typify consumes.
+- **`src/config.rs`** — style as data: [`StyleConfig`], the presets, the
+  `codegen.toml` loader, and the mapping onto the fork's
+  `TypeSpaceSettings` knobs.
+- **`src/overrides.rs`** — per-type / per-field override resolution: the
+  deep-patch predicate handed to the fork, patch-machinery stripping,
+  field type replacement, and hard-error selector validation.
+- **`src/condense.rs`** — the condensed emit style, as a token-verified
+  AST transformation (see [below](#readable-output--emit-style)).
 - **`src/postprocess.rs`** — synthesizes `impl Default` for enums typify
   can't default (untagged `oneOf` with no unit variant).
 - **`src/tree.rs`** — the folder-tree writer: splits the generated module
@@ -84,10 +89,10 @@ pub struct CancelBookingRequest {
 
 Consumers of the generated code need `serde`, `serde_with`, and
 `struct-patch` as dependencies, plus an optional `schemars` Cargo feature
-for the cfg-gated `JsonSchema` derives. (On the IR engine the
-`struct_patch` machinery itself is optional, globally or per type — see
-[Style as data](#style-as-data-ir-engine); the typify engine keeps the
-all-or-nothing shape above.)
+for the cfg-gated `JsonSchema` derives. The `struct_patch` machinery
+itself is optional, globally or per type — see
+[Style as data](#style-as-data); with patch fully off the generated code
+has no `struct-patch` dependency at all.
 
 ## Request/response splitting and folder output
 
@@ -299,12 +304,12 @@ Booking spec (`specs/sabre-booking/`) is the real-world fixture: 9
 operations, 257 schemas, Swagger-conversion `allOf` patterns, plus an RFC
 6902 patch documenting a spec/reality discrepancy.
 
-## Style as data (IR engine)
+## Style as data
 
-On the IR engine the style profile is data — `StyleConfig::api_client()`
-is the exact declarative form of the `api-client` knob recipe — and a
-`codegen.toml` can override any of it, plus target individual types and
-fields:
+The style profile is data — `StyleConfig::api_client()` is the exact
+declarative form of the `api-client` knob recipe, applied onto the
+fork's `TypeSpaceSettings` — and a `codegen.toml` can override any of
+it, plus target individual types and fields:
 
 ```toml
 profile = "api-client"
@@ -337,33 +342,41 @@ type = "::my_crate::PetId"
 ```
 
 ```bash
-cargo run -- generate --spec spec.yaml --profile api-client --engine ir \
+cargo run -- generate --spec spec.yaml --profile api-client \
     --config codegen.toml --split-request-response --output-dir src/generated
 ```
+
+How the granular keys land (the fork's knob surface is global-per-kind
+by design, so this crate owns the per-type/per-field decisions): the
+`deep-patch` keys become the predicate handed to the fork's
+`with_deep_patch_filter`, deciding every `#[patch(name = ...)]`
+annotation at the source; `derives-add` rides the fork's per-type
+`with_patch` mechanism; `patch = false` types get their `Patch` derive
+and `patch(...)` attributes stripped in a post-generation AST pass; and
+`type` replacements rewrite the field's AST (its deep-patch annotation
+is withheld, since a replaced type has no known Patch companion).
 
 Unmatched `[types]`/`[fields]` selectors are hard errors, as are
 contradictions the generated code could not satisfy (`patch = false` on
 a non-struct, or a forced `deep-patch = true` whose owner or target
 type is not patchable). When no struct keeps patch support, the
 `use ::struct_patch::Patch;` preamble import is dropped too, so fully
-patch-free output compiles without the `struct-patch` dependency. The
-patch toggles are IR-engine-only: the typify engine keeps the frozen
-fork's all-or-nothing unconditional-derive mechanism.
+patch-free output compiles without the `struct-patch` dependency.
 
-## Readable output / emit style (IR engine)
+## Readable output / emit style
 
 By default every string enum is followed by ~50 lines of mechanical
 impls (`Display`, `FromStr`, the three `TryFrom` forms, `Default`), and
 every partition module carries its own copy of the `error` module —
-the shape the frozen fork emits, which the parity gate pins. That
-burying of types under boilerplate is what `emit-style` addresses:
+typify's native shape, which the goldens pin. That burying of types
+under boilerplate is what `emit-style` addresses:
 
 ```toml
 [style]
 emit-style = "condensed"   # default: "expanded"
 ```
 
-Under `condensed` (IR engine only):
+Under `condensed`:
 
 - **One `support` module per generation unit** (a `support.rs` file at
   the tree root in `--output-dir` mode) holds the single `error`
@@ -397,36 +410,35 @@ impl_string_enum!(FareRuleRestrictionEnum {
   `<module>::error::ConversionError` paths in consumer code keep
   resolving.
 
-Capabilities are identical: the macro expands to exactly the impls the
-expanded style writes out (same trait surface, same error paths — the
-capability-equivalence tests and the checked-in
-`examples/generated_tree/petstore_condensed/` golden pin this), and the
-type items themselves are token-identical between styles. On the Sabre
-tree the condensed style is ~36% fewer lines overall and ~67% fewer in
-`shared/enums.rs`.
+Capabilities are identical, by construction: the condensation is a
+token-verified AST transformation over typify's output — a ladder is
+only replaced after the macro's expansion for the extracted pairs is
+verified token-equal to the impls being removed, and anything
+unrecognized is left expanded. The capability-equivalence tests and the
+checked-in `examples/generated_tree/petstore_condensed/` golden pin
+this, and the type items themselves are token-identical between styles.
+On the Sabre tree the condensed style is ~36% fewer lines overall and
+~67% fewer in `shared/enums.rs`.
 
-`emit-style` defaults to `expanded` in every preset so the parity gate
-against the frozen fork keeps its meaning; flipping to condensed is a
-consumer choice in `codegen.toml` (see decision D14 in
-[docs/MIGRATION.md](docs/MIGRATION.md)). The typify engine has no
-equivalent knob.
+`emit-style` defaults to `expanded` in every preset so the goldens keep
+their meaning; flipping to condensed is a consumer choice in
+`codegen.toml` (see decision D14 in
+[docs/MIGRATION.md](docs/MIGRATION.md)).
 
 From the library, `Generator::style(|s| ...)` is the code-level hook
 (isomorphic to the file: `style.patch`, `TypeOverride::patch`, and
-friends are plain fields) and `Generator::ir_pass(...)` appends custom
-IR passes after the built-in pipeline. Every config key is consumed by
-exactly one named pass (`docs/MIGRATION.md` maps them); the `patch`
-keys are resolved once by the `patchability` pass into a per-type IR
-flag that the `derives-attrs`, `deep-patch`, and `imports` passes read
-(decision D13).
+friends are plain fields), and `Generator::customize(|settings| ...)`
+reaches the raw fork knobs underneath the data layer.
 
 ## Relationship to the typify fork
 
-On the default engine, everything style-related lives in the fork behind
-`TypeSpaceSettings` knobs; this crate sequences the pipeline and picks
-knob values. See
+The schema-to-Rust semantics live in the fork behind opt-in
+`TypeSpaceSettings` knobs; this crate sequences the pipeline, maps
+[`StyleConfig`] data onto those knobs, and owns every decision typify
+structurally can't host (per-type/per-field overrides, condensed
+emission, partitioning, trees). See
 [`../typify/FORK_FEATURES.md`](../typify/FORK_FEATURES.md) for the full
 feature-by-feature mapping to settings, macro keys, and CLI flags. The
-fork is frozen (tag `fork-freeze-20260703`); the IR engine exists to
-retire it, and `tests/parity.rs` holds the two engines identical on the
-fixtures until the default flips.
+fork's defaults match upstream byte-for-byte — its upstream test goldens
+are unchanged — so rebasing it onto upstream `main` stays cheap; every
+deviation is an explicit knob this crate turns.

@@ -8,7 +8,7 @@
 //!   [`RootSchema`](schemars::schema::RootSchema) via
 //!   [`Spec::to_draft07_root`] — byte-identical to the historical in-place
 //!   `Value` lowering (guarded by `tests/spec_model.rs`);
-//! - the IR engine (step 2) lowers it into the IR directly.
+//! - future consumers (operations/client generation) read it directly.
 //!
 //! Unlike the old string surgery, normalization is *structural*: `$ref`
 //! rewrites and metadata stripping happen by field, not by key name, so a

@@ -1,12 +1,12 @@
-//! The optional / per-type `struct_patch` configuration (IR engine;
-//! docs/MIGRATION.md D13): the `[style] patch` baseline, per-type
+//! The optional / per-type `struct_patch` configuration
+//! (docs/MIGRATION.md D13): the `[style] patch` baseline, per-type
 //! `[types."Name"] patch` overrides, cross-type pruning of
 //! `#[patch(name = ...)]` annotations, and the hard errors for
 //! unmatched or contradictory selectors. The typify engine is not
 //! affected — its Patch behavior stays the fork's all-or-nothing
 //! unconditional-derive mechanism.
 
-use openapi_codegen::{Engine, Generator, StyleConfig};
+use openapi_codegen::{Generator, StyleConfig};
 
 /// Write `document` (an OpenAPI JSON document) to a temp spec file and
 /// return an IR-engine generator for it.
@@ -17,7 +17,7 @@ fn generator_for(name: &str, document: serde_json::Value) -> Generator {
     std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
     Generator::new(path)
         .profile(openapi_codegen::StyleProfile::ApiClient)
-        .engine(Engine::Ir)
+        
 }
 
 /// A small spec with cross-references: `Order` holds `Option<Category>`

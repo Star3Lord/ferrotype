@@ -105,7 +105,8 @@ pub fn plan_file_tree(
                 attrs: Vec::new(),
                 items,
             };
-            let contents = format!("{header}{}", prettyplease::unparse(&file));
+            let body = crate::ir::polish_rendered(prettyplease::unparse(&file));
+            let contents = format!("{header}{body}");
             (rel_path, contents)
         })
         .collect()

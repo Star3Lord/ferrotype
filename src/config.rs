@@ -154,6 +154,26 @@ pub enum DeepPatchMode {
     Off,
 }
 
+/// How mechanical impls and shared helpers are laid out in the output.
+/// Consumed by `EmitStylePass` (which materializes it onto the IR for
+/// the emitter). See docs/MIGRATION.md D14 and "Readable output" in the
+/// README.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum EmitStyle {
+    /// Every impl written out per type and an `error` module duplicated
+    /// into every partition module — byte-identical to the frozen
+    /// typify fork (the parity-gate shape). The default.
+    #[default]
+    Expanded,
+    /// One `support` module per generation unit holding the shared
+    /// `error` module and an `impl_string_enum!` macro; each string
+    /// enum's conversion-impl ladder becomes a single macro invocation
+    /// and per-module `error` mods become one-line re-exports. Same
+    /// trait surface, same paths, dramatically shorter files.
+    Condensed,
+}
+
 /// Ordered derive lists per type kind. Consumed by `DeriveAttrPass`.
 /// An empty list means "upstream base set" (`::serde::Serialize`,
 /// `::serde::Deserialize`, `Debug`, `Clone`, lexicographically sorted).
@@ -235,6 +255,9 @@ pub struct StyleConfig {
     pub patch: bool,
     /// `DeepPatchPass`.
     pub deep_patch: DeepPatchMode,
+    /// `EmitStylePass`: expanded (typify-parity) or condensed
+    /// (macro + shared `support` module) output layout.
+    pub emit_style: EmitStyle,
     /// `ImplSynthPass`: synthesize `impl Default` for untagged enums
     /// with no unit variant (the `postprocess.rs` behavior).
     pub untagged_enum_defaults: bool,
@@ -280,6 +303,7 @@ impl Default for StyleConfig {
             elide_option_defaults: false,
             patch: true,
             deep_patch: DeepPatchMode::Off,
+            emit_style: EmitStyle::Expanded,
             untagged_enum_defaults: false,
             derives: DeriveLists::default(),
             attrs: Vec::new(),
@@ -321,6 +345,7 @@ impl StyleConfig {
             elide_option_defaults: true,
             patch: true,
             deep_patch: DeepPatchMode::AllOptionStructs,
+            emit_style: EmitStyle::Expanded,
             untagged_enum_defaults: true,
             derives: DeriveLists {
                 structs: struct_derives.iter().map(|s| s.to_string()).collect(),
@@ -470,6 +495,7 @@ fn merge_style_table(mut config: StyleConfig, table: toml::Table) -> Result<Styl
             "elide-option-defaults" => set!(elide_option_defaults),
             "patch" => set!(patch),
             "deep-patch" => set!(deep_patch),
+            "emit-style" => set!(emit_style),
             "untagged-enum-defaults" => set!(untagged_enum_defaults),
             "derives" => set!(derives),
             "attrs" => set!(attrs),

@@ -303,8 +303,13 @@ pub(crate) fn generated_header(spec_path: impl AsRef<Path>) -> String {
 /// of [`Generator::generate_to_string`](crate::Generator::generate_to_string),
 /// so an unedited [`GeneratedTypes::into_file`] result rendered here is
 /// byte-identical to the one-shot output.
+///
+/// (Output containing the IR engine's condensed-style `impl_string_enum`
+/// macro additionally gets its macro definition and invocations
+/// re-formatted readably — a token-preserving text fix-up that is a
+/// no-op for everything else. See `ir::emit::polish_rendered`.)
 pub fn render_file(file: &syn::File, spec_path: impl AsRef<Path>) -> String {
-    let body = prettyplease::unparse(file);
+    let body = crate::ir::polish_rendered(prettyplease::unparse(file));
     let header = generated_header(spec_path);
     format!("{header}{body}")
 }

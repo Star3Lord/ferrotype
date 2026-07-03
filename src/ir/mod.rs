@@ -17,6 +17,7 @@ mod lower;
 pub mod passes;
 
 pub use emit::{emit_single_file, emit_tokens};
+pub(crate) use emit::polish_rendered;
 pub use lower::lower_spec;
 
 use crate::spec::Origin;
@@ -273,6 +274,10 @@ pub struct Ir {
     /// Modules that must exist even when empty (import-preamble
     /// referenced), filled by `PartitionPass`.
     pub materialized_modules: std::collections::BTreeSet<String>,
+    /// Output layout for mechanical impls and shared helpers, resolved
+    /// by `EmitStylePass` from the `emit-style` config key (never read
+    /// from config by the emitter). See docs/MIGRATION.md D14.
+    pub emit_style: crate::config::EmitStyle,
 }
 
 impl Ir {

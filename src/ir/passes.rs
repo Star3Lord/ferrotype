@@ -36,6 +36,7 @@ pub trait Pass {
 /// The built-in pipeline, in order.
 pub fn standard_pipeline() -> Vec<Box<dyn Pass>> {
     vec![
+        Box::new(EmitStylePass),
         Box::new(ResolveAliasPass),
         Box::new(PatchabilityPass),
         Box::new(OptionalityPass),
@@ -60,6 +61,23 @@ pub fn run_pipeline(
             .with_context(|| format!("in pass {}", pass.name()))?;
     }
     Ok(())
+}
+
+/// Materialize the `emit-style` config key onto the IR — its single
+/// consumer (docs/MIGRATION.md D14). The emitter reads
+/// [`Ir::emit_style`](super::Ir), never the config, mirroring how
+/// `PatchabilityPass` resolves the `patch` keys into IR state.
+struct EmitStylePass;
+
+impl Pass for EmitStylePass {
+    fn name(&self) -> &'static str {
+        "emit-style"
+    }
+
+    fn run(&self, ir: &mut Ir, cx: &PassCx<'_>) -> Result<()> {
+        ir.emit_style = cx.style.emit_style;
+        Ok(())
+    }
 }
 
 /// Replace alias-typed references with their targets everywhere, so

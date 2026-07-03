@@ -53,6 +53,9 @@ load (YAML/JSON)
   field type replacement, and hard-error selector validation.
 - **`src/condense.rs`** — the condensed emit style, as a token-verified
   AST transformation (see [below](#readable-output--emit-style)).
+- **`src/render.rs`** — the shared post-render passes both output modes
+  finish with: the condensed style's macro polish and the item-spacing
+  pass (a blank line between adjacent items, token-verified).
 - **`src/postprocess.rs`** — synthesizes `impl Default` for enums typify
   can't default (untagged `oneOf` with no unit variant).
 - **`src/tree.rs`** — the folder-tree writer: splits the generated module
@@ -365,11 +368,20 @@ patch-free output compiles without the `struct-patch` dependency.
 
 ## Readable output / emit style
 
-By default every string enum is followed by ~50 lines of mechanical
-impls (`Display`, `FromStr`, the three `TryFrom` forms, `Default`), and
-every partition module carries its own copy of the `error` module —
-typify's native shape, which the goldens pin. That burying of types
-under boilerplate is what `emit-style` addresses:
+Regardless of emit style, every rendered file separates adjacent items
+with a single blank line — prettyplease alone packs one item flush
+against the next type's doc comment. Runs of one-line declarations
+(the `use` preamble, a root `mod.rs`'s `pub mod x;` block) stay tight.
+The pass is token-verified whitespace-only: the spaced output must
+re-parse to the identical token stream or rendering falls back to the
+packed form (`src/render.rs`, decision D16 in
+[docs/MIGRATION.md](docs/MIGRATION.md)).
+
+Beyond spacing: by default every string enum is followed by ~50 lines
+of mechanical impls (`Display`, `FromStr`, the three `TryFrom` forms,
+`Default`), and every partition module carries its own copy of the
+`error` module — typify's native shape, which the goldens pin. That
+burying of types under boilerplate is what `emit-style` addresses:
 
 ```toml
 [style]
@@ -398,6 +410,7 @@ pub enum FareRuleRestrictionEnum {
     #[serde(rename = "CHANGEABLE_AND_REFUNDABLE")]
     ChangeableAndRefundable,
 }
+
 impl_string_enum!(FareRuleRestrictionEnum {
     Changeable => "CHANGEABLE",
     Refundable => "REFUNDABLE",

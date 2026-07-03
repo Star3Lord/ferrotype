@@ -6,11 +6,14 @@ use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -19,6 +22,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -27,17 +31,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Allows pricing of the booking by incorporating account codes.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -53,6 +60,7 @@ pub struct AccountCode {
     ///If `true` system will force pricing with desired account codes.
     pub force_account_codes: ::std::option::Option<bool>,
 }
+
 ///Contains Adjusted Selling Level pricing qualifiers.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -72,6 +80,7 @@ pub struct AdjustedSellingLevel {
     ///If `true` system will price the booking and provide breakdown of Adjusted Selling Level amounts.
     pub return_breakdown: ::std::option::Option<bool>,
 }
+
 ///Contains agency information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -92,6 +101,7 @@ pub struct Agency {
     #[patch(name = "Option<TicketingTimeLimitPolicyPatch>")]
     pub ticketing_time_limit_policy: ::std::option::Option<TicketingTimeLimitPolicy>,
 }
+
 ///Contains details of a particular ancillary service to be booked.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -137,6 +147,7 @@ pub struct BookAncillary {
     ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline providing the service. Mutually exclusive with the `source` property.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains baggage allowance information (either its weight or the number of pieces).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -154,6 +165,7 @@ pub struct BookBaggageAllowance {
     ///The total weight of baggage measured in kilograms [kg]. Mutually exclusive with the `baggagePieces` property.
     pub total_weight_in_kilograms: ::std::option::Option<i32>,
 }
+
 ///Contains contact information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -173,6 +185,7 @@ pub struct BookContactInformation {
     ///Lists formatted phone numbers of travelers or vendors.
     pub phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }
+
 ///Contains details of a particular seat to book.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -188,6 +201,7 @@ pub struct BookGenericSeat {
     ///The traveler index that is matched with the particular seat number.
     pub traveler_index: i32,
 }
+
 ///Contains details of identity documents (such as passport or SFPD).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -237,6 +251,7 @@ pub struct BookIdentityDocument {
     ///The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains required and optional fields needed to retrieve the profile information needed to complete a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -258,6 +273,7 @@ pub struct BookProfile {
     ///The unique profile ID number. Used to blind the move profile into the AAA. Cannot combine with `profileName`. Either `profileName or `domainId` need to be used in order to retrieve a profile.
     pub unique_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a remark to add to the booking. Please note that the `PRINT_ON_TICKET`, `FILLER_STRIP`, `INTERFACE`, and `FORM_OF_PAYMENT` remark types are currently not supported. The `FORM_OF_PAYMENT` remark type is automatically added to a booking upon populating the `formsOfPayment` array.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -273,6 +289,7 @@ pub struct BookRemark {
     #[patch(name = "Option<QueuePatch>")]
     pub queue_placement: ::std::option::Option<Queue>,
 }
+
 ///Contains details of a particular seat to book or a preferred area in the cabin.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -288,6 +305,7 @@ pub struct BookSeat {
     ///Lists seating area preferences. Cannot be used with `number`. You can combine a maximum of three non-conflicting values, such as `FRONT` and `LEFT_SIDE`, etc.
     pub area_preferences: ::std::option::Option<::std::vec::Vec<SeatAreaPreferenceEnum>>,
 }
+
 ///Contains details of a particular seat to book. Applicable for NDC flights only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -303,6 +321,7 @@ pub struct BookSeatOffer {
     ///The seat availability offer item ID. Applicable for NDC flights only.
     pub seat_offer_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the special service request (SSR) message sent to an airline. The message may contain traveler preferences or mandatory/optional information directed to the airline.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -320,6 +339,7 @@ pub struct BookSpecialService {
     ///The text of the special service. Some of the special service types require additional description, which is mandatory to distinguish product characteristics on the airline's side.
     pub message: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains traveler information. Multiple travelers are supported when you book by passing flight details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -367,6 +387,7 @@ pub struct BookTraveler {
     ///If `true`, traveler’s contact type included in the order is set to Notification type. Required by some airlines (e.g., Hawaiian). Applicable to NDC content only.
     pub use_notification_contact_type: ::std::option::Option<bool>,
 }
+
 ///Contains a brand code to use for booking pricing.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -382,6 +403,7 @@ pub struct BrandedFare {
     ///Lists the indices of flights within a booking.
     pub flight_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Identifies the hotel payment policy.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -391,6 +413,7 @@ pub enum CarPaymentPolicyEnum {
     #[serde(rename = "GUARANTEE")]
     Guarantee,
 }
+
 impl ::std::fmt::Display for CarPaymentPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -399,6 +422,7 @@ impl ::std::fmt::Display for CarPaymentPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CarPaymentPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -411,6 +435,7 @@ impl ::std::str::FromStr for CarPaymentPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CarPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -419,6 +444,7 @@ impl ::std::convert::TryFrom<&str> for CarPaymentPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CarPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -427,6 +453,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CarPaymentPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CarPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -435,11 +462,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CarPaymentPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CarPaymentPolicyEnum {
     fn default() -> Self {
         Self::Deposit
     }
 }
+
 ///Contains car information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -476,6 +505,7 @@ pub struct CarToBook {
     ///The traveler index that is associated with the car booking.
     pub traveler_index: ::std::option::Option<i32>,
 }
+
 ///Identifies the comparison method.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -489,6 +519,7 @@ pub enum ComparisonTypeEnum {
     #[serde(rename = "DECREASE_BY_PERCENT")]
     DecreaseByPercent,
 }
+
 impl ::std::fmt::Display for ComparisonTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -499,6 +530,7 @@ impl ::std::fmt::Display for ComparisonTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for ComparisonTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -513,6 +545,7 @@ impl ::std::str::FromStr for ComparisonTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for ComparisonTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -521,6 +554,7 @@ impl ::std::convert::TryFrom<&str> for ComparisonTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for ComparisonTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -529,6 +563,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for ComparisonTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for ComparisonTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -537,11 +572,13 @@ impl ::std::convert::TryFrom<::std::string::String> for ComparisonTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for ComparisonTypeEnum {
     fn default() -> Self {
         Self::IncreaseByAmount
     }
 }
+
 ///Contains information to price the booking by incorporating corporate fares.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -557,6 +594,7 @@ pub struct CorporateFare {
     ///If `true` system will force pricing with corporate fares.
     pub force_corporate_id: ::std::option::Option<bool>,
 }
+
 ///Contains required and optional elements to make a booking request.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -610,6 +648,7 @@ pub struct CreateBookingRequest {
     ///Lists details of the travelers' employers.
     pub travelers_employers: ::std::option::Option<::std::vec::Vec<TravelersEmployer>>,
 }
+
 /**Identifies an error handling policy. Can be:
  `HALT_ON_ERROR` - stop processing upon encountering any error from a downline service.
  `DO_NOT_HALT_ON_FLIGHT_PRICING_ERROR` - continue upon encountering a pricing error (only ATPCO/traditional bookings).
@@ -639,6 +678,7 @@ pub enum CreateErrorPolicyEnum {
     #[serde(rename = "DO_NOT_HALT_ON_IDENTITY_DOCUMENT_WARNING")]
     DoNotHaltOnIdentityDocumentWarning,
 }
+
 impl ::std::fmt::Display for CreateErrorPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -667,6 +707,7 @@ impl ::std::fmt::Display for CreateErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CreateErrorPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -695,6 +736,7 @@ impl ::std::str::FromStr for CreateErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CreateErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -703,6 +745,7 @@ impl ::std::convert::TryFrom<&str> for CreateErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CreateErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -711,6 +754,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CreateErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CreateErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -719,11 +763,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CreateErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CreateErrorPolicyEnum {
     fn default() -> Self {
         CreateErrorPolicyEnum::HaltOnError
     }
 }
+
 ///Identifies the fare restriction type.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -735,6 +781,7 @@ pub enum FareRuleRestrictionEnum {
     #[serde(rename = "CHANGEABLE_AND_REFUNDABLE")]
     ChangeableAndRefundable,
 }
+
 impl ::std::fmt::Display for FareRuleRestrictionEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -744,6 +791,7 @@ impl ::std::fmt::Display for FareRuleRestrictionEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FareRuleRestrictionEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -757,6 +805,7 @@ impl ::std::str::FromStr for FareRuleRestrictionEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FareRuleRestrictionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -765,6 +814,7 @@ impl ::std::convert::TryFrom<&str> for FareRuleRestrictionEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FareRuleRestrictionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -773,6 +823,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FareRuleRestrictionEnum
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FareRuleRestrictionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -781,11 +832,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FareRuleRestrictionEnum 
         value.parse()
     }
 }
+
 impl ::std::default::Default for FareRuleRestrictionEnum {
     fn default() -> Self {
         Self::Changeable
     }
 }
+
 ///Contains details of all flights to book.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -807,6 +860,7 @@ pub struct FlightDetails {
     ///If true, the system will attempt to rebook unconfirmed flights. If any of the booked flights returns an unacceptable status code (as defined by `HaltOnFlightStatusCodeEnum`), the system will cancel them and rebook them in the lowest available fare. If the status codes remain unacceptable after the process has completed, the system will stop processing and return an error message. `retryBookingUnconfirmedFlights` may result in a price increase.
     pub retry_booking_unconfirmed_flights: ::std::option::Option<bool>,
 }
+
 ///Contains required and optional fields needed to make an NDC air booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -824,6 +878,7 @@ pub struct FlightOffer {
     ///The `offerItem` list selected by a specific traveler.
     pub selected_offer_items: ::std::vec::Vec<::std::string::String>,
 }
+
 ///Contains flight information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -864,6 +919,7 @@ pub struct FlightToBook {
     ///The three-letter IATA airport code of the destination airport.
     pub to_airport_code: ::std::string::String,
 }
+
 ///Identifies the booking method for a flight. `ATPCO` is the traditional booking method. `LCC` is the instant purchase booking method common across low cost carriers such as `U2` or `FR`. If not specified, defaults to `ATPCO`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -873,6 +929,7 @@ pub enum FlightToBookSourceEnum {
     #[serde(rename = "LCC")]
     Lcc,
 }
+
 impl ::std::fmt::Display for FlightToBookSourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -881,6 +938,7 @@ impl ::std::fmt::Display for FlightToBookSourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FlightToBookSourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -893,6 +951,7 @@ impl ::std::str::FromStr for FlightToBookSourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FlightToBookSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -901,6 +960,7 @@ impl ::std::convert::TryFrom<&str> for FlightToBookSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FlightToBookSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -909,6 +969,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FlightToBookSourceEnum 
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FlightToBookSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -917,11 +978,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FlightToBookSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FlightToBookSourceEnum {
     fn default() -> Self {
         Self::Atpco
     }
 }
+
 ///Identifies flight status code that was considered unacceptable. Refer to the [Sabre Central Status Codes page](https://central.sabre.com/s/article/status-codes---overview) for more information on different status codes.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -943,6 +1006,7 @@ pub enum HaltOnFlightStatusCodeEnum {
     #[serde(rename = "HL")]
     Hl,
 }
+
 impl ::std::fmt::Display for HaltOnFlightStatusCodeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -957,6 +1021,7 @@ impl ::std::fmt::Display for HaltOnFlightStatusCodeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for HaltOnFlightStatusCodeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -975,6 +1040,7 @@ impl ::std::str::FromStr for HaltOnFlightStatusCodeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for HaltOnFlightStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -983,6 +1049,7 @@ impl ::std::convert::TryFrom<&str> for HaltOnFlightStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for HaltOnFlightStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -991,6 +1058,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for HaltOnFlightStatusCodeE
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for HaltOnFlightStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -999,11 +1067,13 @@ impl ::std::convert::TryFrom<::std::string::String> for HaltOnFlightStatusCodeEn
         value.parse()
     }
 }
+
 impl ::std::default::Default for HaltOnFlightStatusCodeEnum {
     fn default() -> Self {
         Self::No
     }
 }
+
 ///Contains hotel information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1030,6 +1100,7 @@ pub struct HotelToBook {
     ///If true, the hotel originally sourced from the GDS will be booked using the Content Services for Lodging (CSL) booking path instead of the legacy path (low level services).
     pub use_csl: ::std::option::Option<bool>,
 }
+
 ///Contains Automated Net Remit pricing qualifiers. Net Remit is used to arrange the payment of an extra commission that is over and above the standard commission. This extra commission is payable by the validating carrier through BSP reports.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1051,6 +1122,7 @@ pub struct NetRemit {
     ///The value code used to enter a manual Net Remit code.
     pub net_remit_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a desired `passengerCode` and the quantity used for pricing.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1068,6 +1140,7 @@ pub struct PassengerPricing {
     ///Identifies the type (age) of the traveler. To book a flight that includes infant travelers, pass `INF`. Pass `INY` to indicate an infant without an assigned seat, or pass `INS` to indicate an infant with a seat.
     pub passenger_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Identifies the passenger status code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1079,6 +1152,7 @@ pub enum PassengerStatusEnum {
     #[serde(rename = "EMPLOYEE")]
     Employee,
 }
+
 impl ::std::fmt::Display for PassengerStatusEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1088,6 +1162,7 @@ impl ::std::fmt::Display for PassengerStatusEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PassengerStatusEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1101,6 +1176,7 @@ impl ::std::str::FromStr for PassengerStatusEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PassengerStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1109,6 +1185,7 @@ impl ::std::convert::TryFrom<&str> for PassengerStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PassengerStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1117,6 +1194,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PassengerStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PassengerStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1125,11 +1203,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PassengerStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PassengerStatusEnum {
     fn default() -> Self {
         Self::Resident
     }
 }
+
 ///Identifies the type of the passenger's passport document. Must be combined with the `documentType` parameter set to `PASSPORT`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1156,6 +1236,7 @@ pub enum PassportTypeEnum {
     SingleSheetEmergencyPassport,
     Passport,
 }
+
 impl ::std::fmt::Display for PassportTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1175,6 +1256,7 @@ impl ::std::fmt::Display for PassportTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PassportTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1196,6 +1278,7 @@ impl ::std::str::FromStr for PassportTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PassportTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1204,6 +1287,7 @@ impl ::std::convert::TryFrom<&str> for PassportTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PassportTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1212,6 +1296,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PassportTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PassportTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1220,11 +1305,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PassportTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PassportTypeEnum {
     fn default() -> Self {
         Self::NationalPassport
     }
 }
+
 ///Contains required and optional fields needed to pass payment information necessary to complete the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1240,6 +1327,7 @@ pub struct Payment {
     ///Contains all the payment methods that will be associated to the booking.
     pub forms_of_payment: ::std::option::Option<::std::vec::Vec<FormOfPayment>>,
 }
+
 ///Contains penalty information applied to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1255,6 +1343,7 @@ pub struct PenaltyRestriction {
     pub penalty_amount: ::std::option::Option<PenaltyRestrictionAmount>,
     pub restriction_type: FareRuleRestrictionEnum,
 }
+
 ///Contains penalty amount information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1268,6 +1357,7 @@ pub struct PenaltyRestrictionAmount {
     ///The penalty amount.
     pub amount: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains details of the acceptable booking price threshold that will be validated against. If the threshold is exceeded, system stops processing and terminates the transaction.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1286,6 +1376,7 @@ pub struct PriceComparison {
     ///The acceptable percent threshold that the desired amount can exceed. Cannot be combined with `amount`.
     pub percent: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains optional fields needed to pass pricing information that may be necessary to complete the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1301,6 +1392,7 @@ pub struct PricingDetails {
     #[patch(name = "Option<PricingQualifiersPatch>")]
     pub qualifiers: ::std::option::Option<PricingQualifiers>,
 }
+
 ///Contains all optional pricing qualifiers.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1393,6 +1485,7 @@ pub struct PricingQualifiers {
     ///If `true`, the booking will be priced by incorporating a round-the-world or circle trip fare.
     pub use_round_the_world_fare: ::std::option::Option<bool>,
 }
+
 ///Contains qualifier fields that allow pricing a booking by incorporating fares linked to a specific Retailer Rule code.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1408,6 +1501,7 @@ pub struct RetailerRule {
     ///The Retailer Rule Qualifier list.
     pub qualifiers: ::std::vec::Vec<::std::string::String>,
 }
+
 ///Contains room extra information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1425,6 +1519,7 @@ pub struct RoomExtra {
     ///Identifies the type of the room extra. Currently supported types are `26` - Crib, `91` - Roll-away Bed, `196` - Extra Person.
     pub room_extra_type: i32,
 }
+
 ///Contains details of a hotel room to be booked.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1446,6 +1541,7 @@ pub struct RoomToBook {
     ///Index of the traveler within the `travelers` list. Indicates which travelers will be booked into a particular room. It is assumed that the first traveler will be considered the lead guest.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Identifies area preference. Cannot be combined with `number`. You can combine a maximum of three non-conflicting values such as `FRONT` and `LEFT_SIDE`, etc.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1465,6 +1561,7 @@ pub enum SeatAreaPreferenceEnum {
     #[serde(rename = "WINDOW")]
     Window,
 }
+
 impl ::std::fmt::Display for SeatAreaPreferenceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1478,6 +1575,7 @@ impl ::std::fmt::Display for SeatAreaPreferenceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for SeatAreaPreferenceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1495,6 +1593,7 @@ impl ::std::str::FromStr for SeatAreaPreferenceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for SeatAreaPreferenceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1503,6 +1602,7 @@ impl ::std::convert::TryFrom<&str> for SeatAreaPreferenceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for SeatAreaPreferenceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1511,6 +1611,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for SeatAreaPreferenceEnum 
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for SeatAreaPreferenceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1519,11 +1620,13 @@ impl ::std::convert::TryFrom<::std::string::String> for SeatAreaPreferenceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for SeatAreaPreferenceEnum {
     fn default() -> Self {
         Self::Aisle
     }
 }
+
 ///Contains a desired fare basis code with complete auto-pricing validation and associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1539,6 +1642,7 @@ pub struct SpecificFare {
     ///Lists the indices of flights within a booking.
     pub flight_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Identifies general information about the booking ticket date.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1552,6 +1656,7 @@ pub enum TicketingPolicyEnum {
     #[serde(rename = "TICKETING_TIME_LIMIT")]
     TicketingTimeLimit,
 }
+
 impl ::std::fmt::Display for TicketingPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1562,6 +1667,7 @@ impl ::std::fmt::Display for TicketingPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TicketingPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1576,6 +1682,7 @@ impl ::std::str::FromStr for TicketingPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TicketingPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1584,6 +1691,7 @@ impl ::std::convert::TryFrom<&str> for TicketingPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TicketingPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1592,6 +1700,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TicketingPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TicketingPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1600,11 +1709,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TicketingPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TicketingPolicyEnum {
     fn default() -> Self {
         Self::Today
     }
 }
+
 ///Contains information necessary to request time limit policies for tickets. This is used by travel agencies to request the first airline in the air booking to issue the tickets.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1622,6 +1733,7 @@ pub struct TicketingTimeLimitPolicy {
     ///The ticketing time in `HH:MM` format.
     pub ticketing_time: ::std::option::Option<::std::string::String>,
 }
+
 ///Identifies the title used by a traveler.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1645,6 +1757,7 @@ pub enum TitleEnum {
     Duchess,
     Prof,
 }
+
 impl ::std::fmt::Display for TitleEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1669,6 +1782,7 @@ impl ::std::fmt::Display for TitleEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TitleEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1697,6 +1811,7 @@ impl ::std::str::FromStr for TitleEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TitleEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1705,6 +1820,7 @@ impl ::std::convert::TryFrom<&str> for TitleEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TitleEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1713,6 +1829,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TitleEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TitleEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1721,6 +1838,7 @@ impl ::std::convert::TryFrom<::std::string::String> for TitleEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TitleEnum {
     fn default() -> Self {
         Self::Mr

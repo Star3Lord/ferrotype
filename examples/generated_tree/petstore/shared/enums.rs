@@ -3,11 +3,14 @@
 
 use ::serde::{Deserialize, Serialize};
 use ::struct_patch::Patch;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -16,6 +19,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -24,17 +28,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///`PetStatus`
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -46,6 +53,7 @@ pub enum PetStatus {
     #[serde(rename = "sold")]
     Sold,
 }
+
 impl ::std::fmt::Display for PetStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -55,6 +63,7 @@ impl ::std::fmt::Display for PetStatus {
         }
     }
 }
+
 impl ::std::str::FromStr for PetStatus {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -68,6 +77,7 @@ impl ::std::str::FromStr for PetStatus {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PetStatus {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -76,6 +86,7 @@ impl ::std::convert::TryFrom<&str> for PetStatus {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PetStatus {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -84,6 +95,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PetStatus {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PetStatus {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -92,6 +104,7 @@ impl ::std::convert::TryFrom<::std::string::String> for PetStatus {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PetStatus {
     fn default() -> Self {
         Self::Available

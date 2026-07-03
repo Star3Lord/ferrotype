@@ -6,11 +6,14 @@ use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -19,6 +22,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -27,17 +31,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains baggage allowance information (either its weight or the number of pieces) and associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -55,6 +62,7 @@ pub struct FulfillBaggageAllowance {
     ///The total weight of baggage measured in kilograms [kg]. Mutually exclusive with the `baggagePieces` property.
     pub total_weight_in_kilograms: ::std::option::Option<i32>,
 }
+
 ///Contains a brand code to use for the ticketing operation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -70,6 +78,7 @@ pub struct FulfillBrandedFare {
     ///Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
+
 ///Identifies the type of the document to print during the fulfillment process. Can be `Invoice`, `Electronic Ticketing Receipt`, or `All` (prints both the invoice and the electronic ticketing receipt).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -79,6 +88,7 @@ pub enum FulfillDocumentsEnum {
     ElectronicTicketingReceipt,
     All,
 }
+
 impl ::std::fmt::Display for FulfillDocumentsEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -90,6 +100,7 @@ impl ::std::fmt::Display for FulfillDocumentsEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FulfillDocumentsEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -103,6 +114,7 @@ impl ::std::str::FromStr for FulfillDocumentsEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FulfillDocumentsEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -111,6 +123,7 @@ impl ::std::convert::TryFrom<&str> for FulfillDocumentsEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FulfillDocumentsEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -119,6 +132,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FulfillDocumentsEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FulfillDocumentsEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -127,11 +141,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FulfillDocumentsEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FulfillDocumentsEnum {
     fn default() -> Self {
         Self::Invoice
     }
 }
+
 ///Identifies the type of error handling policy used by the Fulfill Flight Tickets service. Can be `ALLOW_PARTIAL_FULFILLMENT` (continues processing upon encountering any error from downline services during ticket issuance) or `HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR` (stops processing if the minimum connecting time between flights is not met).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -141,6 +157,7 @@ pub enum FulfillErrorPolicyEnum {
     #[serde(rename = "HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR")]
     HaltOnInvalidMinimumConnectingTimeError,
 }
+
 impl ::std::fmt::Display for FulfillErrorPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -151,6 +168,7 @@ impl ::std::fmt::Display for FulfillErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FulfillErrorPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -165,6 +183,7 @@ impl ::std::str::FromStr for FulfillErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FulfillErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -173,6 +192,7 @@ impl ::std::convert::TryFrom<&str> for FulfillErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FulfillErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -181,6 +201,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FulfillErrorPolicyEnum 
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FulfillErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -189,11 +210,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FulfillErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FulfillErrorPolicyEnum {
     fn default() -> Self {
         FulfillErrorPolicyEnum::AllowPartialFulfillment
     }
 }
+
 ///Contains details of a form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -220,6 +243,7 @@ pub struct FulfillFormOfPayment {
     ///The customer account code of a virtual card. Use with `VIRTUAL_CARD`.
     pub virtual_card_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Identifies the type of the form of payment supported for fulfillment. Can be `CASH`, `CHECK`, `PAYMENTCARD`, `VIRTUAL_CARD`, `INVOICE`, `MISCELLANEOUS` (must be activated by the agency; requires a specific payment credit code), or `INSTALLMENTS` (applies only for BSP Brazil customers and refers to payment by means of card installments commonly referred to as "parcelado").
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -239,6 +263,7 @@ pub enum FulfillFormOfPaymentTypeEnum {
     #[serde(rename = "INVOICE")]
     Invoice,
 }
+
 impl ::std::fmt::Display for FulfillFormOfPaymentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -252,6 +277,7 @@ impl ::std::fmt::Display for FulfillFormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FulfillFormOfPaymentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -269,6 +295,7 @@ impl ::std::str::FromStr for FulfillFormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FulfillFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -277,6 +304,7 @@ impl ::std::convert::TryFrom<&str> for FulfillFormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FulfillFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -285,6 +313,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FulfillFormOfPaymentTyp
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FulfillFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -293,11 +322,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FulfillFormOfPaymentType
         value.parse()
     }
 }
+
 impl ::std::default::Default for FulfillFormOfPaymentTypeEnum {
     fn default() -> Self {
         Self::Paymentcard
     }
 }
+
 ///Contains the automated Net Remit ticketing qualifiers. Net Remit is used to arrange the payment of an additional commission above the standard commission amount. This extra commission is payable by the validating carrier through the BSP settlement cycle.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -325,6 +356,7 @@ pub struct FulfillNetRemit {
     ///The tour code to use during Net Remit ticketing.
     pub tour_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains all optional ticketing qualifiers to use during the fulfillment process.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -373,6 +405,7 @@ pub struct FulfillQualifiers {
     ///Lists ticket validity dates.
     pub validity_dates: ::std::option::Option<::std::vec::Vec<ValidityPeriod>>,
 }
+
 ///Contains a desired fare basis code with complete auto-pricing validation and associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -388,6 +421,7 @@ pub struct FulfillSpecificFare {
     ///Lists flights associated with the brand code referenced by their `itemId`.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
+
 ///Contains strong customer authentication details for a payment card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -401,6 +435,7 @@ pub struct FulfillStrongCustomerAuthentication {
     ///The channel in which a payment transaction was initiated. Can be `MO` (Mail Order), `TO` (Telephone Order), or `EC` (eCommerce).
     pub channel_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains required and optional elements to fulfill tickets and EMDs.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -450,6 +485,7 @@ pub struct FulfillTicketsRequest {
     ///Lists information about the travelers.
     pub travelers: ::std::option::Option<::std::vec::Vec<TravelerName>>,
 }
+
 ///Contains ticketing details related to a given document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -469,6 +505,7 @@ pub struct FulfillmentDetails {
     #[patch(name = "Option<FulfillQualifiersPatch>")]
     pub ticketing_qualifiers: ::std::option::Option<FulfillQualifiers>,
 }
+
 ///Contains details of a so-called future processing or future pricing line (FP).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -486,6 +523,7 @@ pub struct FutureProcessing {
     ///The item number of the traveler in the `travelers` array to whom the future processing or pricing is assigned.
     pub traveler_index: ::std::option::Option<i32>,
 }
+
 ///Contains details of the Miscellaneous Intelligent Service Fee (MISF), applied for submitting a paperless service fee request using the amount stored in the travel journal record (TJR). May be combined with `formsOfPayment` details. Applicable to Canadian customers only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -505,6 +543,7 @@ pub struct MiscellaneousServiceFee {
     ///The override amount of the service fee.
     pub override_amount: ::std::option::Option<::std::string::String>,
 }
+
 ///Identifies how the service handles expired Price Quotes (PQ) or Price Quotes with a back date price.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -513,6 +552,7 @@ pub enum PriceQuoteHandlingMethodEnum {
     Override,
     Quit,
 }
+
 impl ::std::fmt::Display for PriceQuoteHandlingMethodEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -522,6 +562,7 @@ impl ::std::fmt::Display for PriceQuoteHandlingMethodEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PriceQuoteHandlingMethodEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -535,6 +576,7 @@ impl ::std::str::FromStr for PriceQuoteHandlingMethodEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PriceQuoteHandlingMethodEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -543,6 +585,7 @@ impl ::std::convert::TryFrom<&str> for PriceQuoteHandlingMethodEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PriceQuoteHandlingMethodEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -551,6 +594,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PriceQuoteHandlingMetho
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PriceQuoteHandlingMethodEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -559,11 +603,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PriceQuoteHandlingMethod
         value.parse()
     }
 }
+
 impl ::std::default::Default for PriceQuoteHandlingMethodEnum {
     fn default() -> Self {
         PriceQuoteHandlingMethodEnum::Reprice
     }
 }
+
 ///Contains information about a penalty correlated with itinerary change or cancellation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -581,6 +627,7 @@ pub struct TicketPenalty {
     pub maximum_penalty: ::std::option::Option<Value>,
     pub type_: TicketPenaltyTypeEnum,
 }
+
 ///Identifies the penalty associated with the fare. Can be `Changeable` (changeable fare options), `Either or` (refundable or changeable fare options), or `Refundable` (refundable fare options).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -590,6 +637,7 @@ pub enum TicketPenaltyTypeEnum {
     EitherOr,
     Refundable,
 }
+
 impl ::std::fmt::Display for TicketPenaltyTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -599,6 +647,7 @@ impl ::std::fmt::Display for TicketPenaltyTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TicketPenaltyTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -612,6 +661,7 @@ impl ::std::str::FromStr for TicketPenaltyTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TicketPenaltyTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -620,6 +670,7 @@ impl ::std::convert::TryFrom<&str> for TicketPenaltyTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TicketPenaltyTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -628,6 +679,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TicketPenaltyTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TicketPenaltyTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -636,11 +688,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TicketPenaltyTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TicketPenaltyTypeEnum {
     fn default() -> Self {
         Self::Changeable
     }
 }
+
 ///Contains details of the traveler's full name.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -658,6 +712,7 @@ pub struct TravelerName {
     ///The traveler's last name.
     pub surname: ::std::string::String,
 }
+
 ///Contains the ticket validity period and associated flights.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

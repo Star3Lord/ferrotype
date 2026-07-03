@@ -351,12 +351,13 @@ pub(crate) fn generated_header(spec_path: impl AsRef<Path>) -> String {
 /// so an unedited [`GeneratedTypes::into_file`] result rendered here is
 /// byte-identical to the one-shot output.
 ///
-/// (Output containing the condensed style's `impl_string_enum` macro
-/// additionally gets its macro definition and invocations re-formatted
-/// readably — a token-preserving text fix-up that is a no-op for
-/// everything else. See `condense::polish_rendered`.)
+/// (Two token-preserving text fix-ups run over the prettyplease output:
+/// output containing the condensed style's `impl_string_enum` macro gets
+/// its macro definition and invocations re-formatted readably — a no-op
+/// for everything else — and adjacent items are separated with a blank
+/// line. See `condense::polish_rendered` and `render::space_rendered`.)
 pub fn render_file(file: &syn::File, spec_path: impl AsRef<Path>) -> String {
-    let body = crate::condense::polish_rendered(prettyplease::unparse(file));
+    let body = crate::render::render_body(file);
     let header = generated_header(spec_path);
     format!("{header}{body}")
 }

@@ -22,11 +22,14 @@ use super::super::shared::request::*;
 use super::super::shared::response::*;
 use super::super::void_tickets::request::*;
 use super::super::void_tickets::response::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -35,6 +38,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -43,17 +47,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains basic address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -75,6 +82,7 @@ pub struct Address {
     ///The street name and house number accompanied with the number of apartment, unit, or suite, if applicable.
     pub street: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains flight information used for cars bookings.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -90,6 +98,7 @@ pub struct AssociatedArrivalFlight {
     ///The flight number associated with the marketing carrier for the arrival flight.
     pub arrival_flight_number: ::std::option::Option<i32>,
 }
+
 ///Contains flight arrival and departure information used mainly for hotel bookings.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -111,6 +120,7 @@ pub struct AssociatedFlightDetails {
     ///The scheduled time of departure in `HH:MM` format.
     pub departure_time: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a set of basic details related to the form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -140,6 +150,7 @@ pub struct BasicFormOfPayment {
     ///The number of installments. Use with `INSTALLMENTS`.
     pub number_of_installments: ::std::option::Option<i32>,
 }
+
 ///Contains car object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -153,6 +164,7 @@ pub struct CarReference {
     ///The id of the given car reservation.
     pub item_id: ::std::string::String,
 }
+
 ///Contains information about the car rental location.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -170,6 +182,7 @@ pub struct CarRentalSite {
     ///The phone number of the car rental location involved in vehicle collection or delivery.
     pub phone: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains payment card holder information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -191,6 +204,7 @@ pub struct CardHolder {
     ///The card holder's last name.
     pub surname: ::std::string::String,
 }
+
 ///Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -208,6 +222,7 @@ pub struct CommonOtherServiceInformation {
     ///Specifies the traveler from the `travelers` array whose name is associated with the ticket.
     pub traveler_index: ::std::option::Option<i32>,
 }
+
 ///Contains cruise object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -221,6 +236,7 @@ pub struct CruiseReference {
     ///The id of the given cruise reservation.
     pub item_id: ::std::string::String,
 }
+
 ///Contains coupon information of the corresponding flight for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -236,6 +252,7 @@ pub struct FlightCoupon {
     #[serde(flatten)]
     pub coupon_status: CouponStatus,
 }
+
 ///Contains flight object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -249,6 +266,7 @@ pub struct FlightReference {
     ///The ID of a flight.
     pub item_id: ::std::string::String,
 }
+
 ///Contains details of a form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -309,6 +327,7 @@ pub struct FormOfPayment {
     #[patch(name = "Option<VoucherPatch>")]
     pub voucher: ::std::option::Option<Voucher>,
 }
+
 ///Contains a detailed ticket arrangement for a future date.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -330,6 +349,7 @@ pub struct FutureTicketingPolicy {
     ///The ticketing time in `HH:MM` format.
     pub ticketing_time: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -347,6 +367,7 @@ pub struct GenericAddress {
     ///The name of the person or the company/organization.
     pub name: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains hotel object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -360,6 +381,7 @@ pub struct HotelReference {
     ///The ID of a hotel reservation.
     pub item_id: ::std::string::String,
 }
+
 ///Contains details of the passenger's loyalty program, such as a frequent flyer card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -380,6 +402,7 @@ pub struct LoyaltyProgram {
     ///The level reached by the traveler in the loyalty program.
     pub tier_level: ::std::option::Option<i32>,
 }
+
 ///Contains manual approval details of a form of payment. Use with `PAYMENTCARD`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -403,6 +426,7 @@ pub struct ManualApproval {
     ///The manual approval request date in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format. Time should be provided in UTC time zone.
     pub request_date_time: ::std::string::String,
 }
+
 ///Contains Other Service Information (OSI) sent to or retrieved from a specific vendor.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -420,6 +444,7 @@ pub struct OtherServiceInformation {
     ///The two-letter code of the car rental vendor.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains phone details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -435,6 +460,7 @@ pub struct Phone {
     ///The formatted phone number of the traveler.
     pub number: ::std::string::String,
 }
+
 ///Contains remark details stored within the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -451,6 +477,7 @@ pub struct Remark {
     pub text: ::std::option::Option<::std::string::String>,
     pub type_: ::std::option::Option<RemarkTypeEnum>,
 }
+
 ///Contains strong customer authentication details for the payment card.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -497,6 +524,7 @@ pub struct StrongCustomerAuthentication {
     ///The 3DS Program Protocol version. A 3 alphanumeric character value, without dots between.
     pub version: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains desired tax codes and their associated amounts.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -512,6 +540,7 @@ pub struct Tax {
     ///The desired tax code. Must be combined with `amount`.
     pub tax_code: ::std::string::String,
 }
+
 ///Contains train object reference by `itemId`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -525,6 +554,7 @@ pub struct TrainReference {
     ///The id of the given train reservation.
     pub item_id: ::std::string::String,
 }
+
 ///Contains details of the traveler's employer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -555,6 +585,7 @@ pub struct TravelersEmployer {
     ///The street name and house number accompanied with the number of apartment, unit, or suite, if applicable.
     pub street: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains monetary amount information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -570,6 +601,7 @@ pub struct Value {
     ///The three-letter ISO 4217 currency code.
     pub currency_code: ::std::string::String,
 }
+
 ///Contains virtual card information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -599,6 +631,7 @@ pub struct VirtualCard {
         ::std::vec::Vec<::std::string::String>,
     >,
 }
+
 ///Contains voucher information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

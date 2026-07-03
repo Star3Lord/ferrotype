@@ -6,11 +6,14 @@ use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -19,6 +22,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -27,17 +31,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains details of ancillary to be added or deleted.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -100,6 +107,7 @@ pub struct AncillaryToModify {
     ///The two-letter IATA designator code of the airline providing the service. Mutually exclusive with the `source` parameter. Applicable for ATPCO content only.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains details of the payment amount - the total amount to pay, the amount before tax, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -121,6 +129,7 @@ pub struct AncillaryTotalValues {
     ///The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the original booking details (within the `before` property) or the target booking details used after a finalized modification (within the `after` property). Based on the difference between the `before` and `after` properties, appropriate add, update, or delete operations are performed on the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -158,6 +167,7 @@ pub struct BookingToModify {
     ///Lists personal information of the travelers.
     pub travelers: ::std::option::Option<::std::vec::Vec<TravelerToModify>>,
 }
+
 ///Contains creation information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -171,6 +181,7 @@ pub struct CreationDetailsToModify {
     ///A unique identifier accredited by the International Air Transport Association (IATA).
     pub agency_iata_number: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains details of a specific fare to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -184,6 +195,7 @@ pub struct FareToModify {
     ///The ID of the fare source.
     pub record_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains flight details to modify for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -199,6 +211,7 @@ pub struct FlightToModify {
     ///Lists seats assigned to the travelers by matching the indices in the `travelers` array. Providing a null value instead of a `SeatToModify` object indicates that there is no seat assigned to the corresponding traveler. To obtain full seat details for modification, we recommended sending a Get Booking call with the extra feature `returnEmptySeatObjects` parameter set to `false`. If combined with `changeOfGaugeSeats`, this array assigns seats on the first aircraft on a change of gauge or funnel flight.
     pub seats: ::std::option::Option<::std::vec::Vec<SeatToModify>>,
 }
+
 ///Contains hotel information for the given booking which should be modified.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -230,6 +243,7 @@ pub struct HotelDetailsToModify {
     ///Additional special requests put in by the traveler with regards to the hotel reservation.
     pub special_instructions: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains hotel reservation information identified by `itemId` and associated with a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -245,6 +259,7 @@ pub struct HotelToModify {
     #[serde(flatten)]
     pub hotel_details_to_modify: HotelDetailsToModify,
 }
+
 ///Contains details of an identity document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -290,6 +305,7 @@ pub struct IdentityDocumentDetails {
     ///The traveler's last name.
     pub surname: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains required and optional elements to modify a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -318,6 +334,7 @@ pub struct ModifyBookingRequest {
     ///If `true`, unmasks payment card information during the `bookingSignature` verification step. To use unmasked data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
     pub unmask_payment_card_numbers: ::std::option::Option<bool>,
 }
+
 ///Contains details of the identity document to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -333,6 +350,7 @@ pub struct ModifyIdentityDocument {
     ///Lists flights associated with a document referenced by their `itemId`. A single identity document can be associated with multiple flight IDs.
     pub flights: ::std::option::Option<::std::vec::Vec<FlightReference>>,
 }
+
 ///Contains payment information necessary to modify the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -346,6 +364,7 @@ pub struct PaymentToModify {
     ///Lists payment methods associated with the booking.
     pub forms_of_payment: ::std::option::Option<::std::vec::Vec<FormOfPayment>>,
 }
+
 ///Contains details of a hotel room to modify.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -361,6 +380,7 @@ pub struct RoomToModify {
     ///Lists indices of travelers from the `travelers` array to whom the room is assigned.
     pub traveler_indices: ::std::vec::Vec<i32>,
 }
+
 ///Contains detailed information about a seat that should be modified.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -376,6 +396,7 @@ pub struct SeatToModify {
     ///The seat availability offer item ID. Applicable for NDC flights only.
     pub offer_item_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the special service request (SSR) message sent to an airline. The message may contain traveler preferences or mandatory/optional information directed to the airline.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -395,6 +416,7 @@ pub struct SpecialServiceToModify {
     ///Lists indices of travelers from the `travelers` array to whom the special service is assigned. For special services without explicit traveler assignation, this array should not be provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains traveler information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

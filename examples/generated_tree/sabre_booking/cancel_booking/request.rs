@@ -6,11 +6,14 @@ use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -19,6 +22,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -27,17 +31,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains required and optional elements to cancel a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -87,6 +94,7 @@ pub struct CancelBookingRequest {
     ///If `true`, nonelectronic tickets are included in the void process.
     pub void_non_electronic_tickets: ::std::option::Option<bool>,
 }
+
 ///Identifies the policy for handling flight ticket operations within the Cancel Booking service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -96,6 +104,7 @@ pub enum FlightTicketOperationEnum {
     #[serde(rename = "REFUND")]
     Refund,
 }
+
 impl ::std::fmt::Display for FlightTicketOperationEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -104,6 +113,7 @@ impl ::std::fmt::Display for FlightTicketOperationEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FlightTicketOperationEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -116,6 +126,7 @@ impl ::std::str::FromStr for FlightTicketOperationEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FlightTicketOperationEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -124,6 +135,7 @@ impl ::std::convert::TryFrom<&str> for FlightTicketOperationEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FlightTicketOperationEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -132,6 +144,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FlightTicketOperationEn
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FlightTicketOperationEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -140,11 +153,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FlightTicketOperationEnu
         value.parse()
     }
 }
+
 impl ::std::default::Default for FlightTicketOperationEnum {
     fn default() -> Self {
         Self::Void
     }
 }
+
 ///Contains reference to the segment for cancellation, identified either by `sequence` or by `id`.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

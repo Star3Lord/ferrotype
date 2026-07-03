@@ -10,11 +10,14 @@ use super::super::get_pet::response::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
 use super::super::shared::response::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -23,6 +26,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -31,17 +35,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///`Category`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -56,6 +63,7 @@ pub struct Category {
     #[patch(name = "Option<CategoryRefPatch>")]
     pub parent: ::std::option::Option<CategoryRef>,
 }
+
 ///`CategoryRef`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -68,6 +76,7 @@ pub struct Category {
 pub struct CategoryRef {
     pub slug: ::std::option::Option<::std::string::String>,
 }
+
 ///`Dog`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

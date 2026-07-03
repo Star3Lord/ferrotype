@@ -126,6 +126,7 @@ mod partition;
 mod pipeline;
 mod postprocess;
 mod profile;
+mod render;
 pub mod spec;
 mod tree;
 

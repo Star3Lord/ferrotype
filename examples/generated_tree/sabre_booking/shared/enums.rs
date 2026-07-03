@@ -3,11 +3,14 @@
 
 use ::serde::{Deserialize, Serialize};
 use ::struct_patch::Patch;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -16,6 +19,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -24,17 +28,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Identifies the payment method of the accounting item.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -49,6 +56,7 @@ pub enum AccountingFormOfPaymentTypeEnum {
     MaskedPaymentCard,
     Unknown,
 }
+
 impl ::std::fmt::Display for AccountingFormOfPaymentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -61,6 +69,7 @@ impl ::std::fmt::Display for AccountingFormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for AccountingFormOfPaymentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -77,6 +86,7 @@ impl ::std::str::FromStr for AccountingFormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for AccountingFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -85,6 +95,7 @@ impl ::std::convert::TryFrom<&str> for AccountingFormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String>
 for AccountingFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
@@ -94,6 +105,7 @@ for AccountingFormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for AccountingFormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -102,11 +114,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AccountingFormOfPaymentT
         value.parse()
     }
 }
+
 impl ::std::default::Default for AccountingFormOfPaymentTypeEnum {
     fn default() -> Self {
         AccountingFormOfPaymentTypeEnum::Unknown
     }
 }
+
 ///Identifies the ticket operation which triggered automatic accounting item creation.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -116,6 +130,7 @@ pub enum AccountingItemCreationTypeEnum {
     Exchange,
     Refund,
 }
+
 impl ::std::fmt::Display for AccountingItemCreationTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -125,6 +140,7 @@ impl ::std::fmt::Display for AccountingItemCreationTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for AccountingItemCreationTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -138,6 +154,7 @@ impl ::std::str::FromStr for AccountingItemCreationTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for AccountingItemCreationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -146,6 +163,7 @@ impl ::std::convert::TryFrom<&str> for AccountingItemCreationTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for AccountingItemCreationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -154,6 +172,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for AccountingItemCreationT
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for AccountingItemCreationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -162,11 +181,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AccountingItemCreationTy
         value.parse()
     }
 }
+
 impl ::std::default::Default for AccountingItemCreationTypeEnum {
     fn default() -> Self {
         AccountingItemCreationTypeEnum::FirstIssuance
     }
 }
+
 ///The application source that provides the ancillary service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -176,6 +197,7 @@ pub enum AncillarySourceEnum {
     #[serde(rename = "MERCHANDISING_MANAGER")]
     MerchandisingManager,
 }
+
 impl ::std::fmt::Display for AncillarySourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -184,6 +206,7 @@ impl ::std::fmt::Display for AncillarySourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for AncillarySourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -196,6 +219,7 @@ impl ::std::str::FromStr for AncillarySourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for AncillarySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -204,6 +228,7 @@ impl ::std::convert::TryFrom<&str> for AncillarySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for AncillarySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -212,6 +237,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for AncillarySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for AncillarySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -220,11 +246,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AncillarySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for AncillarySourceEnum {
     fn default() -> Self {
         Self::Atpco
     }
 }
+
 ///Identifies the meaningful value describing the ancillary status.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -242,6 +270,7 @@ pub enum AncillaryStatusNameEnum {
     #[serde(rename = "Schedule change")]
     ScheduleChange,
 }
+
 impl ::std::fmt::Display for AncillaryStatusNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -258,6 +287,7 @@ impl ::std::fmt::Display for AncillaryStatusNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for AncillaryStatusNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -276,6 +306,7 @@ impl ::std::str::FromStr for AncillaryStatusNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for AncillaryStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -284,6 +315,7 @@ impl ::std::convert::TryFrom<&str> for AncillaryStatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for AncillaryStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -292,6 +324,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for AncillaryStatusNameEnum
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for AncillaryStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -300,11 +333,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AncillaryStatusNameEnum 
         value.parse()
     }
 }
+
 impl ::std::default::Default for AncillaryStatusNameEnum {
     fn default() -> Self {
         Self::Confirmed
     }
 }
+
 ///Identifies the source of the booking. Defaults to `SABRE`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -314,6 +349,7 @@ pub enum BookingSourceEnum {
     #[serde(rename = "SABRE_ORDER")]
     SabreOrder,
 }
+
 impl ::std::fmt::Display for BookingSourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -322,6 +358,7 @@ impl ::std::fmt::Display for BookingSourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for BookingSourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -334,6 +371,7 @@ impl ::std::str::FromStr for BookingSourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for BookingSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -342,6 +380,7 @@ impl ::std::convert::TryFrom<&str> for BookingSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for BookingSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -350,6 +389,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for BookingSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for BookingSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -358,11 +398,13 @@ impl ::std::convert::TryFrom<::std::string::String> for BookingSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for BookingSourceEnum {
     fn default() -> Self {
         Self::Sabre
     }
 }
+
 ///Identifies the policy for handling errors within the Cancel Booking service.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -372,6 +414,7 @@ pub enum CancelErrorPolicyEnum {
     #[serde(rename = "ALLOW_PARTIAL_CANCEL")]
     AllowPartialCancel,
 }
+
 impl ::std::fmt::Display for CancelErrorPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -380,6 +423,7 @@ impl ::std::fmt::Display for CancelErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CancelErrorPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -392,6 +436,7 @@ impl ::std::str::FromStr for CancelErrorPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CancelErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -400,6 +445,7 @@ impl ::std::convert::TryFrom<&str> for CancelErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CancelErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -408,6 +454,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CancelErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CancelErrorPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -416,11 +463,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CancelErrorPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CancelErrorPolicyEnum {
     fn default() -> Self {
         CancelErrorPolicyEnum::HaltOnError
     }
 }
+
 ///Identifies the coupon status code based on the IATA PADIS Codeset 4405.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -449,6 +498,7 @@ pub enum CouponStatusCodeEnum {
     #[serde(rename = "XX")]
     Xx,
 }
+
 impl ::std::fmt::Display for CouponStatusCodeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -470,6 +520,7 @@ impl ::std::fmt::Display for CouponStatusCodeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CouponStatusCodeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -495,6 +546,7 @@ impl ::std::str::FromStr for CouponStatusCodeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CouponStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -503,6 +555,7 @@ impl ::std::convert::TryFrom<&str> for CouponStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CouponStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -511,6 +564,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CouponStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CouponStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -519,11 +573,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CouponStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CouponStatusCodeEnum {
     fn default() -> Self {
         Self::Al
     }
 }
+
 ///Identifies descriptive status of the corresponding coupon status code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -551,6 +607,7 @@ pub enum CouponStatusEnum {
     Suspended,
     Locked,
 }
+
 impl ::std::fmt::Display for CouponStatusEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -573,6 +630,7 @@ impl ::std::fmt::Display for CouponStatusEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CouponStatusEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -599,6 +657,7 @@ impl ::std::str::FromStr for CouponStatusEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CouponStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -607,6 +666,7 @@ impl ::std::convert::TryFrom<&str> for CouponStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CouponStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -615,6 +675,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CouponStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CouponStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -623,11 +684,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CouponStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CouponStatusEnum {
     fn default() -> Self {
         Self::AirportControl
     }
 }
+
 ///Identifies the passenger document subtype for `documentType` set to `FISCAL_ID`. Can be `RUC` (Taxpayer's Unique Registry in Ecuador), `CUIT/CUIL` (Argentina Unique Tax Identification Key), or `NIT` (Tax Identification Number in Bolivia).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -639,6 +702,7 @@ pub enum DocumentSubTypeEnum {
     #[serde(rename = "NIT")]
     Nit,
 }
+
 impl ::std::fmt::Display for DocumentSubTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -648,6 +712,7 @@ impl ::std::fmt::Display for DocumentSubTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for DocumentSubTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -661,6 +726,7 @@ impl ::std::str::FromStr for DocumentSubTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for DocumentSubTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -669,6 +735,7 @@ impl ::std::convert::TryFrom<&str> for DocumentSubTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for DocumentSubTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -677,6 +744,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for DocumentSubTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for DocumentSubTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -685,11 +753,13 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentSubTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for DocumentSubTypeEnum {
     fn default() -> Self {
         Self::Ruc
     }
 }
+
 ///Identifies the type of passenger document.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -729,6 +799,7 @@ pub enum DocumentTypeEnum {
     #[serde(rename = "FISCAL_ID")]
     FiscalId,
 }
+
 impl ::std::fmt::Display for DocumentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -754,6 +825,7 @@ impl ::std::fmt::Display for DocumentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for DocumentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -781,6 +853,7 @@ impl ::std::str::FromStr for DocumentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for DocumentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -789,6 +862,7 @@ impl ::std::convert::TryFrom<&str> for DocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for DocumentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -797,6 +871,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for DocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for DocumentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -805,11 +880,13 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for DocumentTypeEnum {
     fn default() -> Self {
         Self::Passport
     }
 }
+
 ///Identifies the type(s) of electronic documents to refund.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -820,6 +897,7 @@ pub enum DocumentsTypeEnum {
     #[serde(rename = "Tickets and EMDs")]
     TicketsAndEmDs,
 }
+
 impl ::std::fmt::Display for DocumentsTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -829,6 +907,7 @@ impl ::std::fmt::Display for DocumentsTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for DocumentsTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -842,6 +921,7 @@ impl ::std::str::FromStr for DocumentsTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for DocumentsTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -850,6 +930,7 @@ impl ::std::convert::TryFrom<&str> for DocumentsTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for DocumentsTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -858,6 +939,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for DocumentsTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for DocumentsTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -866,11 +948,13 @@ impl ::std::convert::TryFrom<::std::string::String> for DocumentsTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for DocumentsTypeEnum {
     fn default() -> Self {
         DocumentsTypeEnum::Tickets
     }
 }
+
 ///Identifies the type of Electronic Miscellaneous Document (EMD) or other document that must be issued for the selected subcode.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -886,6 +970,7 @@ pub enum ElectronicMiscellaneousDocumentTypeEnum {
     #[serde(rename = "ETICKET")]
     Eticket,
 }
+
 impl ::std::fmt::Display for ElectronicMiscellaneousDocumentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -899,6 +984,7 @@ impl ::std::fmt::Display for ElectronicMiscellaneousDocumentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for ElectronicMiscellaneousDocumentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -914,6 +1000,7 @@ impl ::std::str::FromStr for ElectronicMiscellaneousDocumentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for ElectronicMiscellaneousDocumentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -922,6 +1009,7 @@ impl ::std::convert::TryFrom<&str> for ElectronicMiscellaneousDocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String>
 for ElectronicMiscellaneousDocumentTypeEnum {
     type Error = self::error::ConversionError;
@@ -931,6 +1019,7 @@ for ElectronicMiscellaneousDocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String>
 for ElectronicMiscellaneousDocumentTypeEnum {
     type Error = self::error::ConversionError;
@@ -940,11 +1029,13 @@ for ElectronicMiscellaneousDocumentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for ElectronicMiscellaneousDocumentTypeEnum {
     fn default() -> Self {
         Self::Standalone
     }
 }
+
 ///Identifies the type of employer ID. Can be `GST` (Indian Goods and Services Tax information) or `Unknown`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -953,6 +1044,7 @@ pub enum EmployerIdTypeEnum {
     Gst,
     Unknown,
 }
+
 impl ::std::fmt::Display for EmployerIdTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -961,6 +1053,7 @@ impl ::std::fmt::Display for EmployerIdTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for EmployerIdTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -973,6 +1066,7 @@ impl ::std::str::FromStr for EmployerIdTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for EmployerIdTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -981,6 +1075,7 @@ impl ::std::convert::TryFrom<&str> for EmployerIdTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for EmployerIdTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -989,6 +1084,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for EmployerIdTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for EmployerIdTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -997,11 +1093,13 @@ impl ::std::convert::TryFrom<::std::string::String> for EmployerIdTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for EmployerIdTypeEnum {
     fn default() -> Self {
         EmployerIdTypeEnum::Unknown
     }
 }
+
 ///Identifies the association type of the accounting item, which indicates to whom the fare is applied. Can be `Single Traveler` (fare amount applied to a singular passenger whose details are provided in `FormOfPayment`), `All Travelers` (fare amount applied to all passengers together as a group), or `Each Traveler` (fare amount applied to individual passengers).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1013,6 +1111,7 @@ pub enum FareApplicationTypeEnum {
     #[serde(rename = "Each Traveler")]
     EachTraveler,
 }
+
 impl ::std::fmt::Display for FareApplicationTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1022,6 +1121,7 @@ impl ::std::fmt::Display for FareApplicationTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FareApplicationTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1035,6 +1135,7 @@ impl ::std::str::FromStr for FareApplicationTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FareApplicationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1043,6 +1144,7 @@ impl ::std::convert::TryFrom<&str> for FareApplicationTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FareApplicationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1051,6 +1153,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FareApplicationTypeEnum
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FareApplicationTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1059,11 +1162,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FareApplicationTypeEnum 
         value.parse()
     }
 }
+
 impl ::std::default::Default for FareApplicationTypeEnum {
     fn default() -> Self {
         Self::SingleTraveler
     }
 }
+
 ///Identifies the applicability type associated with a particular fare rule penalty.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1073,6 +1178,7 @@ pub enum FareRulePenaltyApplicabilityEnum {
     #[serde(rename = "AFTER_DEPARTURE")]
     AfterDeparture,
 }
+
 impl ::std::fmt::Display for FareRulePenaltyApplicabilityEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1081,6 +1187,7 @@ impl ::std::fmt::Display for FareRulePenaltyApplicabilityEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FareRulePenaltyApplicabilityEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1093,6 +1200,7 @@ impl ::std::str::FromStr for FareRulePenaltyApplicabilityEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FareRulePenaltyApplicabilityEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1101,6 +1209,7 @@ impl ::std::convert::TryFrom<&str> for FareRulePenaltyApplicabilityEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String>
 for FareRulePenaltyApplicabilityEnum {
     type Error = self::error::ConversionError;
@@ -1110,6 +1219,7 @@ for FareRulePenaltyApplicabilityEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String>
 for FareRulePenaltyApplicabilityEnum {
     type Error = self::error::ConversionError;
@@ -1119,11 +1229,13 @@ for FareRulePenaltyApplicabilityEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FareRulePenaltyApplicabilityEnum {
     fn default() -> Self {
         Self::BeforeDeparture
     }
 }
+
 ///Identifies the applicability of the ancillary item to the flights in the booking. Can be `Single` (an ancillary item applies to a single flight/sector of the booking), `Multiple` (an ancillary item applies to the portion of flights in the booking), or `Unknown` (applicability of the ancillary cannot be determined). This information is required when `electronicMiscellaneousDocumentType` has the value `OTHER_THAN_EMD`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1132,6 +1244,7 @@ pub enum FlightApplicabilityTypeEnum {
     Multiple,
     Unknown,
 }
+
 impl ::std::fmt::Display for FlightApplicabilityTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1141,6 +1254,7 @@ impl ::std::fmt::Display for FlightApplicabilityTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FlightApplicabilityTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1154,6 +1268,7 @@ impl ::std::str::FromStr for FlightApplicabilityTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FlightApplicabilityTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1162,6 +1277,7 @@ impl ::std::convert::TryFrom<&str> for FlightApplicabilityTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FlightApplicabilityTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1170,6 +1286,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FlightApplicabilityType
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FlightApplicabilityTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1178,11 +1295,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FlightApplicabilityTypeE
         value.parse()
     }
 }
+
 impl ::std::default::Default for FlightApplicabilityTypeEnum {
     fn default() -> Self {
         FlightApplicabilityTypeEnum::Unknown
     }
 }
+
 ///Identifies source type of the flight.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1194,6 +1313,7 @@ pub enum FlightSourceEnum {
     #[serde(rename = "NDC")]
     Ndc,
 }
+
 impl ::std::fmt::Display for FlightSourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1203,6 +1323,7 @@ impl ::std::fmt::Display for FlightSourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FlightSourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1216,6 +1337,7 @@ impl ::std::str::FromStr for FlightSourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FlightSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1224,6 +1346,7 @@ impl ::std::convert::TryFrom<&str> for FlightSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FlightSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1232,6 +1355,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FlightSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FlightSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1240,11 +1364,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FlightSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FlightSourceEnum {
     fn default() -> Self {
         Self::Atpco
     }
 }
+
 ///Identifies the trip type associated with the selected form of payment.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1258,6 +1384,7 @@ pub enum FormOfPaymentTripTypeEnum {
     Group,
     Unknown,
 }
+
 impl ::std::fmt::Display for FormOfPaymentTripTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1271,6 +1398,7 @@ impl ::std::fmt::Display for FormOfPaymentTripTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FormOfPaymentTripTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1288,6 +1416,7 @@ impl ::std::str::FromStr for FormOfPaymentTripTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FormOfPaymentTripTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1296,6 +1425,7 @@ impl ::std::convert::TryFrom<&str> for FormOfPaymentTripTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentTripTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1304,6 +1434,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentTripTypeEn
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentTripTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1312,11 +1443,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentTripTypeEnu
         value.parse()
     }
 }
+
 impl ::std::default::Default for FormOfPaymentTripTypeEnum {
     fn default() -> Self {
         FormOfPaymentTripTypeEnum::Unknown
     }
 }
+
 ///Identifies the type of payment method. The `MISCELLANEOUS` payment method must be activated on the agency level and requires a specific payment credit code. `INSTALLMENTS` is used for BSP Brazil customers only and refers to payment by means of card installments commonly referred to as "parcelado". `VIRTUAL_CARD`, `AGENCY_NAME`, `AGENCY_IATA`, `CORPORATE`, `COMPANY_NAME` are used for hotel bookings. `VOUCHER` is used for vehicle booking.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1350,6 +1483,7 @@ pub enum FormOfPaymentTypeEnum {
     #[serde(rename = "INVOICE")]
     Invoice,
 }
+
 impl ::std::fmt::Display for FormOfPaymentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1370,6 +1504,7 @@ impl ::std::fmt::Display for FormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FormOfPaymentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1394,6 +1529,7 @@ impl ::std::str::FromStr for FormOfPaymentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1402,6 +1538,7 @@ impl ::std::convert::TryFrom<&str> for FormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1410,6 +1547,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1418,11 +1556,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for FormOfPaymentTypeEnum {
     fn default() -> Self {
         Self::Paymentcard
     }
 }
+
 ///Identifies the use type associated with the selected form of payment.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1447,6 +1587,7 @@ pub enum FormOfPaymentUseTypeEnum {
     InterfaceRecord,
     Unknown,
 }
+
 impl ::std::fmt::Display for FormOfPaymentUseTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1468,6 +1609,7 @@ impl ::std::fmt::Display for FormOfPaymentUseTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for FormOfPaymentUseTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1493,6 +1635,7 @@ impl ::std::str::FromStr for FormOfPaymentUseTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for FormOfPaymentUseTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1501,6 +1644,7 @@ impl ::std::convert::TryFrom<&str> for FormOfPaymentUseTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentUseTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1509,6 +1653,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for FormOfPaymentUseTypeEnu
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentUseTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1517,11 +1662,13 @@ impl ::std::convert::TryFrom<::std::string::String> for FormOfPaymentUseTypeEnum
         value.parse()
     }
 }
+
 impl ::std::default::Default for FormOfPaymentUseTypeEnum {
     fn default() -> Self {
         FormOfPaymentUseTypeEnum::Unknown
     }
 }
+
 ///Identifies the gender of the traveler.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1539,6 +1686,7 @@ pub enum GenderEnum {
     #[serde(rename = "UNDEFINED")]
     Undefined,
 }
+
 impl ::std::fmt::Display for GenderEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1551,6 +1699,7 @@ impl ::std::fmt::Display for GenderEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for GenderEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1567,6 +1716,7 @@ impl ::std::str::FromStr for GenderEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for GenderEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1575,6 +1725,7 @@ impl ::std::convert::TryFrom<&str> for GenderEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for GenderEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1583,6 +1734,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for GenderEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for GenderEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1591,11 +1743,13 @@ impl ::std::convert::TryFrom<::std::string::String> for GenderEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for GenderEnum {
     fn default() -> Self {
         Self::Female
     }
 }
+
 ///Identifies the payment information type provided to the car vendor.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1604,6 +1758,7 @@ pub enum GuaranteePaymentTypeEnum {
     Deposit,
     Unknown,
 }
+
 impl ::std::fmt::Display for GuaranteePaymentTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1613,6 +1768,7 @@ impl ::std::fmt::Display for GuaranteePaymentTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for GuaranteePaymentTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1626,6 +1782,7 @@ impl ::std::str::FromStr for GuaranteePaymentTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for GuaranteePaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1634,6 +1791,7 @@ impl ::std::convert::TryFrom<&str> for GuaranteePaymentTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for GuaranteePaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1642,6 +1800,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for GuaranteePaymentTypeEnu
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for GuaranteePaymentTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1650,11 +1809,13 @@ impl ::std::convert::TryFrom<::std::string::String> for GuaranteePaymentTypeEnum
         value.parse()
     }
 }
+
 impl ::std::default::Default for GuaranteePaymentTypeEnum {
     fn default() -> Self {
         GuaranteePaymentTypeEnum::Unknown
     }
 }
+
 ///Identifies the OTA payment name.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1672,6 +1833,7 @@ pub enum GuaranteeTypeNameEnum {
     #[serde(rename = "Virtual card")]
     VirtualCard,
 }
+
 impl ::std::fmt::Display for GuaranteeTypeNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1684,6 +1846,7 @@ impl ::std::fmt::Display for GuaranteeTypeNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for GuaranteeTypeNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1700,6 +1863,7 @@ impl ::std::str::FromStr for GuaranteeTypeNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for GuaranteeTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1708,6 +1872,7 @@ impl ::std::convert::TryFrom<&str> for GuaranteeTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for GuaranteeTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1716,6 +1881,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for GuaranteeTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for GuaranteeTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1724,11 +1890,13 @@ impl ::std::convert::TryFrom<::std::string::String> for GuaranteeTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for GuaranteeTypeNameEnum {
     fn default() -> Self {
         Self::CreditCard
     }
 }
+
 ///Identifies the hotel payment policy.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1740,6 +1908,7 @@ pub enum HotelPaymentPolicyEnum {
     #[serde(rename = "LATE")]
     Late,
 }
+
 impl ::std::fmt::Display for HotelPaymentPolicyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1749,6 +1918,7 @@ impl ::std::fmt::Display for HotelPaymentPolicyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for HotelPaymentPolicyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1762,6 +1932,7 @@ impl ::std::str::FromStr for HotelPaymentPolicyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for HotelPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1770,6 +1941,7 @@ impl ::std::convert::TryFrom<&str> for HotelPaymentPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for HotelPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1778,6 +1950,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for HotelPaymentPolicyEnum 
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for HotelPaymentPolicyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1786,11 +1959,13 @@ impl ::std::convert::TryFrom<::std::string::String> for HotelPaymentPolicyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for HotelPaymentPolicyEnum {
     fn default() -> Self {
         Self::Deposit
     }
 }
+
 ///Identifies the source of the hotel booking.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1808,6 +1983,7 @@ pub enum HotelSourceEnum {
     CmNet,
     Unknown,
 }
+
 impl ::std::fmt::Display for HotelSourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1821,6 +1997,7 @@ impl ::std::fmt::Display for HotelSourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for HotelSourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1838,6 +2015,7 @@ impl ::std::str::FromStr for HotelSourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for HotelSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1846,6 +2024,7 @@ impl ::std::convert::TryFrom<&str> for HotelSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for HotelSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1854,6 +2033,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for HotelSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for HotelSourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1862,11 +2042,13 @@ impl ::std::convert::TryFrom<::std::string::String> for HotelSourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for HotelSourceEnum {
     fn default() -> Self {
         HotelSourceEnum::Unknown
     }
 }
+
 ///Applicable to BSP France and Canada only. Identifies the journey type, which must be supplied if the refund is for a domestic flight. Possible values are `B`, `F`, or `M`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1875,6 +2057,7 @@ pub enum JourneyTypeCodeEnum {
     F,
     M,
 }
+
 impl ::std::fmt::Display for JourneyTypeCodeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1884,6 +2067,7 @@ impl ::std::fmt::Display for JourneyTypeCodeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for JourneyTypeCodeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -1897,6 +2081,7 @@ impl ::std::str::FromStr for JourneyTypeCodeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for JourneyTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1905,6 +2090,7 @@ impl ::std::convert::TryFrom<&str> for JourneyTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for JourneyTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1913,6 +2099,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for JourneyTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for JourneyTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -1921,11 +2108,13 @@ impl ::std::convert::TryFrom<::std::string::String> for JourneyTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for JourneyTypeCodeEnum {
     fn default() -> Self {
         Self::B
     }
 }
+
 ///Identifies the meal provided on the flight, matching accordingly to the meal type code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1955,6 +2144,7 @@ pub enum MealDescriptionEnum {
     RefreshmentForPurchase,
     Snack,
 }
+
 impl ::std::fmt::Display for MealDescriptionEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -1982,6 +2172,7 @@ impl ::std::fmt::Display for MealDescriptionEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for MealDescriptionEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2009,6 +2200,7 @@ impl ::std::str::FromStr for MealDescriptionEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for MealDescriptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2017,6 +2209,7 @@ impl ::std::convert::TryFrom<&str> for MealDescriptionEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for MealDescriptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2025,6 +2218,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for MealDescriptionEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for MealDescriptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2033,11 +2227,13 @@ impl ::std::convert::TryFrom<::std::string::String> for MealDescriptionEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for MealDescriptionEnum {
     fn default() -> Self {
         Self::AlcoholicBeveragesForPurchase
     }
 }
+
 ///Identifies the status of a nonelectronic ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2046,6 +2242,7 @@ pub enum NonElectronicTicketStatusEnum {
     Inactive,
     Unknown,
 }
+
 impl ::std::fmt::Display for NonElectronicTicketStatusEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2055,6 +2252,7 @@ impl ::std::fmt::Display for NonElectronicTicketStatusEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for NonElectronicTicketStatusEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2068,6 +2266,7 @@ impl ::std::str::FromStr for NonElectronicTicketStatusEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for NonElectronicTicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2076,6 +2275,7 @@ impl ::std::convert::TryFrom<&str> for NonElectronicTicketStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for NonElectronicTicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2084,6 +2284,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for NonElectronicTicketStat
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for NonElectronicTicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2092,11 +2293,13 @@ impl ::std::convert::TryFrom<::std::string::String> for NonElectronicTicketStatu
         value.parse()
     }
 }
+
 impl ::std::default::Default for NonElectronicTicketStatusEnum {
     fn default() -> Self {
         NonElectronicTicketStatusEnum::Unknown
     }
 }
+
 ///Identifies the method of e-mail notification. `DEFAULT` sends a default e-mail notification based on the agency/PCC configuration. `INVOICE` sends an e-mail with a copy of the eInvoice, `ETICKET` sends an e-mail with a text copy of the eTicket, and `ITINERARY` sends an e-mail with a text copy of the itinerary.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2114,6 +2317,7 @@ pub enum NotificationEmailEnum {
     #[serde(rename = "ITINERARY_PDF")]
     ItineraryPdf,
 }
+
 impl ::std::fmt::Display for NotificationEmailEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2126,6 +2330,7 @@ impl ::std::fmt::Display for NotificationEmailEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for NotificationEmailEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2142,6 +2347,7 @@ impl ::std::str::FromStr for NotificationEmailEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for NotificationEmailEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2150,6 +2356,7 @@ impl ::std::convert::TryFrom<&str> for NotificationEmailEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for NotificationEmailEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2158,6 +2365,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for NotificationEmailEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for NotificationEmailEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2166,11 +2374,13 @@ impl ::std::convert::TryFrom<::std::string::String> for NotificationEmailEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for NotificationEmailEnum {
     fn default() -> Self {
         Self::Default
     }
 }
+
 ///Identifies the type of the passenger's passport document. Applies to identity documents with the `documentType` parameter set to `PASSPORT`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2198,6 +2408,7 @@ pub enum PassportTypeResponseEnum {
     Passport,
     Unknown,
 }
+
 impl ::std::fmt::Display for PassportTypeResponseEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2218,6 +2429,7 @@ impl ::std::fmt::Display for PassportTypeResponseEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PassportTypeResponseEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2240,6 +2452,7 @@ impl ::std::str::FromStr for PassportTypeResponseEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PassportTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2248,6 +2461,7 @@ impl ::std::convert::TryFrom<&str> for PassportTypeResponseEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PassportTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2256,6 +2470,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PassportTypeResponseEnu
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PassportTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2264,11 +2479,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PassportTypeResponseEnum
         value.parse()
     }
 }
+
 impl ::std::default::Default for PassportTypeResponseEnum {
     fn default() -> Self {
         Self::NationalPassport
     }
 }
+
 ///Identifies a particular ATPCO Fare Category as the source of penalty information.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2281,6 +2498,7 @@ pub enum PenaltySourceEnum {
     Category16,
     Unknown,
 }
+
 impl ::std::fmt::Display for PenaltySourceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2291,6 +2509,7 @@ impl ::std::fmt::Display for PenaltySourceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PenaltySourceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2305,6 +2524,7 @@ impl ::std::str::FromStr for PenaltySourceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PenaltySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2313,6 +2533,7 @@ impl ::std::convert::TryFrom<&str> for PenaltySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PenaltySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2321,6 +2542,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PenaltySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PenaltySourceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2329,11 +2551,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PenaltySourceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PenaltySourceEnum {
     fn default() -> Self {
         PenaltySourceEnum::Unknown
     }
 }
+
 ///Identifies the status code of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2341,6 +2565,7 @@ pub enum PricingStatusCodeEnum {
     A,
     H,
 }
+
 impl ::std::fmt::Display for PricingStatusCodeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2349,6 +2574,7 @@ impl ::std::fmt::Display for PricingStatusCodeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PricingStatusCodeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2361,6 +2587,7 @@ impl ::std::str::FromStr for PricingStatusCodeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PricingStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2369,6 +2596,7 @@ impl ::std::convert::TryFrom<&str> for PricingStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PricingStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2377,6 +2605,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PricingStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PricingStatusCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2385,11 +2614,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PricingStatusCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PricingStatusCodeEnum {
     fn default() -> Self {
         Self::A
     }
 }
+
 ///Identifies the status name of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2397,6 +2628,7 @@ pub enum PricingStatusNameEnum {
     Active,
     History,
 }
+
 impl ::std::fmt::Display for PricingStatusNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2405,6 +2637,7 @@ impl ::std::fmt::Display for PricingStatusNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PricingStatusNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2417,6 +2650,7 @@ impl ::std::str::FromStr for PricingStatusNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PricingStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2425,6 +2659,7 @@ impl ::std::convert::TryFrom<&str> for PricingStatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PricingStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2433,6 +2668,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PricingStatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PricingStatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2441,11 +2677,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PricingStatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PricingStatusNameEnum {
     fn default() -> Self {
         Self::Active
     }
 }
+
 ///Identifies pricing type code of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2454,6 +2692,7 @@ pub enum PricingTypeCodeEnum {
     A,
     M,
 }
+
 impl ::std::fmt::Display for PricingTypeCodeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2463,6 +2702,7 @@ impl ::std::fmt::Display for PricingTypeCodeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PricingTypeCodeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2476,6 +2716,7 @@ impl ::std::str::FromStr for PricingTypeCodeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PricingTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2484,6 +2725,7 @@ impl ::std::convert::TryFrom<&str> for PricingTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PricingTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2492,6 +2734,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PricingTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PricingTypeCodeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2500,11 +2743,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PricingTypeCodeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PricingTypeCodeEnum {
     fn default() -> Self {
         Self::S
     }
 }
+
 ///Identifies the pricing type of a fare.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2514,6 +2759,7 @@ pub enum PricingTypeNameEnum {
     Manual,
     Unknown,
 }
+
 impl ::std::fmt::Display for PricingTypeNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2524,6 +2770,7 @@ impl ::std::fmt::Display for PricingTypeNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for PricingTypeNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2538,6 +2785,7 @@ impl ::std::str::FromStr for PricingTypeNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for PricingTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2546,6 +2794,7 @@ impl ::std::convert::TryFrom<&str> for PricingTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for PricingTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2554,6 +2803,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for PricingTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for PricingTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2562,11 +2812,13 @@ impl ::std::convert::TryFrom<::std::string::String> for PricingTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for PricingTypeNameEnum {
     fn default() -> Self {
         Self::System
     }
 }
+
 ///Identifies the type of the loyalty program.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2580,6 +2832,7 @@ pub enum ProgramTypeEnum {
     #[serde(rename = "CORPORATE_LOYALTY_ID")]
     CorporateLoyaltyId,
 }
+
 impl ::std::fmt::Display for ProgramTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2590,6 +2843,7 @@ impl ::std::fmt::Display for ProgramTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for ProgramTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2604,6 +2858,7 @@ impl ::std::str::FromStr for ProgramTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for ProgramTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2612,6 +2867,7 @@ impl ::std::convert::TryFrom<&str> for ProgramTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for ProgramTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2620,6 +2876,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for ProgramTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for ProgramTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2628,11 +2885,13 @@ impl ::std::convert::TryFrom<::std::string::String> for ProgramTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for ProgramTypeEnum {
     fn default() -> Self {
         ProgramTypeEnum::FrequentFlyer
     }
 }
+
 ///Specifies the IATA-defined reason for the issuance code (RFIC) applicable to the Electronic Miscellaneous Document (EMD) that will be issued for the subcode identified in this record. The UNKNOWN option is used for the read-only purpose by getBooking API.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2656,6 +2915,7 @@ pub enum ReasonForIssuanceEnum {
     #[serde(rename = "UNKNOWN")]
     Unknown,
 }
+
 impl ::std::fmt::Display for ReasonForIssuanceEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2673,6 +2933,7 @@ impl ::std::fmt::Display for ReasonForIssuanceEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for ReasonForIssuanceEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2694,6 +2955,7 @@ impl ::std::str::FromStr for ReasonForIssuanceEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for ReasonForIssuanceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2702,6 +2964,7 @@ impl ::std::convert::TryFrom<&str> for ReasonForIssuanceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for ReasonForIssuanceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2710,6 +2973,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for ReasonForIssuanceEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for ReasonForIssuanceEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2718,11 +2982,13 @@ impl ::std::convert::TryFrom<::std::string::String> for ReasonForIssuanceEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for ReasonForIssuanceEnum {
     fn default() -> Self {
         Self::AirTransportation
     }
 }
+
 ///Identifies the type associated with the particular remark.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2756,6 +3022,7 @@ pub enum RemarkTypeEnum {
     #[serde(rename = "QUEUE_PLACE")]
     QueuePlace,
 }
+
 impl ::std::fmt::Display for RemarkTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2776,6 +3043,7 @@ impl ::std::fmt::Display for RemarkTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for RemarkTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2800,6 +3068,7 @@ impl ::std::str::FromStr for RemarkTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for RemarkTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2808,6 +3077,7 @@ impl ::std::convert::TryFrom<&str> for RemarkTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for RemarkTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2816,6 +3086,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for RemarkTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for RemarkTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2824,11 +3095,13 @@ impl ::std::convert::TryFrom<::std::string::String> for RemarkTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for RemarkTypeEnum {
     fn default() -> Self {
         Self::General
     }
 }
+
 ///Identifies the booking status of the item.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2854,6 +3127,7 @@ pub enum StatusNameEnum {
     Standby,
     Unknown,
 }
+
 impl ::std::fmt::Display for StatusNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2874,6 +3148,7 @@ impl ::std::fmt::Display for StatusNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for StatusNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2898,6 +3173,7 @@ impl ::std::str::FromStr for StatusNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for StatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2906,6 +3182,7 @@ impl ::std::convert::TryFrom<&str> for StatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for StatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2914,6 +3191,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for StatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for StatusNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2922,11 +3200,13 @@ impl ::std::convert::TryFrom<::std::string::String> for StatusNameEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for StatusNameEnum {
     fn default() -> Self {
         Self::Confirmed
     }
 }
+
 ///Indicates the type of tariff basis.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2935,6 +3215,7 @@ pub enum TariffBasisTypeEnum {
     Foreign,
     International,
 }
+
 impl ::std::fmt::Display for TariffBasisTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -2944,6 +3225,7 @@ impl ::std::fmt::Display for TariffBasisTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TariffBasisTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -2957,6 +3239,7 @@ impl ::std::str::FromStr for TariffBasisTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TariffBasisTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2965,6 +3248,7 @@ impl ::std::convert::TryFrom<&str> for TariffBasisTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TariffBasisTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2973,6 +3257,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TariffBasisTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TariffBasisTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -2981,11 +3266,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TariffBasisTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TariffBasisTypeEnum {
     fn default() -> Self {
         Self::Domestic
     }
 }
+
 ///Identifies the current status of the ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2995,6 +3282,7 @@ pub enum TicketStatusEnum {
     #[serde(rename = "Refunded/Exchanged")]
     RefundedExchanged,
 }
+
 impl ::std::fmt::Display for TicketStatusEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -3004,6 +3292,7 @@ impl ::std::fmt::Display for TicketStatusEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TicketStatusEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -3017,6 +3306,7 @@ impl ::std::str::FromStr for TicketStatusEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3025,6 +3315,7 @@ impl ::std::convert::TryFrom<&str> for TicketStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3033,6 +3324,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TicketStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TicketStatusEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3041,11 +3333,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TicketStatusEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TicketStatusEnum {
     fn default() -> Self {
         Self::Issued
     }
 }
+
 ///Identifies the options that will be printed on the final ticket. Must be used in combination with `tourCode`. Can be `REPLACE_WITH_BT` (suppresses the fare amount and replaces it with `BT`), `REPLACE_WITH_IT` (suppresses the fare amount and replaces it with `IT`), `SUPPRESS_IT` (suppresses `IT`), or `SUPPRESS_IT_AND_FARE` (suppresses `IT` as well as the fare amount). `IT` stands for the inclusive tour ticket amount on the passenger coupon of a ticket, while `BT` indicates the bulk inclusive tour ticket amount on the passenger coupon of a ticket.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -3059,6 +3353,7 @@ pub enum TourCodeOverridesOptionEnum {
     #[serde(rename = "SUPPRESS_IT_AND_FARE")]
     SuppressItAndFare,
 }
+
 impl ::std::fmt::Display for TourCodeOverridesOptionEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -3069,6 +3364,7 @@ impl ::std::fmt::Display for TourCodeOverridesOptionEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TourCodeOverridesOptionEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -3083,6 +3379,7 @@ impl ::std::str::FromStr for TourCodeOverridesOptionEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TourCodeOverridesOptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3091,6 +3388,7 @@ impl ::std::convert::TryFrom<&str> for TourCodeOverridesOptionEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TourCodeOverridesOptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3099,6 +3397,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TourCodeOverridesOption
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TourCodeOverridesOptionEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3107,11 +3406,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TourCodeOverridesOptionE
         value.parse()
     }
 }
+
 impl ::std::default::Default for TourCodeOverridesOptionEnum {
     fn default() -> Self {
         Self::ReplaceWithBt
     }
 }
+
 ///Identifies the type of the traveler.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -3141,6 +3442,7 @@ pub enum TravelerTypeEnum {
     #[serde(rename = "YOUTH")]
     Youth,
 }
+
 impl ::std::fmt::Display for TravelerTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -3159,6 +3461,7 @@ impl ::std::fmt::Display for TravelerTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for TravelerTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -3181,6 +3484,7 @@ impl ::std::str::FromStr for TravelerTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for TravelerTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3189,6 +3493,7 @@ impl ::std::convert::TryFrom<&str> for TravelerTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for TravelerTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3197,6 +3502,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for TravelerTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for TravelerTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3205,11 +3511,13 @@ impl ::std::convert::TryFrom<::std::string::String> for TravelerTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for TravelerTypeEnum {
     fn default() -> Self {
         Self::Adult
     }
 }
+
 ///Identifies the name of the car type based on the second character of the [ACRISS](https://www.acriss.org/car-codes/) code.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -3252,6 +3560,7 @@ pub enum VehicleTypeNameEnum {
     #[serde(rename = "Commercial Van/Truck")]
     CommercialVanTruck,
 }
+
 impl ::std::fmt::Display for VehicleTypeNameEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -3282,6 +3591,7 @@ impl ::std::fmt::Display for VehicleTypeNameEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for VehicleTypeNameEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -3316,6 +3626,7 @@ impl ::std::str::FromStr for VehicleTypeNameEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for VehicleTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3324,6 +3635,7 @@ impl ::std::convert::TryFrom<&str> for VehicleTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for VehicleTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3332,6 +3644,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for VehicleTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for VehicleTypeNameEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3340,11 +3653,13 @@ impl ::std::convert::TryFrom<::std::string::String> for VehicleTypeNameEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for VehicleTypeNameEnum {
     fn default() -> Self {
         Self::TwoThreeDoor
     }
 }
+
 ///Identifies the type of the passenger’s visa document. Applies to identity documents with the `documentType` parameter set to `VISA`. If the visa document type cannot be determined, it is displayed as `Unknown`.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -3356,6 +3671,7 @@ pub enum VisaTypeResponseEnum {
     Visa,
     Unknown,
 }
+
 impl ::std::fmt::Display for VisaTypeResponseEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -3366,6 +3682,7 @@ impl ::std::fmt::Display for VisaTypeResponseEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for VisaTypeResponseEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -3380,6 +3697,7 @@ impl ::std::str::FromStr for VisaTypeResponseEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for VisaTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3388,6 +3706,7 @@ impl ::std::convert::TryFrom<&str> for VisaTypeResponseEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for VisaTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3396,6 +3715,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for VisaTypeResponseEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for VisaTypeResponseEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -3404,6 +3724,7 @@ impl ::std::convert::TryFrom<::std::string::String> for VisaTypeResponseEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for VisaTypeResponseEnum {
     fn default() -> Self {
         Self::USNonImmigrantVisa

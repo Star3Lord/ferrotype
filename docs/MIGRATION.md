@@ -344,6 +344,26 @@ the old engine as default, and record where the wall is.
   the typify base; `docs/SPEC_COVERAGE.md` stands as the record of why
   owning schema semantics was the wrong debt to take on.
 
+- **D16 — rendering separates items with blank lines.** prettyplease
+  emits no blank line between items, so generated files read as a wall:
+  a struct's closing brace with the next type's doc comment on the very
+  next line. Every rendered output document (single-file and folder-tree
+  alike — both paths share `render::render_body`) now gets an
+  item-spacing post-pass after `polish_rendered`: a single blank line
+  between adjacent items, at the top level and inside every inline
+  module body, with runs of one-line declarations kept tight
+  (consecutive `use` items, consecutive body-less `pub mod x;`
+  declarations — so import preambles and the root `mod.rs` keep their
+  block shape). Item boundaries come from span line numbers of the
+  re-parsed source (proc-macro2 `span-locations`), which start at an
+  item's doc/attribute stack, so docs move with their item; insertions
+  are applied bottom-up by line index. Same safety posture as the D14
+  polish: the pass is whitespace-only and token-verified — the spaced
+  output must re-parse to the identical token stream or the input is
+  returned unchanged. This is a deliberate output change for every emit
+  style; all goldens and the examples workspace's checked-in outputs
+  were regenerated (the diff is insertion-only).
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

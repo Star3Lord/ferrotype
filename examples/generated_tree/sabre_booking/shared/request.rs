@@ -5,11 +5,14 @@ use ::serde::{Deserialize, Serialize};
 use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -18,6 +21,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -26,17 +30,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains contact information of an agency.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -54,6 +61,7 @@ pub struct AgencyContacts {
     ///Lists the agency's formatted phone numbers.
     pub phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }
+
 ///Contains refund amount and applicable three-letter IATA airport code.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -69,6 +77,7 @@ pub struct AirportTaxBreakdown {
     ///Amount in the currency of the original ticket.
     pub tax_amount: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a set of additional features whose usage requires explicit indication to maintain backward compatibility. These functionalities will be seamlessly incorporated into a future major version of this API.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -86,6 +95,7 @@ pub struct CommonExtraFeatures {
     ///If `true`, returns the following additional forms of payment - `DOCKET`, `GOVERNMENT_TRAVEL_REQUEST`, and `INVOICE`.
     pub return_wallet_forms_of_payment: ::std::option::Option<bool>,
 }
+
 ///Contains information that may be used to replace the ticket endorsement text stored during pricing.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -101,6 +111,7 @@ pub struct Endorsements {
     ///If `true`, overrides all pre-programmed endorsements and prints special endorsements of the fare.
     pub use_override: ::std::option::Option<bool>,
 }
+
 ///Contains basic agency information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -116,6 +127,7 @@ pub struct GenericAgency {
     #[patch(name = "Option<AgencyContactsPatch>")]
     pub contact_info: ::std::option::Option<AgencyContacts>,
 }
+
 ///Contains information about the hardcopy printer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -131,6 +143,7 @@ pub struct HardcopyPrinter {
     ///The hardcopy printer spacing to be applied.
     pub spacing: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the actions to be performed after the completion of the requested action (booking creation/ticket void or refund).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -145,6 +158,7 @@ pub struct Notification {
     ///Lists the specific queue (up to three) to place the PNR into for the operation.
     pub queue_placement: ::std::option::Option<::std::vec::Vec<Queue>>,
 }
+
 ///Contains code and amount of a specific tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -164,6 +178,7 @@ pub struct OverrideTax {
     ///The two-character tax code for which the refundable amount is applicable. Must be combined with `taxAmount`.
     pub tax_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a maximum of two forms of payment from the `formsOfPayment` array. Multiple forms of payment may be defined only if your location uses Billing and Settlement Plan (BSP) reporting and/or the point of sale country does not prohibit providing more than one credit card as the form of payment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -181,6 +196,7 @@ pub struct PaymentMethod {
     ///The index of the primary form of payment type in the `formsOfPayment` array.
     pub secondary_form_of_payment: ::std::option::Option<i32>,
 }
+
 ///Contains information about a printer or a printer profile.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -200,6 +216,7 @@ pub struct PrinterAddress {
     #[patch(name = "Option<TicketPrinterPatch>")]
     pub ticket: ::std::option::Option<TicketPrinter>,
 }
+
 ///Contains details of a queue.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -221,6 +238,7 @@ pub struct Queue {
     ///The queue number.
     pub queue_number: ::std::option::Option<i32>,
 }
+
 ///Contains detailed information for each ticket to be refunded.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -236,6 +254,7 @@ pub struct RefundFlightTicket {
     #[patch(name = "Option<RefundQualifiersPatch>")]
     pub refund_qualifiers: ::std::option::Option<RefundQualifiers>,
 }
+
 ///Contains optional refund qualifiers for ATPCO tickets.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -264,6 +283,7 @@ pub struct RefundQualifiers {
     ///A waiver code to be applied to the refund. Typically a waiver code will be supplied by the airline for the agent to use to override a cancel fee.
     pub waiver_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains refund amount per form of payment in the currency of the original ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -277,6 +297,7 @@ pub struct SplitRefundAmount {
     ///Amount in the currency of the original ticket.
     pub amount: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains information about the ticket printer.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -292,6 +313,7 @@ pub struct TicketPrinter {
     ///The ticket stock country code to be applied.
     pub country_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains basic ticketing qualifiers.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

@@ -6,11 +6,14 @@ use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::request::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -19,6 +22,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -27,17 +31,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains a set of additional features whose usage requires explicit indication to maintain backward compatibility. These functionalities will be seamlessly incorporated into a future major version of this API.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -53,6 +60,7 @@ pub struct ExtraFeatures {
     ///If `true`, a lack of seat assignation to the corresponding traveler is marked as an empty `Seat` object. If `false`, empty objects are replaced with null values. Applies to NDC content only.
     pub return_empty_seat_objects: ::std::option::Option<bool>,
 }
+
 ///Contains both required and optional elements to make a booking request.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -81,6 +89,7 @@ pub struct GetBookingRequest {
     ///If true, the application unmasks payment card information stored in the booking. To display this data, the Employee Profile Record (EPR) needs to include the CCVIEW keyword.
     pub unmask_payment_card_numbers: ::std::option::Option<bool>,
 }
+
 ///Identifies the portion of data to be returned.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -148,6 +157,7 @@ pub enum ReturnOnlyEnum {
     #[serde(rename = "PROFILES")]
     Profiles,
 }
+
 impl ::std::fmt::Display for ReturnOnlyEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -185,6 +195,7 @@ impl ::std::fmt::Display for ReturnOnlyEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for ReturnOnlyEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -226,6 +237,7 @@ impl ::std::str::FromStr for ReturnOnlyEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for ReturnOnlyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -234,6 +246,7 @@ impl ::std::convert::TryFrom<&str> for ReturnOnlyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for ReturnOnlyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -242,6 +255,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for ReturnOnlyEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for ReturnOnlyEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -250,6 +264,7 @@ impl ::std::convert::TryFrom<::std::string::String> for ReturnOnlyEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for ReturnOnlyEnum {
     fn default() -> Self {
         Self::Flights

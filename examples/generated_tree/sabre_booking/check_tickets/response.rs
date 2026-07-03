@@ -7,11 +7,14 @@ use super::super::check_tickets::request::*;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
 use super::super::shared::response::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -20,6 +23,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -28,17 +32,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains detailed information about a specific cancellation option for a NDC Order item.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -59,6 +66,7 @@ pub struct CancelOffer {
     #[patch(name = "Option<TotalValuesPatch>")]
     pub refund_totals: ::std::option::Option<TotalValues>,
 }
+
 ///Identifies the offer type of the cancel option.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -68,6 +76,7 @@ pub enum CancelOfferTypeEnum {
     #[serde(rename = "REFUND")]
     Refund,
 }
+
 impl ::std::fmt::Display for CancelOfferTypeEnum {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
@@ -76,6 +85,7 @@ impl ::std::fmt::Display for CancelOfferTypeEnum {
         }
     }
 }
+
 impl ::std::str::FromStr for CancelOfferTypeEnum {
     type Err = self::error::ConversionError;
     fn from_str(
@@ -88,6 +98,7 @@ impl ::std::str::FromStr for CancelOfferTypeEnum {
         }
     }
 }
+
 impl ::std::convert::TryFrom<&str> for CancelOfferTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -96,6 +107,7 @@ impl ::std::convert::TryFrom<&str> for CancelOfferTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<&::std::string::String> for CancelOfferTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -104,6 +116,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for CancelOfferTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::convert::TryFrom<::std::string::String> for CancelOfferTypeEnum {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -112,11 +125,13 @@ impl ::std::convert::TryFrom<::std::string::String> for CancelOfferTypeEnum {
         value.parse()
     }
 }
+
 impl ::std::default::Default for CancelOfferTypeEnum {
     fn default() -> Self {
         Self::Void
     }
 }
+
 ///Contains information about cancellation eligibility and refundable amounts per ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -140,6 +155,7 @@ pub struct CheckTicketsResponse {
     ///Provides the exact point in time when the response was generated. The timestamp is expressed in UTC and presented in the YYYY-MM-DDTHH:MM:SSZ format.
     pub timestamp: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains detailed information about cancellation eligibility, refundable amounts, and exchangeability data for a single ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -155,6 +171,7 @@ pub struct CheckedTicket {
     #[patch(name = "Option<RefundFeePatch>")]
     pub refund_fee: ::std::option::Option<RefundFee>,
 }
+
 ///Contains structured details about the cancellation fee applied during an automated refund process. Includes the fee amount, currency, and any applicable taxes.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

@@ -5,11 +5,14 @@ pub mod create_pet {
     use ::serde::{Deserialize, Serialize};
     use ::struct_patch::Patch;
     use super::shared::*;
+
     /// Error types.
     pub mod error {
         /// Error from a `TryFrom` or `FromStr` implementation.
         pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
         impl ::std::error::Error for ConversionError {}
+
         impl ::std::fmt::Display for ConversionError {
             fn fmt(
                 &self,
@@ -18,6 +21,7 @@ pub mod create_pet {
                 ::std::fmt::Display::fmt(&self.0, f)
             }
         }
+
         impl ::std::fmt::Debug for ConversionError {
             fn fmt(
                 &self,
@@ -26,17 +30,20 @@ pub mod create_pet {
                 ::std::fmt::Debug::fmt(&self.0, f)
             }
         }
+
         impl From<&'static str> for ConversionError {
             fn from(value: &'static str) -> Self {
                 Self(value.into())
             }
         }
+
         impl From<String> for ConversionError {
             fn from(value: String) -> Self {
                 Self(value.into())
             }
         }
     }
+
     ///`CreatePetRequest`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -56,15 +63,19 @@ pub mod create_pet {
         pub wants_newsletter: ::std::option::Option<bool>,
     }
 }
+
 pub mod get_pet {
     use ::serde::{Deserialize, Serialize};
     use ::struct_patch::Patch;
     use super::shared::*;
+
     /// Error types.
     pub mod error {
         /// Error from a `TryFrom` or `FromStr` implementation.
         pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
         impl ::std::error::Error for ConversionError {}
+
         impl ::std::fmt::Display for ConversionError {
             fn fmt(
                 &self,
@@ -73,6 +84,7 @@ pub mod get_pet {
                 ::std::fmt::Display::fmt(&self.0, f)
             }
         }
+
         impl ::std::fmt::Debug for ConversionError {
             fn fmt(
                 &self,
@@ -81,11 +93,13 @@ pub mod get_pet {
                 ::std::fmt::Debug::fmt(&self.0, f)
             }
         }
+
         impl From<&'static str> for ConversionError {
             fn from(value: &'static str) -> Self {
                 Self(value.into())
             }
         }
+
         impl From<String> for ConversionError {
             fn from(value: String) -> Self {
                 Self(value.into())
@@ -93,16 +107,20 @@ pub mod get_pet {
         }
     }
 }
+
 pub mod shared {
     use ::serde::{Deserialize, Serialize};
     use ::struct_patch::Patch;
     use super::create_pet::*;
     use super::get_pet::*;
+
     /// Error types.
     pub mod error {
         /// Error from a `TryFrom` or `FromStr` implementation.
         pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
         impl ::std::error::Error for ConversionError {}
+
         impl ::std::fmt::Display for ConversionError {
             fn fmt(
                 &self,
@@ -111,6 +129,7 @@ pub mod shared {
                 ::std::fmt::Display::fmt(&self.0, f)
             }
         }
+
         impl ::std::fmt::Debug for ConversionError {
             fn fmt(
                 &self,
@@ -119,17 +138,20 @@ pub mod shared {
                 ::std::fmt::Debug::fmt(&self.0, f)
             }
         }
+
         impl From<&'static str> for ConversionError {
             fn from(value: &'static str) -> Self {
                 Self(value.into())
             }
         }
+
         impl From<String> for ConversionError {
             fn from(value: String) -> Self {
                 Self(value.into())
             }
         }
     }
+
     ///`Category`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -144,6 +166,7 @@ pub mod shared {
         #[patch(name = "Option<CategoryRefPatch>")]
         pub parent: ::std::option::Option<CategoryRef>,
     }
+
     ///`CategoryRef`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -156,6 +179,7 @@ pub mod shared {
     pub struct CategoryRef {
         pub slug: ::std::option::Option<::std::string::String>,
     }
+
     ///`Dog`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -170,6 +194,7 @@ pub mod shared {
         pub pet: Pet,
         pub bark_loudness: ::std::option::Option<i32>,
     }
+
     ///`Pet`
     #[serde_with::skip_serializing_none]
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -188,6 +213,7 @@ pub mod shared {
         pub status: ::std::option::Option<PetStatus>,
         pub tag_count: ::std::option::Option<i32>,
     }
+
     ///`PetStatus`
     #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -199,6 +225,7 @@ pub mod shared {
         #[serde(rename = "sold")]
         Sold,
     }
+
     impl ::std::fmt::Display for PetStatus {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match *self {
@@ -208,6 +235,7 @@ pub mod shared {
             }
         }
     }
+
     impl ::std::str::FromStr for PetStatus {
         type Err = self::error::ConversionError;
         fn from_str(
@@ -221,6 +249,7 @@ pub mod shared {
             }
         }
     }
+
     impl ::std::convert::TryFrom<&str> for PetStatus {
         type Error = self::error::ConversionError;
         fn try_from(
@@ -229,6 +258,7 @@ pub mod shared {
             value.parse()
         }
     }
+
     impl ::std::convert::TryFrom<&::std::string::String> for PetStatus {
         type Error = self::error::ConversionError;
         fn try_from(
@@ -237,6 +267,7 @@ pub mod shared {
             value.parse()
         }
     }
+
     impl ::std::convert::TryFrom<::std::string::String> for PetStatus {
         type Error = self::error::ConversionError;
         fn try_from(
@@ -245,6 +276,7 @@ pub mod shared {
             value.parse()
         }
     }
+
     impl ::std::default::Default for PetStatus {
         fn default() -> Self {
             Self::Available

@@ -816,7 +816,7 @@ fn reflow_invocation(item: &syn::ItemMacro, indent: &str) -> Option<Vec<String>>
 /// Structural token equality, ignoring `proc_macro2::Spacing` (which
 /// differs between quote-built and text-lexed streams around tokens
 /// like `$`) — the correct notion of "same tokens" for macro fidelity.
-fn tokens_equal(a: TokenStream, b: TokenStream) -> bool {
+pub(crate) fn tokens_equal(a: TokenStream, b: TokenStream) -> bool {
     use proc_macro2::TokenTree;
     let (a, b): (Vec<TokenTree>, Vec<TokenTree>) =
         (a.into_iter().collect(), b.into_iter().collect());
@@ -833,7 +833,7 @@ fn tokens_equal(a: TokenStream, b: TokenStream) -> bool {
 }
 
 /// Join polished lines, preserving the source's trailing newline.
-fn finish_lines(lines: Vec<String>, source: &str) -> String {
+pub(crate) fn finish_lines(lines: Vec<String>, source: &str) -> String {
     let mut result = lines.join("\n");
     if source.ends_with('\n') {
         result.push('\n');

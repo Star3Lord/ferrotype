@@ -5,6 +5,7 @@ use ::serde::{Deserialize, Serialize};
 use ::struct_patch::Patch;
 use super::super::support::impl_string_enum;
 pub use super::super::support::error;
+
 ///`PetStatus`
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16,6 +17,7 @@ pub enum PetStatus {
     #[serde(rename = "sold")]
     Sold,
 }
+
 impl_string_enum!(PetStatus {
     Available => "available",
     Pending => "pending",

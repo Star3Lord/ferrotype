@@ -28,7 +28,10 @@ clap = { version = "4", features = ["derive"] }
 heck = "0.5"
 json-patch = "4"
 prettyplease = "0.2"
-proc-macro2 = "1"
+# `span-locations` exposes line numbers on parsed spans outside proc-macro
+# context; the item-spacing render pass (src/render.rs) locates item
+# boundaries with them.
+proc-macro2 = { version = "1", features = ["span-locations"] }
 quote = "1"
 # typify's public API is built on schemars 0.8 (`RootSchema`); the same
 # version also backs the cfg-gated `schemars::JsonSchema` derives in

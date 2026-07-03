@@ -11,6 +11,7 @@ use super::super::shared::enums::*;
 use super::super::shared::request::*;
 use super::super::shared::response::*;
 pub use super::super::support::error;
+
 ///`Category`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -25,6 +26,7 @@ pub struct Category {
     #[patch(name = "Option<CategoryRefPatch>")]
     pub parent: ::std::option::Option<CategoryRef>,
 }
+
 ///`CategoryRef`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -37,6 +39,7 @@ pub struct Category {
 pub struct CategoryRef {
     pub slug: ::std::option::Option<::std::string::String>,
 }
+
 ///`Dog`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

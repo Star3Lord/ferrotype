@@ -5,11 +5,14 @@ use ::serde::{Deserialize, Serialize};
 use ::struct_patch::Patch;
 use super::super::shared::common::*;
 use super::super::shared::enums::*;
+
 /// Error types.
 pub mod error {
     /// Error from a `TryFrom` or `FromStr` implementation.
     pub struct ConversionError(::std::borrow::Cow<'static, str>);
+
     impl ::std::error::Error for ConversionError {}
+
     impl ::std::fmt::Display for ConversionError {
         fn fmt(
             &self,
@@ -18,6 +21,7 @@ pub mod error {
             ::std::fmt::Display::fmt(&self.0, f)
         }
     }
+
     impl ::std::fmt::Debug for ConversionError {
         fn fmt(
             &self,
@@ -26,17 +30,20 @@ pub mod error {
             ::std::fmt::Debug::fmt(&self.0, f)
         }
     }
+
     impl From<&'static str> for ConversionError {
         fn from(value: &'static str) -> Self {
             Self(value.into())
         }
     }
+
     impl From<String> for ConversionError {
         fn from(value: String) -> Self {
             Self(value.into())
         }
     }
 }
+
 ///Contains accounting data correlated with a fulfilled document. Supported for ATPCO content only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -76,6 +83,7 @@ pub struct AccountingItem {
     ///Lists the indices of travelers in the `travelers` array to whom the particular accounting item is assigned. Returned only if `fareApplication` is set to `Single Traveler`.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains the details for an ancillary.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -123,6 +131,7 @@ pub struct Ancillary {
     ///The two-letter [IATA](https://www.iata.org/about/members/Pages/airline-list.aspx?All=true) designator code of the airline providing the service. Mutually exclusive with the `source` property.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the allowed baggage number which is included in the ticket price.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -142,6 +151,7 @@ pub struct BaggageAllowance {
     ///Maximum summary weight of all allowed baggage measured in pounds [lb].
     pub total_weight_in_pounds: ::std::option::Option<i32>,
 }
+
 ///Contains restrictions applied on number of baggage pieces and optional fee applicable.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -169,6 +179,7 @@ pub struct BaggagePolicy {
     ///The description of the special baggage items allowed, if the baggage policy provides information about special baggage items such as musical instruments, fishing or sporting equipment, mobility device, etc.
     pub special_item_description: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains booking information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -250,6 +261,7 @@ pub struct Booking {
     #[patch(name = "Option<TravelersGroupPatch>")]
     pub travelers_group: ::std::option::Option<TravelersGroup>,
 }
+
 ///Contains a Branded Fare attribute.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -265,6 +277,7 @@ pub struct BrandAttribute {
     ///The ID of a given Branded Fare attribute.
     pub item_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains car rental information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -280,6 +293,7 @@ pub struct Car {
     #[serde(flatten)]
     pub car_item: CarItem,
 }
+
 ///Contains car rental information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -349,6 +363,7 @@ pub struct CarItem {
     ///The full name of the car rental vendor.
     pub vendor_name: ::std::string::String,
 }
+
 ///Contains the commission amount applicable to the fare or ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -366,6 +381,7 @@ pub struct Commission {
     ///The three letters [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) currency code.
     pub currency_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains contact information for the booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -385,6 +401,7 @@ pub struct ContactInformation {
     ///Lists formatted phone numbers of travelers or vendors.
     pub phones: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
 }
+
 ///Contains the ticket's coupon information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -398,6 +415,7 @@ pub struct CouponStatus {
     pub coupon_status: CouponStatusEnum,
     pub coupon_status_code: CouponStatusCodeEnum,
 }
+
 ///Contains details about the creation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -433,6 +451,7 @@ pub struct CreationDetails {
     ///The pseudo city code where the booking was created.
     pub user_work_pcc: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains cruise reservation information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -448,6 +467,7 @@ pub struct Cruise {
     #[serde(flatten)]
     pub cruise_item: CruiseItem,
 }
+
 ///Contains cruise information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -486,6 +506,7 @@ pub struct CruiseItem {
     ///The cruise vendor code.
     pub vendor_code: ::std::string::String,
 }
+
 ///Contains the date range up to which a penalty is applicable, including the total cost of the penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -502,6 +523,7 @@ pub struct DateRangeRefundPenalty {
     pub applicable_to_date: ::std::option::Option<::std::string::String>,
     pub penalty: Value,
 }
+
 ///Contains error information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -525,6 +547,7 @@ pub struct Error {
     ///The type of the error.
     pub type_: ::std::string::String,
 }
+
 ///Contains construction details of a specific fare.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -578,6 +601,7 @@ pub struct Fare {
     ///Indicates to which travelers from the `travelers` list the fare belongs to. If the fare is applicable for all travelers, this list is not provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains details of a specific fare component.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -613,6 +637,7 @@ pub struct FareComponent {
     ///If `true`, the fare component was created for a flight present in the current itinerary. If `false`, the fare component is related to a flight which is no longer a part of the current itinerary. This may be the case, for example, after a schedule change.
     pub is_current_itinerary: ::std::option::Option<bool>,
 }
+
 ///Contains details about the fare creation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -642,6 +667,7 @@ pub struct FareCreationDetails {
     ///The pseudo city code where the booking was created.
     pub user_work_pcc: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains a breakdown of the fare difference between the initially offered fare totals and the final fare totals.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -663,6 +689,7 @@ pub struct FareDifferenceBreakdown {
         ::std::vec::Vec<GoodsAndServicesTax>,
     >,
 }
+
 ///Contains ancillary offer for selected flights identified by `itemId` flight references and for selected travelers identified by indices in `travelers` list.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -686,6 +713,7 @@ pub struct FareOffer {
     ///Indicates to which travelers from the `travelers` list the ancillary offer belongs to. If the offer is valid for all travelers, this list is not provided.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains eligibility requirements and travel restrictions for a flight.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -717,6 +745,7 @@ pub struct FareRule {
     ///Lists estimated penalty details associated with a refund. Estimates assume the highest possible refund penalty is applied.
     pub refund_penalties: ::std::option::Option<::std::vec::Vec<FareRulePenalty>>,
 }
+
 ///Contains penalty information applied to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -736,6 +765,7 @@ pub struct FareRulePenalty {
     pub no_show_penalty: ::std::option::Option<Value>,
     pub penalty: Value,
 }
+
 ///Contains a service or fee that is bundled with the fare.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -759,6 +789,7 @@ pub struct FareService {
     ///The type of the fare service or fee.
     pub type_: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains flight information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -774,6 +805,7 @@ pub struct Flight {
     #[serde(flatten)]
     pub flight_item: FlightItem,
 }
+
 ///Contains flight information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -877,6 +909,7 @@ pub struct FlightItem {
     ///The estimated (before departure) or actual departure time in `HH:MM` format.
     pub updated_departure_time: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains coupon information of the corresponding flight, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -892,6 +925,7 @@ pub struct FlightReferenceCoupon {
     #[serde(flatten)]
     pub coupon_status: CouponStatus,
 }
+
 ///Contains detailed information about a flight booking refund.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -908,6 +942,7 @@ pub struct FlightRefund {
     pub confirmation_id: ::std::option::Option<::std::string::String>,
     pub refund_totals: TotalValues,
 }
+
 ///Contains information about an electronic flight ticket or EMD issued for a traveler.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -943,6 +978,7 @@ pub struct FlightTicket {
     ///Specifies the traveler from the `travelers` array whose name is associated with the ticket.
     pub traveler_index: i32,
 }
+
 ///Contains details of the payment amount - the total amount to pay, the amount before tax, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -962,6 +998,7 @@ pub struct GenericTotalValues {
     ///The total amount; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::string::String,
 }
+
 ///Contains details of Goods and Services Tax (GST).
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -979,6 +1016,7 @@ pub struct GoodsAndServicesTax {
     ///The GST tax percentage. Mutually exclusive with `amount`.
     pub percentage: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains detailed information about the handling fee applied to the fare. This fee typically covers administrative or processing costs.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -996,6 +1034,7 @@ pub struct HandlingFee {
     ///The fee type.
     pub type_: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains detailed information about the hidden stop location.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1023,6 +1062,7 @@ pub struct HiddenStop {
     ///Layover duration in minutes.
     pub duration_in_minutes: ::std::option::Option<i32>,
 }
+
 ///Contains hotel reservation information identified by `itemId` and associated with a booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1038,6 +1078,7 @@ pub struct Hotel {
     #[serde(flatten)]
     pub hotel_item: HotelItem,
 }
+
 ///Contains hotel address information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1053,6 +1094,7 @@ pub struct HotelAddress {
     ///The three-letter IATA city code of the hotel location.
     pub city_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains the date range up to which a hotel penalty is applicable, including the total cost of the penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1069,6 +1111,7 @@ pub struct HotelDateRangeRefundPenalty {
     pub applicable_to_date: ::std::option::Option<::std::string::String>,
     pub penalty: HotelPenaltyValue,
 }
+
 ///Contains hotel information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1137,6 +1180,7 @@ pub struct HotelItem {
     ///Additional special requests put in by the traveler with regards to the hotel reservation.
     pub special_instructions: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains monetary amount information of hotel penalty.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1154,6 +1198,7 @@ pub struct HotelPenaltyValue {
     ///The hotel refund penalty expressed as percentage. If present, ignore `amount` returned.
     pub percentage: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains details of an identity document.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1206,6 +1251,7 @@ pub struct IdentityDocument {
     pub surname: ::std::option::Option<::std::string::String>,
     pub visa_type: ::std::option::Option<VisaTypeResponseEnum>,
 }
+
 ///`IdentityDocumentReference`
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1220,6 +1266,7 @@ pub struct IdentityDocumentReference {
     pub item_id: ::std::option::Option<::std::string::String>,
     pub status: ::std::option::Option<StatusNameEnum>,
 }
+
 ///Contains details of the initially offered fare. To obtain this data, the Employee Profile Record (EPR) needs to include the ORGFQD keyword.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1235,6 +1282,7 @@ pub struct InitialSellingFare {
     #[patch(name = "Option<GenericTotalValuesPatch>")]
     pub totals: ::std::option::Option<GenericTotalValues>,
 }
+
 ///Contains details of the flights within the journey.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1256,6 +1304,7 @@ pub struct Journey {
     ///The total number of flights in the journey.
     pub number_of_flights: i32,
 }
+
 ///Contains the meal options provided on the flight.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1270,6 +1319,7 @@ pub struct Meal {
     pub code: ::std::string::String,
     pub description: MealDescriptionEnum,
 }
+
 ///Contains a nonelectronic ticket. Supported for ATPCO content only.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1294,6 +1344,7 @@ pub struct NonElectronicTicket {
     ///The index of the traveler to whom the ticket is assigned.
     pub traveler_index: ::std::option::Option<i32>,
 }
+
 ///Contains penalty information that applies to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1308,6 +1359,7 @@ pub struct NonShowPenalty {
     pub penalty: ::std::option::Option<Value>,
     pub source: ::std::option::Option<PenaltySourceEnum>,
 }
+
 ///Contains details of the payment amount in original currency of the base fare - the total amount to pay, the amount before tax, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1323,6 +1375,7 @@ pub struct OriginalTotalValues {
     ///The total amount in original currency; the sum of the `subtotal`, `taxes`, and `fees`.
     pub total: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains penalty information that applies to specific fare rules.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1343,6 +1396,7 @@ pub struct PenaltyItem {
     pub penalty: Value,
     pub source: ::std::option::Option<PenaltySourceEnum>,
 }
+
 ///Contains phone details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1358,6 +1412,7 @@ pub struct PhoneResponse {
     ///The formatted phone number of the traveler.
     pub number: ::std::string::String,
 }
+
 ///Contains parameters needed to retrieve profile information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1375,6 +1430,7 @@ pub struct Profile {
     ///The unique profile ID number.
     pub unique_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Hotel rate for a particular time range of the whole reservation.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1394,6 +1450,7 @@ pub struct RateInterval {
     ///The start date of the rate applicability in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) format.
     pub start_date: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains basic information of the rooms in the hotel with the number of rooms booked.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1431,6 +1488,7 @@ pub struct Room {
     ///Lists the travelers within the `travelers` list. Indicates which travelers are considered to be guests associated with a particular room. It is possible that not all travelers are listed as hotel guests in the hotel booking.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains detailed information about the seat.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1449,6 +1507,7 @@ pub struct Seat {
     pub status_code: ::std::option::Option<::std::string::String>,
     pub status_name: ::std::option::Option<StatusNameEnum>,
 }
+
 ///Contains basic attributes common for all possible types of booking segments. Provided attributes are only relevant to the segment type.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1490,6 +1549,7 @@ pub struct SegmentBasicAttributes {
     ///The corresponding vendor code, such as carrier code for a `FLIGHT` type segment, or hotel vendor code for a `HOTEL` type segment.
     pub vendor_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains essential information which is common for all possible types of booking segments.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1505,6 +1565,7 @@ pub struct SegmentBasics {
     #[serde(flatten)]
     pub segment_basic_attributes: SegmentBasicAttributes,
 }
+
 ///Contains the unique ID of the segment.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1518,6 +1579,7 @@ pub struct SegmentReference {
     ///The unique ID of the segment which may correspond to the itemId of a booking element, such as flight, hotel, car, etc.
     pub id: ::std::string::String,
 }
+
 ///Contains special service information (SSR) for a specific traveler.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1542,6 +1604,7 @@ pub struct SpecialService {
     ///Lists the travelers within the travelers list the special service belongs to. This list is not provided for special services without explicit traveler assignation.
     pub traveler_indices: ::std::option::Option<::std::vec::Vec<i32>>,
 }
+
 ///Contains details for a single tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1559,6 +1622,7 @@ pub struct TaxComponent {
     ///The desired tax code. Must be combined with `taxAmount`.
     pub tax_code: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains detailed information about cancellation eligibility, refundable amounts, and exchangeability data for a single ticket.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1588,6 +1652,7 @@ pub struct Ticket {
     #[patch(name = "Option<TotalValuesPatch>")]
     pub refund_totals: ::std::option::Option<TotalValues>,
 }
+
 ///Contains coupon status details.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1603,6 +1668,7 @@ pub struct TicketCoupon {
     ///The identifier of the flight associated with the coupon and stored in the booking.
     pub item_id: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains all total payment amounts across flights, hotels, car reservations and others.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1628,6 +1694,7 @@ pub struct TotalPayments {
     ///Lists all train payments, per each currency used.
     pub train_totals: ::std::option::Option<::std::vec::Vec<TotalValues>>,
 }
+
 ///Contains details of the payment amount - the total amount to pay, the amount before tax, the amount of fees, and the amount of tax.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1645,6 +1712,7 @@ pub struct TotalValues {
     ///The net remit amount. The EPR keyword "NETFQD" is required to return `netRemit`. Net remit is used to arrange the payment of an additional commission above the standard commission amount. This extra commission is payable by the validating carrier through the BSP settlement cycle.
     pub net_remit: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains train reservation information, identified by `itemId`, for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1660,6 +1728,7 @@ pub struct Train {
     #[serde(flatten)]
     pub train_item: TrainItem,
 }
+
 ///Contains train information for the given booking.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1708,6 +1777,7 @@ pub struct TrainItem {
     ///The name of the marketing railroad company.
     pub vendor_name: ::std::option::Option<::std::string::String>,
 }
+
 ///Contains traveler information.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -1755,6 +1825,7 @@ pub struct Traveler {
     pub surname: ::std::string::String,
     pub type_: ::std::option::Option<TravelerTypeEnum>,
 }
+
 ///Contains information about the group the travelers belong to.
 #[serde_with::skip_serializing_none]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

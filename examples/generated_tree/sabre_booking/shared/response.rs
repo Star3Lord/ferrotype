@@ -253,10 +253,10 @@ pub struct Booking {
     pub is_cancelable: ::std::option::Option<bool>,
     /// If true, at least one ticket was issued for the booking.
     pub is_ticketed: ::std::option::Option<bool>,
-    /// Lists all the journeys associated with the booking.
-    /// * For one-way, this is a single element list.
-    /// * For round-trip, the list contains two journeys.
-    /// * For multi-destinations, the list contains more than two journeys.
+    /// Lists all the journeys associated with the booking.\
+    ///   * For one-way, this is a single element list.\
+    ///   * For round-trip, the list contains two journeys.\
+    ///   * For multi-destinations, the list contains more than two journeys.
     pub journeys: ::std::option::Option<::std::vec::Vec<Journey>>,
     /// Lists nonelectronic tickets from the booking.
     pub non_electronic_tickets: ::std::option::Option<

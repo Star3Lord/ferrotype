@@ -382,12 +382,16 @@ packed form (`src/render.rs`, decision D16 in
 Doc comments are normalized the same way for both styles: the raw
 `#[doc]` strings typify carries (cramped `///text`, `/** ... */`
 blocks for multi-line descriptions, unwrapped spec-length lines)
-render as stacked `/// ` lines — one leading space, multi-line
-descriptions split line-per-line, and long lines soft-wrapped at word
-boundaries to 92 content characters without re-flowing the spec's own
-line structure. Doc blocks containing fenced code (the
-`with_schema_in_docs` `<details>` sections) pass through untouched
-(decision D17).
+render as stacked `/// ` lines — one leading doc space with each
+line's own indentation preserved, multi-line descriptions split
+line-per-line, and long lines soft-wrapped at word boundaries to 92
+content characters without re-flowing the spec's own line structure.
+The spec's newlines stay *visible* line breaks in rustdoc and IDE
+hover: CommonMark collapses a bare newline to a space, so every
+original line followed by another gets a trailing-backslash hard
+break, while the soft wrap's own line breaks carry no marker and keep
+flowing. Doc blocks containing fenced code (the `with_schema_in_docs`
+`<details>` sections) pass through untouched (decision D17).
 
 Beyond spacing: by default every string enum is followed by ~50 lines
 of mechanical impls (`Display`, `FromStr`, the three `TryFrom` forms,

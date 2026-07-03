@@ -376,14 +376,30 @@ the old engine as default, and record where the wall is.
   (recursing into inline module bodies): multi-line strings split into
   stacked single-line `#[doc]`s (adjacent doc attributes concatenate
   with newlines in rustdoc — rendering-equivalent), every non-empty
-  line gets exactly one leading space, and lines longer than 92
-  content characters soft-wrap at word boundaries (≈100 rendered
-  columns at generated module depths; an unbreakable over-long word,
-  e.g. a URL, stands alone). Wrapping is per input line — text is
-  never re-flowed across the spec's own newlines, so deliberate line
-  structure like `` `HALT_ON_ERROR` - … `` item lists survives, and
-  markdown's single-newline collapsing keeps the soft-wrap
-  display-equivalent in rustdoc/hover. Two exemptions: doc blocks
+  line gets one normalized leading doc space with its own indentation
+  preserved as content, and lines longer than 92 content characters
+  soft-wrap at word boundaries (≈100 rendered columns at generated
+  module depths; an unbreakable over-long word, e.g. a URL, stands
+  alone). Wrapping is per input line — text is never re-flowed across
+  the spec's own newlines, so deliberate line structure like
+  `` `HALT_ON_ERROR` - … `` item lists survives in the source.
+  Splitting alone is not enough for the *rendered* docs, though:
+  CommonMark treats a single newline inside a paragraph as a soft
+  break and collapses it to a space, so rustdoc/hover would re-flow
+  the whole description into one paragraph. The spec's newlines are
+  therefore made hard: every original line followed by another
+  non-empty original line gets a trailing-backslash hard-break marker
+  (blank lines are already paragraph breaks — no markers around them),
+  and when a long original line soft-wraps, only the last segment
+  inherits the marker; interior wrap points stay soft, keeping the
+  distinction between the spec's real breaks and our cosmetic ones.
+  The backslash spelling was forced: CommonMark's two-trailing-space
+  hard break does not survive prettyplease, which unconditionally
+  trims trailing spaces when printing `#[doc]` as `///`
+  (`trim_trailing_spaces` in its `attr.rs`) — and invisible trailing
+  whitespace would be fragile under editors and diff tooling anyway;
+  an existing end-of-line backslash is folded into the marker, never
+  doubled into a `\\` escape. Two exemptions: doc blocks
   containing a fenced code line (```` ``` ````) pass through
   byte-untouched — the `with_schema_in_docs` `<details>` sections
   depend on exact zero-leading-space alignment (pinned by
@@ -391,8 +407,10 @@ the old engine as default, and record where the wall is.
   (`#[doc(hidden)]`) plus inner attributes are left alone. Unlike the
   D16 spacing pass this deliberately changes tokens, so there is no
   token-identity gate; the pass is pinned by unit tests (splitting,
-  spacing, wrap boundaries, fence skip, field/variant coverage) plus
-  an idempotence test, and the condensed style's quote-built docs
+  spacing, indentation preservation, wrap boundaries, hard-break
+  placement — between non-empty lines, absent around blank lines, last
+  wrap segment only — fence skip, field/variant coverage) plus an
+  idempotence test, and the condensed style's quote-built docs
   (support module, `impl_string_enum` definition) are already in
   normalized shape, so the D14 pins hold with zero edits. All goldens
   and the examples workspace regenerated.

@@ -9,15 +9,20 @@
 //! attributes on every item, struct field, and enum variant (recursing
 //! into inline module bodies): multi-line strings split into stacked
 //! single-line `#[doc]`s (adjacent doc attributes concatenate with
-//! newlines in rustdoc, so this is rendering-equivalent), every
-//! non-empty line gets exactly one leading space, and lines longer
-//! than [`DOC_WIDTH`] soft-wrap at word boundaries — each source line
-//! individually, never re-flowing across the spec's own line
-//! structure (markdown collapses single newlines, so the wrap is
-//! display-equivalent). Doc blocks containing a fenced code block
-//! (schema-in-docs `<details>` sections with ```json fences and
-//! deliberate alignment) pass through byte-untouched, as do
-//! non-name-value forms like `#[doc(hidden)]` and inner attributes.
+//! newlines in rustdoc, so this is rendering-equivalent), every line
+//! gets one normalized leading space with its own indentation
+//! preserved as content, and lines longer than [`DOC_WIDTH`]
+//! soft-wrap at word boundaries — each source line individually,
+//! never re-flowing across the spec's own line structure. The spec's
+//! newlines are made *visible*: CommonMark collapses a single newline
+//! to a space, so every original line followed by another non-empty
+//! line gets a two-trailing-space hard-break marker, while our own
+//! wrap points carry no marker and keep flowing (blank lines are
+//! already paragraph breaks and get no markers around them). Doc
+//! blocks containing a fenced code block (schema-in-docs `<details>`
+//! sections with ```json fences and deliberate alignment) pass
+//! through byte-untouched, as do non-name-value forms like
+//! `#[doc(hidden)]` and inner attributes.
 //!
 //! **Item spacing** ([`space_rendered`]): prettyplease emits no blank
 //! line between items, so generated output reads as a wall — a
@@ -166,40 +171,111 @@ fn doc_value(attr: &syn::Attribute) -> Option<String> {
     Some(lit.value())
 }
 
-/// One doc attribute's value as normalized single-line doc strings:
-/// split on the embedded newlines (dropping empty edge lines, the
-/// artifact of descriptions ending in `\n` — interior empty lines are
-/// paragraph separators and stay), each non-empty line trimmed,
-/// wrapped at [`DOC_WIDTH`], and given exactly one leading space.
+/// The CommonMark hard-line-break marker: a trailing backslash. A bare
+/// newline inside a paragraph is a *soft* break that rustdoc/hover
+/// collapse to a space; the marker keeps a spec description's own line
+/// structure visible in the rendered docs.
+///
+/// CommonMark's other hard-break spelling — two trailing spaces — does
+/// not survive rendering: prettyplease unconditionally trims trailing
+/// spaces when it prints a `#[doc]` attribute as a `///` comment
+/// (`trim_trailing_spaces` in its `attr.rs`), and invisible trailing
+/// whitespace would be one editor save away from silent deletion
+/// anyway. The backslash renders identically and survives both.
+const HARD_BREAK: char = '\\';
+
+/// One doc attribute's value as normalized single-line doc strings.
+///
+/// A multi-line value is a raw spec description: it splits at its
+/// newlines (empty edge lines — descriptions ending in `\n` — drop;
+/// interior empty lines are paragraph separators and stay), every line
+/// keeps its own leading indentation as content, and each line
+/// followed by another non-empty line gets the [`HARD_BREAK`] marker
+/// so the newline survives CommonMark's soft-break collapse (next to a
+/// blank line the paragraph break already separates, so no marker).
+///
+/// A single-line value is either this pass's own earlier output, a
+/// quote-built `///` doc, or a one-line description: the first leading
+/// space is the doc convention (not content); an existing trailing
+/// [`HARD_BREAK`] is preserved but never introduced (nothing follows
+/// within the attribute), which keeps the pass idempotent over
+/// already-split docs.
 fn normalized_doc_lines(value: &str) -> Vec<String> {
+    if !value.contains('\n') {
+        let line = value.strip_prefix(' ').unwrap_or(value);
+        if line.trim().is_empty() {
+            return vec![String::new()];
+        }
+        return normalize_line(line, false);
+    }
+
     let mut lines: Vec<&str> = value.split('\n').collect();
-    if lines.len() > 1 {
-        while lines.first().is_some_and(|line| line.trim().is_empty()) {
-            lines.remove(0);
-        }
-        while lines.last().is_some_and(|line| line.trim().is_empty()) {
-            lines.pop();
-        }
+    while lines.first().is_some_and(|line| line.trim().is_empty()) {
+        lines.remove(0);
+    }
+    while lines.last().is_some_and(|line| line.trim().is_empty()) {
+        lines.pop();
     }
 
     let mut normalized = Vec::with_capacity(lines.len());
-    for line in lines {
-        let text = line.trim();
-        if text.is_empty() {
+    for (index, line) in lines.iter().enumerate() {
+        if line.trim().is_empty() {
             normalized.push(String::new());
-        } else if text.chars().count() <= DOC_WIDTH {
-            normalized.push(format!(" {text}"));
-        } else {
-            normalized.extend(wrap_words(text).into_iter().map(|chunk| format!(" {chunk}")));
+            continue;
         }
+        let followed_by_text = lines
+            .get(index + 1)
+            .is_some_and(|next| !next.trim().is_empty());
+        normalized.extend(normalize_line(line, followed_by_text));
     }
     normalized
 }
 
-/// Greedy word wrap of one line at [`DOC_WIDTH`] characters. A single
-/// word longer than the width stands alone unbroken; text is never
+/// Normalize one content line: emit ` {line}` doc strings wrapped at
+/// [`DOC_WIDTH`], leading indentation preserved (it belongs to the
+/// first wrapped segment; continuations start flush after the doc
+/// convention space — CommonMark's lazy continuation keeps them in the
+/// construct they wrap). With `hard_break`, the [`HARD_BREAK`] marker
+/// lands on the **last** segment only: the spec's newline is a real
+/// break, our own wrap points keep flowing.
+///
+/// A trailing backslash the line already carries — spec content, or
+/// this pass's own marker on a re-run — is folded into the marker
+/// rather than treated as width-counting content: it stays a single
+/// end-of-line backslash (never doubled into a `\\` escape), and a
+/// marker-carrying line that fit on the first pass can never re-wrap
+/// on the next.
+fn normalize_line(line: &str, hard_break: bool) -> Vec<String> {
+    let mut text = line.trim_end();
+    let marked = hard_break || text.ends_with(HARD_BREAK);
+    if let Some(stripped) = text.strip_suffix(HARD_BREAK) {
+        text = stripped.trim_end();
+    }
+    let marker = if marked { String::from(HARD_BREAK) } else { String::new() };
+
+    if text.chars().count() <= DOC_WIDTH {
+        return vec![format!(" {text}{marker}")];
+    }
+
+    let indent_width = text.chars().take_while(|c| c.is_whitespace()).count();
+    let indent: String = text.chars().take(indent_width).collect();
+    let segments = wrap_words(&text[indent.len()..], DOC_WIDTH.saturating_sub(indent_width));
+    let last = segments.len() - 1;
+    segments
+        .iter()
+        .enumerate()
+        .map(|(i, segment)| {
+            let prefix = if i == 0 { indent.as_str() } else { "" };
+            let suffix = if i == last { marker.as_str() } else { "" };
+            format!(" {prefix}{segment}{suffix}")
+        })
+        .collect()
+}
+
+/// Greedy word wrap of one line at `width` characters. A single word
+/// longer than the width stands alone unbroken; text is never
 /// re-flowed across input lines (each line wraps independently).
-fn wrap_words(text: &str) -> Vec<String> {
+fn wrap_words(text: &str, width: usize) -> Vec<String> {
     let mut chunks: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut current_width = 0;
@@ -208,7 +284,7 @@ fn wrap_words(text: &str) -> Vec<String> {
         if current.is_empty() {
             current.push_str(word);
             current_width = word_width;
-        } else if current_width + 1 + word_width <= DOC_WIDTH {
+        } else if current_width + 1 + word_width <= width {
             current.push(' ');
             current.push_str(word);
             current_width += 1 + word_width;
@@ -417,36 +493,57 @@ mod tests {
     }
 
     /// A multi-line doc string becomes stacked `///` lines, not a
-    /// `/** ... */` block, and a trailing newline in the value doesn't
-    /// leave a dangling empty doc line.
+    /// `/** ... */` block; every line followed by another non-empty
+    /// line carries the backslash hard-break marker (a bare newline is
+    /// a CommonMark soft break that collapses to a space), the last
+    /// line carries none, and a trailing newline in the value doesn't
+    /// leave a dangling empty doc line. The end-of-line assertion pins
+    /// that the marker survives prettyplease — trailing *spaces* would
+    /// not (its `attr.rs` trims them from `///` lines).
     #[test]
-    fn multi_line_docs_split_into_doc_lines() {
+    fn multi_line_docs_split_with_hard_breaks() {
         let out = normalized(
-            "#[doc = \"Lists the journeys.\\n* For one-way, one element.\\n* For round-trip, two.\\n\"]\npub struct A;\n",
+            "#[doc = \"Lists the journeys.\\n  * For one-way, one element.\\n  * For round-trip, two.\\n\"]\npub struct A;\n",
         );
         assert_eq!(
             out,
-            "/// Lists the journeys.\n/// * For one-way, one element.\n/// * For round-trip, two.\npub struct A;\n",
+            "/// Lists the journeys.\\\n///   * For one-way, one element.\\\n///   * For round-trip, two.\npub struct A;\n",
         );
+        assert!(out.contains("\\\n"), "hard-break markers survive prettyplease: {out:?}");
     }
 
-    /// Every non-empty line gets exactly one leading space — added
-    /// when missing, collapsed when the spec indented further.
+    /// A content line already ending in a backslash — itself a hard
+    /// break in CommonMark — is not marked again: `\\` would read as
+    /// an escaped literal backslash instead of a break.
     #[test]
-    fn doc_lines_get_one_leading_space() {
+    fn existing_trailing_backslash_is_not_doubled() {
+        let mut file: syn::File = syn::parse_quote! {
+            #[doc = "a\\\nb"]
+            pub struct A;
+        };
+        super::normalize_docs(&mut file.items);
+        assert_eq!(prettyplease::unparse(&file), "/// a\\\n/// b\npub struct A;\n");
+    }
+
+    /// Non-empty lines get one normalized leading doc space; a line's
+    /// own indentation is content and survives after it.
+    #[test]
+    fn doc_lines_get_one_leading_space_and_keep_indentation() {
         let out = normalized("#[doc = \"Allows pricing.\"]\npub struct A;\n");
         assert_eq!(out, "/// Allows pricing.\npub struct A;\n");
 
-        let out = normalized("#[doc = \"   deeply indented\"]\npub struct A;\n");
-        assert_eq!(out, "/// deeply indented\npub struct A;\n");
+        let out = normalized("#[doc = \"Head:\\n    deep indent\"]\npub struct A;\n");
+        assert_eq!(out, "/// Head:\\\n///     deep indent\npub struct A;\n");
 
         let already = "/// Already spaced.\npub struct A;\n";
         assert_eq!(normalized(already), already);
     }
 
-    /// Interior empty lines survive as `///` paragraph separators.
+    /// Interior empty lines survive as `///` paragraph separators, and
+    /// no hard-break marker appears before or after a blank line — the
+    /// paragraph break already separates.
     #[test]
-    fn interior_empty_doc_lines_survive() {
+    fn interior_empty_doc_lines_survive_without_markers() {
         let out = normalized("#[doc = \"First.\\n\\nSecond.\"]\npub struct A;\n");
         assert_eq!(out, "/// First.\n///\n/// Second.\npub struct A;\n");
     }
@@ -476,9 +573,28 @@ mod tests {
         let out = normalized(&format!("#[doc = \"{over}\"]\npub struct A;\n"));
         assert_eq!(out, format!("/// {over}\npub struct A;\n"));
 
-        // Two input lines never merge, even when both are short.
+        // Two input lines never merge, even when both are short; the
+        // first carries the hard break that keeps them apart.
         let out = normalized("#[doc = \"short one\\nshort two\"]\npub struct A;\n");
-        assert_eq!(out, "/// short one\n/// short two\npub struct A;\n");
+        assert_eq!(out, "/// short one\\\n/// short two\npub struct A;\n");
+    }
+
+    /// When a long original line wraps, only the last segment inherits
+    /// the line's hard-break marker — our own wrap points stay soft —
+    /// and the original indentation belongs to the first segment.
+    #[test]
+    fn wrapped_lines_carry_the_marker_on_the_last_segment_only() {
+        use super::DOC_WIDTH;
+
+        let word = "abcdefghijklmn"; // 14 chars
+        let per_line = DOC_WIDTH / 15;
+        let long = vec![word; per_line * 2].join(" ");
+        let out = normalized(&format!("#[doc = \" {long}\\nnext line\"]\npub struct A;\n"));
+        let full = vec![word; per_line].join(" ");
+        assert_eq!(
+            out,
+            format!("///  {full}\n/// {full}\\\n/// next line\npub struct A;\n"),
+        );
     }
 
     /// A doc block containing a fenced code block passes through
@@ -513,20 +629,25 @@ mod tests {
         assert!(out.contains("/// Deep.\n        pub struct D;"), "{out}");
     }
 
-    /// Applying the pass twice equals applying it once.
+    /// Applying the pass twice equals applying it once: re-running
+    /// over already-split single-line docs neither double-appends
+    /// hard-break markers nor re-wraps, including on wrapped long
+    /// lines, marker-carrying over-long unbreakable words, and
+    /// indentation-preserved lines.
     #[test]
     fn doc_normalization_is_idempotent() {
         let long = "word ".repeat(60);
+        let url = format!("https://example.com/{}", "x".repeat(100));
         let source = format!(
-            "#[doc = \"First.\\n  indented line\\n\\n{long}\\n\"]\npub struct A {{\n    #[doc = \"f\"]\n    pub x: i32,\n}}\n",
+            "#[doc = \"First.\\n  indented line\\n\\n{long}\\n{url}\\nlast line\\n\"]\npub struct A {{\n    #[doc = \"f\"]\n    pub x: i32,\n}}\n",
         );
         let mut once = syn::parse_file(&source).unwrap();
         super::normalize_docs(&mut once.items);
+        let rendered = prettyplease::unparse(&once);
+        assert!(rendered.contains("\\\n"), "markers present: {rendered:?}");
+
         let mut twice = once.clone();
         super::normalize_docs(&mut twice.items);
-        assert_eq!(
-            prettyplease::unparse(&once),
-            prettyplease::unparse(&twice),
-        );
+        assert_eq!(rendered, prettyplease::unparse(&twice));
     }
 }

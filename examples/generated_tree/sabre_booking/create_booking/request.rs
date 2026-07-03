@@ -719,18 +719,18 @@ pub struct CreateBookingRequest {
     pub travelers_employers: ::std::option::Option<::std::vec::Vec<TravelersEmployer>>,
 }
 
-/// Identifies an error handling policy. Can be:
-/// `HALT_ON_ERROR` - stop processing upon encountering any error from a downline service.
-/// `DO_NOT_HALT_ON_FLIGHT_PRICING_ERROR` - continue upon encountering a pricing error (only
-/// ATPCO/traditional bookings).
-/// `DO_NOT_HALT_ON_HOTEL_BOOKING_ERROR` - continue upon encountering a hotel booking error.
-/// `DO_NOT_HALT_ON_CAR_BOOKING_ERROR` - continue upon encountering a car booking error.
-/// `DO_NOT_HALT_ON_ANCILLARY_BOOKING_ERROR` - continue upon encountering an ancillary booking
-/// error.
-/// `DO_NOT_HALT_ON_SEAT_BOOKING_ERROR` - continue upon encountering a seat booking error.
-/// `HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR` - stop if the minimum connecting time
-/// between flights is not met (only ATPCO/traditional bookings).
-/// `DO_NOT_HALT_ON_IDENTITY_DOCUMENT_WARNING` - do not stop if orders/create returns an
+/// Identifies an error handling policy. Can be:\
+///  `HALT_ON_ERROR` - stop processing upon encountering any error from a downline service.\
+///  `DO_NOT_HALT_ON_FLIGHT_PRICING_ERROR` - continue upon encountering a pricing error (only
+/// ATPCO/traditional bookings).\
+///  `DO_NOT_HALT_ON_HOTEL_BOOKING_ERROR` - continue upon encountering a hotel booking error.\
+///  `DO_NOT_HALT_ON_CAR_BOOKING_ERROR` - continue upon encountering a car booking error.\
+///  `DO_NOT_HALT_ON_ANCILLARY_BOOKING_ERROR` - continue upon encountering an ancillary booking
+/// error.\
+///  `DO_NOT_HALT_ON_SEAT_BOOKING_ERROR` - continue upon encountering a seat booking error.\
+///  `HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR` - stop if the minimum connecting time
+/// between flights is not met (only ATPCO/traditional bookings).\
+///  `DO_NOT_HALT_ON_IDENTITY_DOCUMENT_WARNING` - do not stop if orders/create returns an
 /// identity document related warning (only NDC bookings).
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

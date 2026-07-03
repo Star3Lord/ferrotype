@@ -197,7 +197,47 @@ the old engine as default, and record where the wall is.
   `Self::Variant` (typify emits the former, the fork's knob the latter);
   and empty partition modules referenced by import preambles are
   materialized (error-mod-only leaf files). The emitter reproduces both.
+- **D11 — name collisions are loud errors on the IR path.** typify
+  silently reuses the first definition when two schema keys sanitize to
+  the same Rust name (`useCSL`/`useCsl` → `UseCsl`). The IR lowering
+  errors with both origins instead. Same for property-name collisions
+  within a struct and non-unique untagged-variant names. The fixtures
+  have no collisions, so parity is unaffected.
+- **D12 — the default engine did NOT flip (stretch declined).** Parity
+  is byte-exact, but flipping the default would change what
+  `Generator::customize(|TypeSpaceSettings| …)` *means*: registered
+  hooks would either error (breaking the `via-build-script` consumer,
+  which calls it) or be silently ignored (worse). The default stays
+  `Engine::Typify`; `Engine::Ir` is opt-in. Flip checklist for later:
+  (1) decide the `customize` story on IR (hard error with a migration
+  message is probably right, after consumers migrate to `style()`),
+  (2) one release of soak with both engines available, (3) regenerate
+  goldens through IR at the flip so the `@generated` provenance is
+  honest.
 
-## Results
+## Results (2026-07-03)
 
-(Filled in at the gate; see the final report.)
+- **Parity gate: green, byte-identical** — not merely token-identical —
+  for both fixtures × both engines across all four output modes (flat,
+  partitioned, split single-file, split folder-tree), verified by
+  `tests/parity.rs` (8 engine-vs-engine tests + 4 golden-fence tests)
+  and by external `diff` against the checked-in goldens. The
+  deliberate-improvements list is **empty**: no golden changed.
+- **Unit coverage for fixture-silent semantics** (`tests/ir_unit.rs`,
+  15 tests): untagged oneOf enums + Default synthesis, anyOf-null →
+  `Option`, `nullable` wrapping, self/mutual cycle boxing, inline-schema
+  naming, collision errors, merge fallback, singleton-allOf aliasing,
+  named-scalar inlining, config plumbing end to end.
+- **Step-1 guard green**: the typed `Spec` render is `Value`-identical
+  to the legacy lowering on both fixtures (`tests/spec_model.rs`), and
+  the golden fence pins the final Rust bytes.
+- **Consumers**: `openapi-codegen-examples` workspace tests pass; the
+  five in-repo examples pass; clippy is clean.
+- **The typify fork needed zero changes** during the migration; its
+  `ir-migration` branch is an empty placeholder over the freeze tag.
+- **What remains before the client emitter (step 6)**: operations are
+  captured in `Spec`/`Ir` as data but nothing consumes them — step 5
+  (partition from IR roles, inline request/response naming, deletion of
+  the raw-`Value` BFS) comes first; auth schemes are parsed but untyped;
+  `examples`/`discriminator` are preserved but unused (doc/test
+  synthesis and discriminator-aware oneOf mapping are open).

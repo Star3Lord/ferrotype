@@ -1,12 +1,23 @@
 # openapi-codegen
 
-Generate ergonomic Rust types from OpenAPI specs, powered by the local
-[typify fork](../typify/FORK_FEATURES.md). This crate is both the
-experimentation ground for the fork and a reusable tool: point it at an
-OpenAPI 3.x document and it produces API-client-style types — bare
-`Option<T>` fields, `camelCase` serde renames, `#[serde(flatten)]`
-inheritance, `struct_patch` deep patches — partitioned into one module per
-operation.
+Generate ergonomic Rust types from OpenAPI specs. Point it at an OpenAPI
+3.x document and it produces API-client-style types — bare `Option<T>`
+fields, `camelCase` serde renames, `#[serde(flatten)]` inheritance,
+`struct_patch` deep patches — partitioned into one module per operation.
+
+Two interchangeable engines run the back half of the pipeline (see
+[docs/MIGRATION.md](docs/MIGRATION.md)):
+
+- **`typify` (default)** — the local
+  [typify fork](../typify/FORK_FEATURES.md), styled through its
+  `TypeSpaceSettings` knobs. Frozen at tag `fork-freeze-20260703`.
+- **`ir`** (`--engine ir` / `Generator::engine(Engine::Ir)`) — the owned
+  `Spec → IR → passes → emitter` pipeline, styled through declarative
+  [`StyleConfig`] data (a `codegen.toml` and/or built-in profile presets).
+  Byte-identical to the typify engine on the checked-in fixtures across
+  every output mode (`tests/parity.rs` is the gate), with per-type and
+  per-field overrides the knob surface never had. Supports the
+  `api-client` profile; the `typify` profile *means* the typify engine.
 
 ## Pipeline
 
@@ -14,9 +25,11 @@ operation.
 load (YAML/JSON)
   → patch (RFC 6902 files + Rust hooks)
   → partition (operation reachability → per-op modules + shared)
-  → lower (OpenAPI 3.x → JSON Schema draft-07)
-  → typify (fork knobs via a style profile + custom hooks)
-  → post-process (Default impls for untagged oneOf enums)
+  → Spec (typed normalization; keeps discriminator/examples)
+      ├─ engine typify: Spec → draft-07 → typify fork (knob profiles)
+      │                  → post-process (Default impls for untagged oneOf)
+      └─ engine ir:     Spec → IR → ordered passes (style as data)
+                         → emitter
   → format (prettyplease) → write (idempotent)
 ```
 
@@ -283,9 +296,49 @@ Booking spec (`specs/sabre-booking/`) is the real-world fixture: 9
 operations, 257 schemas, Swagger-conversion `allOf` patterns, plus an RFC
 6902 patch documenting a spec/reality discrepancy.
 
+## Style as data (IR engine)
+
+On the IR engine the style profile is data — `StyleConfig::api_client()`
+is the exact declarative form of the `api-client` knob recipe — and a
+`codegen.toml` can override any of it, plus target individual types and
+fields:
+
+```toml
+profile = "api-client"
+
+[style]
+rename-all = "camelCase"
+deep-patch = "all-option-structs"
+
+[types."Agency"]
+derives-add = ["Eq"]
+module = "shared/common"
+
+[fields."CancelBookingRequest.notification"]
+deep-patch = true
+
+[fields."Pet.id"]
+type = "::my_crate::PetId"
+```
+
+```bash
+cargo run -- generate --spec spec.yaml --profile api-client --engine ir \
+    --config codegen.toml --split-request-response --output-dir src/generated
+```
+
+Unmatched `[types]`/`[fields]` selectors are hard errors. From the
+library, `Generator::style(|s| ...)` is the code-level hook and
+`Generator::ir_pass(...)` appends custom IR passes after the built-in
+pipeline. Every config key is consumed by exactly one named pass
+(`docs/MIGRATION.md` maps them).
+
 ## Relationship to the typify fork
 
-Everything style-related lives in the fork behind `TypeSpaceSettings`
-knobs; this crate only sequences the pipeline and picks knob values. See
+On the default engine, everything style-related lives in the fork behind
+`TypeSpaceSettings` knobs; this crate sequences the pipeline and picks
+knob values. See
 [`../typify/FORK_FEATURES.md`](../typify/FORK_FEATURES.md) for the full
-feature-by-feature mapping to settings, macro keys, and CLI flags.
+feature-by-feature mapping to settings, macro keys, and CLI flags. The
+fork is frozen (tag `fork-freeze-20260703`); the IR engine exists to
+retire it, and `tests/parity.rs` holds the two engines identical on the
+fixtures until the default flips.

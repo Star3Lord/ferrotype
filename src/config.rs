@@ -567,6 +567,15 @@ pub struct RuleApply {
     /// fields. Feeds the generation-time filter, so the rule may only
     /// use pre-generation predicates (everything except `type`).
     pub deep_patch: Option<bool>,
+    /// A **type-level** decision: strip (`false`) or keep (`true`) the
+    /// whole `struct_patch` surface of the matching types — derive,
+    /// companion, patch attrs, and annotations referencing them — with
+    /// the D13 per-type semantics. A rule carrying `patch` matches
+    /// types, so only the `module` and `struct` predicates are
+    /// allowed, and it cannot be mixed with the field-level payload
+    /// keys in the same rule. Precedence: style `patch` baseline →
+    /// rules in order → exact `[types."X"] patch` beats all rules.
+    pub patch: Option<bool>,
 }
 
 /// The declarative style configuration. Field defaults mean "upstream

@@ -57,6 +57,12 @@ pub(crate) struct Overrides {
     deep_patch_all: bool,
     types: BTreeMap<String, TypePlan>,
     fields: BTreeMap<(String, String), FieldPlan>,
+    /// Type-level `[[rules]] patch` decisions, layered between the
+    /// exact `[types]` entries (which win) and the style baseline.
+    /// Installed by [`Self::set_rule_patchability`] once the rules
+    /// tier has resolved (it needs the partition, which does not exist
+    /// at `Overrides::resolve` time).
+    rule_patch: BTreeMap<String, bool>,
 }
 
 impl Overrides {
@@ -152,14 +158,23 @@ impl Overrides {
             deep_patch_all: style.deep_patch == DeepPatchMode::AllOptionStructs,
             types,
             fields,
+            rule_patch: BTreeMap::new(),
         })
     }
 
-    /// Effective patchability of a generated type.
+    /// Install the `[[rules]]` tier's type-level patchability
+    /// decisions (see [`crate::rules::FieldRules::patch_overrides`]).
+    pub(crate) fn set_rule_patchability(&mut self, rule_patch: BTreeMap<String, bool>) {
+        self.rule_patch = rule_patch;
+    }
+
+    /// Effective patchability of a generated type: the exact `[types]`
+    /// entry, then the `[[rules]]` tier, then the style baseline.
     fn is_patchable(&self, rust_type: &str) -> bool {
         self.types
             .get(rust_type)
             .and_then(|plan| plan.patch)
+            .or_else(|| self.rule_patch.get(rust_type).copied())
             .unwrap_or(self.patch_baseline)
     }
 

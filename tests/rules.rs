@@ -418,6 +418,201 @@ fn deep_patch_rule_reaches_generation_time_filter() {
     assert!(!out.contains("#[patch(name = \"Option<NotePatch>\")]"), "{out}");
 }
 
+// ─── Type-level patch rules ──────────────────────────────────────────────────
+
+#[test]
+fn module_scoped_patch_rule_strips_response_types() {
+    let out = generator_for("patch_rule_module", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.rules.push(rule(
+                RuleMatch {
+                    module: Some("*/response".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(false),
+                    ..Default::default()
+                },
+            ));
+        })
+        .generate_to_string()
+        .unwrap();
+
+    // ThingResult (create_thing/response) loses the whole surface…
+    let result_derives = derive_line_of(&out, "ThingResult");
+    assert!(!result_derives.contains("Patch"), "{result_derives}");
+    let result_position = out.find("pub struct ThingResult").unwrap();
+    let above = &out[result_position.saturating_sub(700)..result_position];
+    assert!(!above.contains("#[patch("), "companion attrs stripped:\n{above}");
+
+    // …while request-side types keep theirs, deep-patch annotation
+    // included.
+    assert!(derive_line_of(&out, "CreateThingRequest").contains("Patch"), "{out}");
+    assert!(out.contains("#[patch(name = \"Option<NotePatch>\")]"), "{out}");
+}
+
+#[test]
+fn patch_rule_prunes_annotations_into_depatched_types() {
+    // De-patching Note by rule: Note loses its machinery AND the
+    // annotation on CreateThingRequest.note (whose companion no longer
+    // exists) is pruned — the cross-type consistency the exact
+    // `[types] patch = false` entry provides.
+    let out = generator_for("patch_rule_crosstype", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.rules.push(rule(
+                RuleMatch {
+                    struct_: Some("Note".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(false),
+                    ..Default::default()
+                },
+            ));
+        })
+        .generate_to_string()
+        .unwrap();
+
+    assert!(!derive_line_of(&out, "Note").contains("Patch"), "{out}");
+    assert!(!out.contains("NotePatch"), "annotation into Note pruned: {out}");
+    assert!(derive_line_of(&out, "CreateThingRequest").contains("Patch"), "{out}");
+}
+
+#[test]
+fn types_entry_beats_patch_rule_both_directions() {
+    // Rule says off, exact entry re-enables.
+    let out = generator_for("patch_rule_vs_types_on", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.rules.push(rule(
+                RuleMatch {
+                    struct_: Some("*".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(false),
+                    ..Default::default()
+                },
+            ));
+            style.types.entry("Note".to_string()).or_default().patch = Some(true);
+        })
+        .generate_to_string()
+        .unwrap();
+    assert!(derive_line_of(&out, "Note").contains("Patch"), "{out}");
+    assert!(!derive_line_of(&out, "CreateThingRequest").contains("Patch"), "{out}");
+
+    // Rule says on (over a false baseline), exact entry disables.
+    let out = generator_for("patch_rule_vs_types_off", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.patch = false;
+            style.rules.push(rule(
+                RuleMatch {
+                    struct_: Some("*".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(true),
+                    ..Default::default()
+                },
+            ));
+            style.types.entry("Note".to_string()).or_default().patch = Some(false);
+        })
+        .generate_to_string()
+        .unwrap();
+    assert!(!derive_line_of(&out, "Note").contains("Patch"), "{out}");
+    assert!(derive_line_of(&out, "CreateThingRequest").contains("Patch"), "{out}");
+}
+
+#[test]
+fn later_patch_rule_wins_and_baseline_reenable_works() {
+    // Baseline false; rule 1 re-enables everything; rule 2 switches
+    // Note back off — later wins.
+    let out = generator_for("patch_rule_ordering", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.patch = false;
+            style.rules.push(rule(
+                RuleMatch {
+                    struct_: Some("*".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(true),
+                    ..Default::default()
+                },
+            ));
+            style.rules.push(rule(
+                RuleMatch {
+                    struct_: Some("Note".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    patch: Some(false),
+                    ..Default::default()
+                },
+            ));
+        })
+        .generate_to_string()
+        .unwrap();
+    assert!(derive_line_of(&out, "CreateThingRequest").contains("Patch"), "{out}");
+    assert!(!derive_line_of(&out, "Note").contains("Patch"), "{out}");
+}
+
+#[test]
+fn patch_payload_with_field_predicates_or_mixed_payload_errors() {
+    // Field-scoped predicates cannot select types.
+    let error = format!(
+        "{:#}",
+        generator_for("patch_rule_field_pred", op_spec())
+            .split_request_response(true)
+            .style(|style| {
+                style.rules.push(rule(
+                    RuleMatch {
+                        field: Some("*".to_string()),
+                        ..Default::default()
+                    },
+                    RuleApply {
+                        patch: Some(false),
+                        ..Default::default()
+                    },
+                ));
+            })
+            .generate_to_string()
+            .unwrap_err(),
+    );
+    assert!(
+        error.contains("matches types") && error.contains("`module` and `struct`"),
+        "{error}",
+    );
+
+    // A rule is single-scope: type-level and field-level payloads
+    // cannot mix.
+    let error = format!(
+        "{:#}",
+        generator_for("patch_rule_mixed", op_spec())
+            .split_request_response(true)
+            .style(|style| {
+                style.rules.push(rule(
+                    RuleMatch {
+                        struct_: Some("*".to_string()),
+                        ..Default::default()
+                    },
+                    RuleApply {
+                        patch: Some(false),
+                        deep_patch: Some(false),
+                        ..Default::default()
+                    },
+                ));
+            })
+            .generate_to_string()
+            .unwrap_err(),
+    );
+    assert!(error.contains("single-scope") && error.contains("split"), "{error}");
+}
+
 // ─── Config errors and warnings ──────────────────────────────────────────────
 
 #[test]

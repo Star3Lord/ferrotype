@@ -120,15 +120,18 @@ impl LoadedSpec {
         let schema = spec_model.to_draft07_root()?;
         // The `[[rules]]` tier resolves here — the one point where the
         // typed spec model (format provenance) and the partition
-        // (module placement) both exist.
+        // (module placement) both exist. Type-level patch decisions
+        // flow into the override plan's patchability immediately.
         let field_rules =
             crate::rules::FieldRules::resolve(&self.style, &spec_model, partition.as_ref())?;
+        let mut overrides = self.overrides;
+        overrides.set_rule_patchability(field_rules.patch_overrides().clone());
         Ok(LoweredSchema {
             schema,
             partition,
             settings: self.settings,
             style: self.style,
-            overrides: self.overrides,
+            overrides,
             field_rules,
             spec_path: self.spec_path,
         })
@@ -200,10 +203,14 @@ impl LoweredSchema {
     /// Run typify: build a [`TypeSpace`] from the settings and populate it
     /// from the lowered schema.
     pub fn build_types(mut self) -> Result<GeneratedTypes> {
-        // Rule-tier deep-patch decisions feed typify's generation-time
-        // filter; re-install it augmented only when rules force
-        // something, preserving any `customize`-hook filter otherwise.
-        if !self.field_rules.deep_patch_overrides().is_empty() {
+        // Rule-tier deep-patch and type-level patch decisions feed
+        // typify's generation-time filter (the load-time install
+        // predates rules resolution); re-install it augmented only
+        // when rules force something, preserving any `customize`-hook
+        // filter otherwise.
+        if !self.field_rules.deep_patch_overrides().is_empty()
+            || !self.field_rules.patch_overrides().is_empty()
+        {
             self.settings.with_deep_patch_filter(
                 self.overrides
                     .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone()),

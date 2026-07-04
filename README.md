@@ -411,6 +411,18 @@ Field-scoped decisions layer across three tiers, most specific wins:
 match = { module = "*/request", format = "string/date-time", struct = "Create*", field = "*_date_time" }
 apply = { field-attrs = ["serde(with = \"time::serde::iso8601\")"], deep-patch = false }
 
+# `patch` is a TYPE-level payload: it strips (or, over a `patch = false`
+# baseline, restores) the whole struct_patch surface — derive,
+# companion, patch attrs, annotations referencing the type. Such a rule
+# matches types, so only `module` and `struct` predicates are allowed,
+# and it cannot be mixed with field-level payload keys in one rule.
+# Precedence: style `patch` baseline → rules in order → exact
+# `[types."X"] patch` beats all rules. Response envelopes are the
+# canonical use: they are read-only, so patching them is meaningless.
+[[rules]]
+match = { module = "*/response" }
+apply = { patch = false }
+
 # [fields] grows the same vocabulary: `field-attrs` replaces (never
 # merges with) mapping/rule attrs for exactly that field — an empty
 # list clears them, an absent key inherits; the field's optionality is
@@ -458,11 +470,21 @@ Generation can be compile-gated: `--verify` (CLI),
 generated source mounted as the lib, dependencies defaulting to serde /
 serde_with / struct-patch plus raw lines from
 `[verify] dependencies = ['time = { version = "0.3", ... }']` (a user
-line for a default crate replaces the default). The gate runs before
-any file is written, fails generation with the captured rustc output
-(keeping the scratch crate for inspection), and needs the declared
-dependencies resolvable by the user's cargo. Single-file and
-folder-tree outputs are both covered.
+line for a default crate replaces the default). Well-known crates the
+output may reference are auto-declared when (and only when) the
+rendered source mentions them: chrono and uuid (typify's format
+defaults, with serde features), serde_json (free-form schemas), and
+regress (validating string newtypes). The scratch crate also declares
+an empty `schemars` feature so the cfg-gated derives don't trip
+`unexpected_cfgs`. The gate runs before any file is written, fails
+generation with the captured rustc output (keeping the scratch crate
+for inspection) — unresolved-crate failures additionally get a
+targeted hint naming the missing crate(s) and the
+`[verify] dependencies` syntax — and needs the declared dependencies
+resolvable by the user's cargo. Single-file and folder-tree outputs
+are both covered. Types mapped via `[style.formats]`/`replace` still
+need their crates declared explicitly (the gate can't guess versions
+or features for arbitrary crates).
 
 ## Readable output / emit style
 

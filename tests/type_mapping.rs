@@ -653,4 +653,11 @@ fn verify_gate_fails_non_compiling_output() {
         error.contains("nonexistent_crate"),
         "compiler output should name the missing crate: {error}",
     );
+    // Unresolved-crate failures carry the targeted [verify] hint.
+    assert!(
+        error.contains("could not resolve: nonexistent_crate")
+            && error.contains("[verify]")
+            && error.contains("dependencies = ["),
+        "the missing-crate hint should name the crate and the fix: {error}",
+    );
 }

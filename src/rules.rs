@@ -97,6 +97,7 @@ struct ResolvedRule {
     type_override: Option<ResolvedTypeOverride>,
     impls: Option<BTreeSet<Capability>>,
     deep_patch: Option<bool>,
+    patch: Option<bool>,
 }
 
 struct ResolvedTypeOverride {
@@ -117,6 +118,9 @@ pub(crate) struct FieldRules {
     /// the rules tier (the `[fields]` tier still wins inside the
     /// filter).
     deep_patch: BTreeMap<(String, String), bool>,
+    /// Rust type → forced patchability from type-level `patch` rules
+    /// (the exact `[types]` entry still wins inside `is_patchable`).
+    patch: BTreeMap<String, bool>,
     /// Rules that definitively matched during the pre-generation pass
     /// (only meaningful for rules without a `type` predicate).
     matched_pre: Vec<bool>,
@@ -155,8 +159,29 @@ impl FieldRules {
                 && a.type_.is_none()
                 && a.impls.is_none()
                 && a.deep_patch.is_none()
+                && a.patch.is_none()
             {
                 bail!("{origin} applies nothing; give `apply` at least one key");
+            }
+            if a.patch.is_some() {
+                if a.field_attrs.is_some()
+                    || a.type_.is_some()
+                    || a.impls.is_some()
+                    || a.deep_patch.is_some()
+                {
+                    bail!(
+                        "{origin} mixes the type-level `patch` payload with field-level \
+                         keys; a rule is single-scope — split it into one type-level and \
+                         one field-level rule",
+                    );
+                }
+                if m.field.is_some() || m.format.is_some() || m.type_.is_some() {
+                    bail!(
+                        "{origin} carries the type-level `patch` payload, which matches \
+                         types — only the `module` and `struct` predicates apply; drop \
+                         `field`/`format`/`type` or move them to a field-level rule",
+                    );
+                }
             }
             if a.deep_patch.is_some() && m.type_.is_some() {
                 bail!(
@@ -190,10 +215,12 @@ impl FieldRules {
                 type_override,
                 impls: a.impls.as_ref().map(|caps| caps.iter().copied().collect()),
                 deep_patch: a.deep_patch,
+                patch: a.patch,
             });
         }
 
-        let meta = index_spec(style, spec, partition);
+        let modules = module_map(style, partition);
+        let meta = index_spec(spec, &modules);
 
         // Pre-generation rule evaluation: deep-patch decisions, in
         // declaration order (later rules override), over every spec
@@ -203,8 +230,8 @@ impl FieldRules {
         let mut matched_pre = vec![false; rules.len()];
         for (key, row) in &meta {
             for (index, rule) in rules.iter().enumerate() {
-                if rule.match_.type_.is_some() {
-                    continue; // post-generation predicate; evaluated later.
+                if rule.match_.type_.is_some() || rule.patch.is_some() {
+                    continue; // post-generation predicate / type-level rule.
                 }
                 if !matches_pre(&rule.match_, row) {
                     continue;
@@ -218,10 +245,40 @@ impl FieldRules {
             }
         }
 
+        // Type-level `patch` rules evaluate over every named schema
+        // (module + struct predicates only, validated above), in
+        // declaration order — later rules override; the exact
+        // `[types."X"] patch` entry beats them inside
+        // `Overrides::is_patchable`.
+        let mut patch: BTreeMap<String, bool> = BTreeMap::new();
+        for (index, rule) in rules.iter().enumerate() {
+            let Some(forced) = rule.patch else { continue };
+            for schema_key in spec.schemas.keys() {
+                let rust_type = typify::rust_type_ident(schema_key);
+                if let Some(pattern) = &rule.match_.module {
+                    let Some(module) = modules.get(&rust_type) else {
+                        continue;
+                    };
+                    if !glob_match(pattern, module) {
+                        continue;
+                    }
+                }
+                if let Some(pattern) = &rule.match_.struct_
+                    && !glob_match(pattern, schema_key)
+                    && !glob_match(pattern, &rust_type)
+                {
+                    continue;
+                }
+                matched_pre[index] = true;
+                patch.insert(rust_type, forced);
+            }
+        }
+
         Ok(FieldRules {
             rules,
             meta,
             deep_patch,
+            patch,
             matched_pre,
         })
     }
@@ -230,6 +287,12 @@ impl FieldRules {
     /// [`crate::overrides::Overrides::deep_patch_filter_with_rules`].
     pub(crate) fn deep_patch_overrides(&self) -> &BTreeMap<(String, String), bool> {
         &self.deep_patch
+    }
+
+    /// The rules tier's type-level patchability decisions, for
+    /// [`crate::overrides::Overrides::set_rule_patchability`].
+    pub(crate) fn patch_overrides(&self) -> &BTreeMap<String, bool> {
+        &self.patch
     }
 
     /// The post-generation half: evaluate every rule (the resolved
@@ -479,19 +542,10 @@ fn resolve_type_override(
     })
 }
 
-/// Index every named schema's properties: Rust-name keys, spec names,
-/// `"type/format"` provenance, and module placement. Properties come
-/// from the schema itself and its `allOf` branches; provenance
-/// resolves one `$ref` hop to a named schema. Inline/anonymous
-/// sub-schemas (typify synthesizes their types) carry no row and never
-/// match `module`/`format` predicates.
-fn index_spec(
-    style: &StyleConfig,
-    spec: &Spec,
-    partition: Option<&Partition>,
-) -> BTreeMap<(String, String), RowMeta> {
-    // Module map: partition placement (schema keys) with `[types]
-    // module` overrides on top, keyed by Rust type name.
+/// Module map: partition placement (schema keys) with `[types] module`
+/// overrides on top, keyed by Rust type name. Empty when partitioning
+/// is off.
+fn module_map(style: &StyleConfig, partition: Option<&Partition>) -> BTreeMap<String, String> {
     let mut modules: BTreeMap<String, String> = BTreeMap::new();
     if let Some(partition) = partition {
         for (schema_key, module) in &partition.by_schema {
@@ -503,7 +557,19 @@ fn index_spec(
             }
         }
     }
+    modules
+}
 
+/// Index every named schema's properties: Rust-name keys, spec names,
+/// `"type/format"` provenance, and module placement. Properties come
+/// from the schema itself and its `allOf` branches; provenance
+/// resolves one `$ref` hop to a named schema. Inline/anonymous
+/// sub-schemas (typify synthesizes their types) carry no row and never
+/// match `module`/`format` predicates.
+fn index_spec(
+    spec: &Spec,
+    modules: &BTreeMap<String, String>,
+) -> BTreeMap<(String, String), RowMeta> {
     let mut meta = BTreeMap::new();
     for (schema_key, schema) in &spec.schemas {
         let rust_type = typify::rust_type_ident(schema_key);

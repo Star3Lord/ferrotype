@@ -534,6 +534,41 @@ the old engine as default, and record where the wall is.
   envelopes are read-only; request-side annotations survive). Presets
   untouched; goldens byte-unchanged.
 
+- **D21 — the verify gate declares what generated code actually
+  references, and rules gain the type-level `patch` payload.** Driven
+  by the second real-world spec (BFM): its verify run failed with 87×
+  E0433 (`serde_json` — free-form schemas generate
+  `::serde_json::Map`/`Value`, which the scratch crate didn't declare)
+  and 792 `unexpected_cfgs` warnings (the cfg-gated schemars derives
+  name a feature the scratch crate didn't have). Gate fixes
+  (`src/verify.rs`): the scratch manifest declares an empty
+  `schemars = []` feature (registering the cfg name; checks run with
+  it off — cleaner than a lints table because the feature genuinely
+  exists in consumer crates); well-known crates are auto-declared when
+  and only when the rendered output references their marker
+  (`::chrono` + serde, `::uuid::` + serde, `::serde_json`,
+  `::regress`), with user `[verify] dependencies` lines still winning
+  name collisions; and unresolved-crate failures (E0433 / undeclared
+  crate / can't-find-crate) append a targeted hint naming the missing
+  crates and the `dependencies = ['...']` syntax on top of the full
+  rustc output. Arbitrary mapped-type crates still need explicit
+  declaration — the gate cannot guess versions or features. Separately,
+  `[[rules]] apply` gains `patch = true|false`, a *type-level* payload
+  reusing the D13 per-type patchability machinery: it strips/keeps the
+  whole struct_patch surface, evaluates pre-generation over named
+  schemas (module/struct predicates only — `field`/`format`/`type`
+  alongside `patch` is a hard error, as is mixing `patch` with
+  field-level payload keys in one rule; rules stay single-scope), and
+  layers as baseline → rules in order → exact `[types."X"] patch`
+  (which wins). Patchability decisions install into the override
+  plan's `is_patchable` in `lower()` and the deep-patch filter
+  re-installs augmented in `build_types`, so cross-type annotation
+  pruning into de-patched types keeps working. The examples
+  workspace's response-module rule upgraded from `deep-patch = false`
+  to the stronger `patch = false` (response envelopes lose the entire
+  patch surface), and the BFM generation is wired end-to-end through
+  the gate.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

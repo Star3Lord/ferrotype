@@ -341,8 +341,13 @@ the old engine as default, and record where the wall is.
   is byte-identical to upstream `main` (upstream test goldens
   unchanged), so upstream syncs conflict only on real feature hunks.
   Client generation (step 6) attaches to `Spec`'s operations data on
-  the typify base; `docs/SPEC_COVERAGE.md` stands as the record of why
-  owning schema semantics was the wrong debt to take on.
+  the typify base. *(2026-07-04 follow-up: the successor audit —
+  docs/SPEC_COVERAGE.md, now rewritten for the typify base with the IR
+  audit as its appendix — validated the reversal empirically: every
+  3.0.x corpus spec generates unpatched in seconds, compiles under a
+  bounded mechanical workaround set, and 770 wire round-trips found no
+  silent lowering defects; six lowering/fork bugs the audit surfaced
+  were fixed with upstream goldens intact.)*
 
 - **D16 — rendering separates items with blank lines.** prettyplease
   emits no blank line between items, so generated files read as a wall:

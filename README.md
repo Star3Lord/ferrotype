@@ -334,9 +334,31 @@ patch = true
 # mapped path is emitted verbatim and must implement
 # Serialize/Deserialize for the wire shape.
 [style.formats]
-"string/date-time" = "::time::OffsetDateTime"
 "string/decimal" = "::rust_decimal::Decimal"
 "integer/int64" = "::my_crate::BigInt"
+
+# The table form additionally attaches per-field attributes (applied at
+# the AST level to every field of the mapped type — `field-attrs` on
+# required fields, `optional-field-attrs` on Option-wrapped ones; the
+# two never substitute for each other, since a `serde(with = ...)`
+# module for T cannot handle Option<T>; Vec<T> fields are out of
+# scope) and declares the type's capabilities. `impls` drives
+# capability-aware derives: serde plus Debug/Clone are always assumed,
+# everything else defaults to NOT provided, and codegen prunes a
+# `Default`/`PartialEq`/`Eq`/`Hash`/`Ord` derive from any generated
+# struct a mapped type cannot satisfy — transitively (a struct whose
+# required field lost Default loses it too), with a stderr warning per
+# removal. Option/Vec-wrapped fields don't constrain Default (they
+# default to empty) but do constrain the equality family; patch
+# companions keep Default (their fields are all Option) and share the
+# equality-family pruning; deep-patch annotations on fields of a type
+# that lost Default are dropped (struct_patch's none-as-default merge
+# needs Default) with the same warning treatment.
+[style.formats."string/date-time"]
+type = "::time::OffsetDateTime"
+field-attrs = ["serde(with = \"time::serde::iso8601\")"]
+optional-field-attrs = ["serde(default, with = \"time::serde::iso8601::option\")"]
+impls = ["serialize", "deserialize", "partial-eq", "eq", "hash", "ord"]  # no `default`
 
 [types."Agency"]
 derives-add = ["Eq"]
@@ -345,14 +367,15 @@ module = "shared/common"
 # Map a named schema to an existing Rust type instead of generating a
 # struct (upstream typify's `with_replacement`): nothing is emitted for
 # the schema and every reference names the path — which, again, must
-# implement Serialize/Deserialize. `replace-impls` optionally declares
-# traits the type provides ("display", "from-str",
-# "from-string-irrefutable", "default"). Cannot be combined with
-# `patch`/`derives-add`/`module` (nothing is generated to patch,
+# implement Serialize/Deserialize. `replace-impls` declares the type's
+# capabilities (same vocabulary and pruning semantics as the formats
+# `impls` list); `field-attrs`/`optional-field-attrs` attach per-field
+# attributes exactly like a formats table entry. Cannot be combined
+# with `patch`/`derives-add`/`module` (nothing is generated to patch,
 # derive on, or place).
 [types."Money"]
 replace = "::my_crate::Money"
-replace-impls = ["display", "from-str"]
+replace-impls = ["display", "from-str", "default", "partial-eq"]
 
 # Per-type override of the [style] patch baseline: this type loses its
 # `Patch` derive and `NotificationPatch` companion, and every
@@ -395,6 +418,18 @@ replacement path actually appears in the output — a replace on a schema
 nothing references is an error like any other unmatched selector — and
 fields holding a replaced type never receive deep-patch annotations
 (the replacement has no generated `Patch` companion).
+
+Generation can be compile-gated: `--verify` (CLI),
+`Generator::verify_compile(true)`, or `[verify] enabled = true` runs
+`cargo check` over the output in a scratch crate — edition 2024, the
+generated source mounted as the lib, dependencies defaulting to serde /
+serde_with / struct-patch plus raw lines from
+`[verify] dependencies = ['time = { version = "0.3", ... }']` (a user
+line for a default crate replaces the default). The gate runs before
+any file is written, fails generation with the captured rustc output
+(keeping the scratch crate for inspection), and needs the declared
+dependencies resolvable by the user's cargo. Single-file and
+folder-tree outputs are both covered.
 
 ## Readable output / emit style
 

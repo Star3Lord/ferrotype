@@ -118,6 +118,16 @@ impl Generator {
         self
     }
 
+    /// Gate generation on the output compiling: after rendering (and
+    /// before any file is written), `cargo check` the output in a
+    /// scratch crate and fail with the compiler output on error. The
+    /// programmatic form of the `[verify]` config table — extra scratch
+    /// dependencies come from `[verify] dependencies`. See
+    /// [`crate::verify`] for the mechanism and its requirements.
+    pub fn verify_compile(self, enabled: bool) -> Self {
+        self.style(move |style| style.verify.enabled = enabled)
+    }
+
     /// Start the staged pipeline: parse the spec and apply patch files and
     /// [`Self::patch_spec_with`] hooks, then stop. The returned
     /// [`LoadedSpec`] exposes the parsed document for arbitrary edits and
@@ -164,7 +174,13 @@ impl Generator {
     /// Equivalent to driving the staged pipeline straight through with no
     /// between-stage customization.
     pub fn generate_to_string(&self) -> Result<String> {
-        self.load()?.lower()?.build_types()?.render()
+        let stage = self.load()?.lower()?.build_types()?;
+        let verify = stage.verify_config().clone();
+        let source = stage.render()?;
+        if verify.enabled {
+            crate::verify::verify_single_file(&source, &verify)?;
+        }
+        Ok(source)
     }
 
     /// Run the pipeline and write the result to `path`, creating parent
@@ -183,7 +199,13 @@ impl Generator {
     /// declaring them. See [`crate::write_file_tree`] for the exact
     /// splitting, header, idempotency, and stale-file-cleanup rules.
     pub fn generate_to_dir(&self, dir: impl AsRef<Path>) -> Result<()> {
-        let file = self.load()?.lower()?.build_types()?.into_file()?;
+        let stage = self.load()?.lower()?.build_types()?;
+        let verify = stage.verify_config().clone();
+        let file = stage.into_file()?;
+        if verify.enabled {
+            let planned = crate::tree::plan_file_tree(&file, &self.spec_path);
+            crate::verify::verify_tree(&planned, &verify)?;
+        }
         crate::tree::write_file_tree(&file, &self.spec_path, dir)
     }
 

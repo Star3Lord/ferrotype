@@ -4,6 +4,8 @@
 //! remaining pass is profile-specific: synthesizing `impl Default` for enums
 //! that typify cannot default itself.
 
+use std::collections::BTreeSet;
+
 use quote::quote;
 
 /// Synthesize a conservative `impl Default` for every enum (in every
@@ -16,28 +18,34 @@ use quote::quote;
 /// default those enums to their first variant with `Default::default()`
 /// payloads — the payload types are generated structs which do implement
 /// `Default` under the ApiClient profile.
-pub fn synthesize_enum_defaults(file: &mut syn::File) {
+///
+/// `skip` names enums whose first-variant payload cannot provide
+/// `Default` (an external mapped type without the capability — see
+/// [`crate::mappings`], which computes the set and warns): synthesizing
+/// for those would emit non-compiling code, so they are left without a
+/// `Default` at all.
+pub fn synthesize_enum_defaults(file: &mut syn::File, skip: &BTreeSet<String>) {
     for item in &mut file.items {
         if let syn::Item::Mod(module) = item {
-            synthesize_in_module(module);
+            synthesize_in_module(module, skip);
         }
     }
-    synthesize_in_items(&mut file.items);
+    synthesize_in_items(&mut file.items, skip);
 }
 
-fn synthesize_in_module(module: &mut syn::ItemMod) {
+fn synthesize_in_module(module: &mut syn::ItemMod, skip: &BTreeSet<String>) {
     let Some((_, items)) = &mut module.content else {
         return;
     };
     for item in items.iter_mut() {
         if let syn::Item::Mod(nested) = item {
-            synthesize_in_module(nested);
+            synthesize_in_module(nested, skip);
         }
     }
-    synthesize_in_items(items);
+    synthesize_in_items(items, skip);
 }
 
-fn synthesize_in_items(items: &mut Vec<syn::Item>) {
+fn synthesize_in_items(items: &mut Vec<syn::Item>, skip: &BTreeSet<String>) {
     // Pass 1: which types already have a `Default` impl?
     let mut has_default_impl: Vec<String> = Vec::new();
     for item in items.iter() {
@@ -61,6 +69,7 @@ fn synthesize_in_items(items: &mut Vec<syn::Item>) {
     let mut synthesized = Vec::new();
     for item in items.iter() {
         if let syn::Item::Enum(item_enum) = item
+            && !skip.contains(&item_enum.ident.to_string())
             && !has_default_impl.contains(&item_enum.ident.to_string())
             && item_enum
                 .variants

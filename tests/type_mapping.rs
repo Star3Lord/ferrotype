@@ -128,11 +128,17 @@ fn formats_round_trip_through_codegen_toml() {
     )
     .unwrap();
     assert_eq!(
-        config.formats.get("string/date-time").map(String::as_str),
+        config
+            .formats
+            .get("string/date-time")
+            .map(openapi_codegen::config::FormatMapping::type_path),
         Some("::time::OffsetDateTime"),
     );
     assert_eq!(
-        config.formats.get("number/decimal").map(String::as_str),
+        config
+            .formats
+            .get("number/decimal")
+            .map(openapi_codegen::config::FormatMapping::type_path),
         Some("::rust_decimal::Decimal"),
     );
 }
@@ -251,7 +257,7 @@ fn replace_impls_without_replace_errors() {
                     .types
                     .entry("Money".to_string())
                     .or_default()
-                    .replace_impls = vec![openapi_codegen::config::ReplaceImpl::Display];
+                    .replace_impls = vec![openapi_codegen::config::Capability::Display];
             })
             .generate_to_string()
             .unwrap_err(),
@@ -289,9 +295,362 @@ fn replace_and_replace_impls_parse_from_codegen_toml() {
     assert_eq!(
         override_.replace_impls,
         vec![
-            openapi_codegen::config::ReplaceImpl::Display,
-            openapi_codegen::config::ReplaceImpl::FromStr,
-            openapi_codegen::config::ReplaceImpl::Default,
+            openapi_codegen::config::Capability::Display,
+            openapi_codegen::config::Capability::FromStr,
+            openapi_codegen::config::Capability::Default,
         ],
+    );
+}
+
+// ─── Table-form mappings: field attrs and capabilities (D19) ─────────────────
+
+/// A spec whose `Event` has required and optional date-times plus a
+/// struct chain for transitive pruning: `Wrapper` requires `Event`,
+/// `Deep` requires `Wrapper`, `Holder` holds `Option<Event>`.
+fn chain_spec() -> serde_json::Value {
+    serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "Event": {
+                "type": "object",
+                "required": ["createdAt"],
+                "properties": {
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" }
+                }
+            },
+            "Wrapper": {
+                "type": "object",
+                "required": ["event"],
+                "properties": { "event": { "$ref": "#/components/schemas/Event" } }
+            },
+            "Deep": {
+                "type": "object",
+                "required": ["wrapper"],
+                "properties": { "wrapper": { "$ref": "#/components/schemas/Wrapper" } }
+            },
+            "Holder": {
+                "type": "object",
+                "properties": { "event": { "$ref": "#/components/schemas/Event" } }
+            }
+        } }
+    })
+}
+
+fn time_mapping() -> openapi_codegen::config::FormatMapping {
+    openapi_codegen::config::FormatMapping::Table(openapi_codegen::config::FormatMappingTable {
+        type_path: "::time::OffsetDateTime".to_string(),
+        field_attrs: vec!["serde(with = \"time::serde::iso8601\")".to_string()],
+        optional_field_attrs: vec!["serde(with = \"time::serde::iso8601::option\")".to_string()],
+        impls: vec![
+            openapi_codegen::config::Capability::Serialize,
+            openapi_codegen::config::Capability::Deserialize,
+        ],
+    })
+}
+
+#[test]
+fn mapping_attrs_attach_by_field_optionality() {
+    let out = generator_for("attrs_attach", StyleProfile::ApiClient, chain_spec())
+        .style(|style| {
+            style.formats.insert("string/date-time".into(), time_mapping());
+        })
+        .generate_to_string()
+        .unwrap();
+
+    // Required field: the plain module; optional field: the ::option
+    // module — never the plain one.
+    assert!(
+        out.contains(
+            "#[serde(with = \"time::serde::iso8601\")]\n    pub created_at: ::time::OffsetDateTime",
+        ),
+        "{out}",
+    );
+    assert!(
+        out.contains(
+            "#[serde(with = \"time::serde::iso8601::option\")]\n    pub updated_at: \
+             ::std::option::Option<::time::OffsetDateTime>",
+        ),
+        "{out}",
+    );
+}
+
+#[test]
+fn optional_fields_never_inherit_required_attrs() {
+    // Only `field-attrs` configured: optional fields get nothing — a
+    // `serde(with = ...)` module for `T` cannot handle `Option<T>`.
+    let mapping = openapi_codegen::config::FormatMapping::Table(
+        openapi_codegen::config::FormatMappingTable {
+            type_path: "::time::OffsetDateTime".to_string(),
+            field_attrs: vec!["serde(with = \"time::serde::iso8601\")".to_string()],
+            optional_field_attrs: vec![],
+            impls: vec![],
+        },
+    );
+    let out = generator_for("attrs_no_fallback", StyleProfile::ApiClient, chain_spec())
+        .style(move |style| {
+            style.formats.insert("string/date-time".into(), mapping.clone());
+        })
+        .generate_to_string()
+        .unwrap();
+
+    let updated_at = out
+        .lines()
+        .zip(out.lines().skip(1))
+        .find(|(_, next)| next.contains("pub updated_at"))
+        .map(|(prev, _)| prev.to_string())
+        .unwrap();
+    assert!(
+        !updated_at.contains("serde(with"),
+        "optional field must not inherit field-attrs: {updated_at}",
+    );
+}
+
+#[test]
+fn invalid_attr_body_errors_with_config_key() {
+    let mapping = openapi_codegen::config::FormatMapping::Table(
+        openapi_codegen::config::FormatMappingTable {
+            type_path: "::time::OffsetDateTime".to_string(),
+            field_attrs: vec!["serde(with = ".to_string()],
+            optional_field_attrs: vec![],
+            impls: vec![],
+        },
+    );
+    let error = format!(
+        "{:#}",
+        generator_for("attrs_invalid", StyleProfile::ApiClient, chain_spec())
+            .style(move |style| {
+                style.formats.insert("string/date-time".into(), mapping.clone());
+            })
+            .generate_to_string()
+            .unwrap_err(),
+    );
+    assert!(
+        error.contains("string/date-time") && error.contains("field-attrs"),
+        "{error}",
+    );
+}
+
+#[test]
+fn missing_capability_prunes_default_transitively() {
+    let out = generator_for("prune_default", StyleProfile::ApiClient, chain_spec())
+        .style(|style| {
+            style.formats.insert("string/date-time".into(), time_mapping());
+        })
+        .generate_to_string()
+        .unwrap();
+
+    // Direct: Event has a required OffsetDateTime (no `default`
+    // capability declared) → loses Default. Transitive: Wrapper
+    // requires Event, Deep requires Wrapper → both lose it. The
+    // mapping also declares no `partial-eq`, so PartialEq goes too
+    // (for the equality family even Option-wrapped fields constrain).
+    for name in ["Event", "Wrapper", "Deep"] {
+        let derive_line = derive_line_of(&out, name);
+        assert!(
+            !derive_line.contains("Default") && !derive_line.contains("PartialEq"),
+            "{name} must lose Default and PartialEq: {derive_line}",
+        );
+        assert!(
+            derive_line.contains("Serialize") && derive_line.contains("Clone"),
+            "{name} keeps the rest: {derive_line}",
+        );
+    }
+    // Option-wrapped usage doesn't constrain Default — Holder keeps it —
+    // but does constrain PartialEq (`Option<T>: PartialEq` needs
+    // `T: PartialEq`), which Holder therefore loses.
+    let holder = derive_line_of(&out, "Holder");
+    assert!(holder.contains("Default"), "{holder}");
+    assert!(!holder.contains("PartialEq"), "{holder}");
+
+    // Patch companions: fields are all Option, so Default survives
+    // there — while PartialEq is pruned from the companion too.
+    let event_block_start = out.find("pub struct Event").unwrap();
+    let block = &out[event_block_start.saturating_sub(800)..event_block_start];
+    assert!(
+        block.contains(
+            "#[patch(attribute(derive(Debug, Clone, Default, Serialize, Deserialize)))]",
+        ),
+        "companion keeps Default, sheds PartialEq:\n{block}",
+    );
+}
+
+/// The main `#[derive(...)]` line of the item named `name`.
+fn derive_line_of<'a>(out: &'a str, name: &str) -> &'a str {
+    let decl = format!("pub struct {name}");
+    let position = out
+        .find(&decl)
+        .unwrap_or_else(|| panic!("no `{decl}` in output"));
+    out[..position]
+        .lines()
+        .rev()
+        .find(|line| line.trim_start().starts_with("#[derive("))
+        .unwrap_or_else(|| panic!("no derive line above {name}"))
+}
+
+#[test]
+fn declared_default_capability_keeps_derive() {
+    let mapping = openapi_codegen::config::FormatMapping::Table(
+        openapi_codegen::config::FormatMappingTable {
+            type_path: "::my_crate::Stamp".to_string(),
+            field_attrs: vec![],
+            optional_field_attrs: vec![],
+            impls: vec![openapi_codegen::config::Capability::Default],
+        },
+    );
+    let out = generator_for("keep_default", StyleProfile::ApiClient, chain_spec())
+        .style(move |style| {
+            style.formats.insert("string/date-time".into(), mapping.clone());
+        })
+        .generate_to_string()
+        .unwrap();
+    assert!(derive_line_of(&out, "Event").contains("Default"), "{out}");
+    assert!(derive_line_of(&out, "Wrapper").contains("Default"), "{out}");
+}
+
+#[test]
+fn formats_table_and_shorthand_parse_from_codegen_toml() {
+    let config = StyleConfig::from_toml_str(
+        "profile = \"api-client\"\n\
+         [style.formats]\n\
+         \"string/decimal\" = \"::rust_decimal::Decimal\"\n\
+         [style.formats.\"string/date-time\"]\n\
+         type = \"::time::OffsetDateTime\"\n\
+         field-attrs = [\"serde(with = \\\"time::serde::iso8601\\\")\"]\n\
+         optional-field-attrs = [\"serde(with = \\\"time::serde::iso8601::option\\\")\"]\n\
+         impls = [\"serialize\", \"deserialize\"]\n",
+        StyleConfig::api_client(),
+    )
+    .unwrap();
+
+    let shorthand = &config.formats["string/decimal"];
+    assert_eq!(shorthand.type_path(), "::rust_decimal::Decimal");
+
+    let table = &config.formats["string/date-time"];
+    assert_eq!(table.type_path(), "::time::OffsetDateTime");
+    match table {
+        openapi_codegen::config::FormatMapping::Table(table) => {
+            assert_eq!(table.field_attrs.len(), 1);
+            assert_eq!(table.optional_field_attrs.len(), 1);
+            assert_eq!(table.impls.len(), 2);
+        }
+        openapi_codegen::config::FormatMapping::Path(_) => panic!("expected table form"),
+    }
+
+    // Unknown capability names are hard errors.
+    let error = StyleConfig::from_toml_str(
+        "[style.formats.\"string/date-time\"]\n\
+         type = \"::time::OffsetDateTime\"\n\
+         impls = [\"defaultable\"]\n",
+        StyleConfig::api_client(),
+    )
+    .unwrap_err();
+    assert!(format!("{error:#}").contains("formats"), "{error:#}");
+}
+
+#[test]
+fn untagged_enum_default_synthesis_skipped_when_payload_lost_default() {
+    // `Choice` is an untagged oneOf whose FIRST variant's payload
+    // (`Payload`) loses Default through the mapping; the api-client
+    // profile would normally synthesize `impl Default for Choice`.
+    let spec = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "Payload": {
+                "type": "object",
+                "required": ["at"],
+                "properties": { "at": { "type": "string", "format": "date-time" } }
+            },
+            "Other": {
+                "type": "object",
+                "required": ["name"],
+                "properties": { "name": { "type": "string" } }
+            },
+            "Choice": {
+                "oneOf": [
+                    { "$ref": "#/components/schemas/Payload" },
+                    { "$ref": "#/components/schemas/Other" }
+                ]
+            },
+            "Basket": {
+                "type": "object",
+                "required": ["choice"],
+                "properties": { "choice": { "$ref": "#/components/schemas/Choice" } }
+            }
+        } }
+    });
+    let out = generator_for("enum_synthesis_guard", StyleProfile::ApiClient, spec)
+        .style(|style| {
+            style.formats.insert("string/date-time".into(), time_mapping());
+        })
+        .generate_to_string()
+        .unwrap();
+
+    // No synthesized Default for the enum, and the struct requiring it
+    // loses its Default derive through the enum.
+    assert!(
+        !out.contains("impl ::std::default::Default for Choice"),
+        "synthesis must be skipped:\n{out}",
+    );
+    assert!(
+        !derive_line_of(&out, "Basket").contains("Default"),
+        "Basket must lose Default through Choice: {}",
+        derive_line_of(&out, "Basket"),
+    );
+}
+
+// ─── The opt-in compile gate ─────────────────────────────────────────────────
+
+/// A minimal spec so the scratch `cargo check` stays fast.
+fn tiny_spec() -> serde_json::Value {
+    serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "Thing": {
+                "type": "object",
+                "required": ["name"],
+                "properties": { "name": { "type": "string" } }
+            }
+        } }
+    })
+}
+
+#[test]
+fn verify_gate_passes_compiling_output() {
+    generator_for("verify_ok", StyleProfile::ApiClient, tiny_spec())
+        .verify_compile(true)
+        .generate_to_string()
+        .expect("compiling output must pass the gate");
+}
+
+#[test]
+fn verify_gate_fails_non_compiling_output() {
+    // A mapping to a nonexistent type produces output that cannot
+    // compile; the gate must fail with the compiler's message.
+    let error = format!(
+        "{:#}",
+        generator_for("verify_fail", StyleProfile::ApiClient, chain_spec())
+            .style(|style| {
+                style
+                    .formats
+                    .insert("string/date-time".into(), "::nonexistent_crate::Missing".into());
+            })
+            .verify_compile(true)
+            .generate_to_string()
+            .unwrap_err(),
+    );
+    assert!(
+        error.contains("failed to compile"),
+        "gate must report the failure: {error}",
+    );
+    assert!(
+        error.contains("nonexistent_crate"),
+        "compiler output should name the missing crate: {error}",
     );
 }

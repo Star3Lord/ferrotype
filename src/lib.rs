@@ -121,6 +121,7 @@ pub mod config;
 mod generate;
 mod load;
 mod lower;
+mod mappings;
 mod overrides;
 mod partition;
 mod pipeline;
@@ -129,6 +130,7 @@ mod profile;
 mod render;
 pub mod spec;
 mod tree;
+mod verify;
 
 pub use config::StyleConfig;
 pub use generate::Generator;

@@ -204,26 +204,147 @@ pub struct DeriveLists {
     pub newtypes: Vec<String>,
 }
 
-/// A trait the replacement type named by [`TypeOverride::replace`]
-/// provides, mapped onto [`typify::TypeSpaceImpl`]. Advisory: it informs
-/// typify's impl bookkeeping (consumed by downstream tooling), not the
-/// emitted code.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+/// A trait capability an externally mapped type declares (the `impls`
+/// list of a [`FormatMapping`] table, or [`TypeOverride::replace_impls`]).
+///
+/// `Serialize` and `Deserialize` are always assumed — the generated code
+/// requires them — as are `Debug` and `Clone`; listing them is accepted
+/// but redundant. Everything else defaults to *not provided*: the
+/// capability analysis ([`crate::mappings`]) prunes `Default` /
+/// `PartialEq` / `Eq` / `Hash` / `Ord` derives from generated types that
+/// a mapped type cannot satisfy. The subset upstream
+/// [`typify::TypeSpaceImpl`] models is also forwarded to
+/// `with_replacement` for `replace` entries. Unknown capability names
+/// are hard config errors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ReplaceImpl {
+pub enum Capability {
+    Default,
+    Serialize,
+    Deserialize,
+    Display,
     FromStr,
     FromStringIrrefutable,
-    Display,
-    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    Ord,
 }
 
-impl ReplaceImpl {
-    fn to_typify(self) -> typify::TypeSpaceImpl {
+impl Capability {
+    /// The corresponding [`typify::TypeSpaceImpl`], for the subset the
+    /// upstream replacement machinery models.
+    pub(crate) fn to_typify(self) -> Option<typify::TypeSpaceImpl> {
         match self {
-            ReplaceImpl::FromStr => typify::TypeSpaceImpl::FromStr,
-            ReplaceImpl::FromStringIrrefutable => typify::TypeSpaceImpl::FromStringIrrefutable,
-            ReplaceImpl::Display => typify::TypeSpaceImpl::Display,
-            ReplaceImpl::Default => typify::TypeSpaceImpl::Default,
+            Capability::FromStr => Some(typify::TypeSpaceImpl::FromStr),
+            Capability::FromStringIrrefutable => {
+                Some(typify::TypeSpaceImpl::FromStringIrrefutable)
+            }
+            Capability::Display => Some(typify::TypeSpaceImpl::Display),
+            Capability::Default => Some(typify::TypeSpaceImpl::Default),
+            _ => None,
+        }
+    }
+
+    /// The derive-list ident this capability governs, for the ones the
+    /// pruning analysis manages.
+    pub(crate) fn derive_ident(self) -> Option<&'static str> {
+        match self {
+            Capability::Default => Some("Default"),
+            Capability::PartialEq => Some("PartialEq"),
+            Capability::Eq => Some("Eq"),
+            Capability::Hash => Some("Hash"),
+            Capability::Ord => Some("Ord"),
+            _ => None,
+        }
+    }
+}
+
+/// One `[style.formats]` entry: either the bare Rust-type-path shorthand
+/// (`"string/date-time" = "::time::OffsetDateTime"`) or the full table
+/// form carrying field attributes and declared capabilities:
+///
+/// ```toml
+/// [style.formats."string/date-time"]
+/// type = "::time::OffsetDateTime"
+/// field-attrs = ["serde(with = \"time::serde::iso8601\")"]
+/// optional-field-attrs = ["serde(with = \"time::serde::iso8601::option\")"]
+/// impls = ["serialize", "deserialize"]
+/// ```
+///
+/// The shorthand declares no capabilities beyond the always-assumed
+/// `Serialize`/`Deserialize` and attaches no attributes.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum FormatMapping {
+    /// Bare type-path shorthand.
+    Path(String),
+    /// Full table form.
+    Table(FormatMappingTable),
+}
+
+/// The table form of a [`FormatMapping`].
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub struct FormatMappingTable {
+    /// The Rust type path, emitted verbatim.
+    #[serde(rename = "type")]
+    pub type_path: String,
+    /// Attribute bodies (without the `#[...]` shell) appended to every
+    /// **required** struct field of this type, e.g.
+    /// `serde(with = "time::serde::iso8601")`.
+    #[serde(default)]
+    pub field_attrs: Vec<String>,
+    /// Attribute bodies appended to every `Option<...>`-wrapped struct
+    /// field of this type. Deliberately separate from
+    /// [`Self::field_attrs`] — a `serde(with = ...)` module for `T`
+    /// does not deserialize `Option<T>` — and never substituted for it.
+    #[serde(default)]
+    pub optional_field_attrs: Vec<String>,
+    /// Capabilities the type provides; see [`Capability`].
+    #[serde(default)]
+    pub impls: Vec<Capability>,
+}
+
+impl From<String> for FormatMapping {
+    fn from(path: String) -> Self {
+        FormatMapping::Path(path)
+    }
+}
+
+impl From<&str> for FormatMapping {
+    fn from(path: &str) -> Self {
+        FormatMapping::Path(path.to_string())
+    }
+}
+
+impl FormatMapping {
+    /// The mapped Rust type path.
+    pub fn type_path(&self) -> &str {
+        match self {
+            FormatMapping::Path(path) => path,
+            FormatMapping::Table(table) => &table.type_path,
+        }
+    }
+
+    pub(crate) fn field_attrs(&self) -> &[String] {
+        match self {
+            FormatMapping::Path(_) => &[],
+            FormatMapping::Table(table) => &table.field_attrs,
+        }
+    }
+
+    pub(crate) fn optional_field_attrs(&self) -> &[String] {
+        match self {
+            FormatMapping::Path(_) => &[],
+            FormatMapping::Table(table) => &table.optional_field_attrs,
+        }
+    }
+
+    pub(crate) fn capabilities(&self) -> &[Capability] {
+        match self {
+            FormatMapping::Path(_) => &[],
+            FormatMapping::Table(table) => &table.impls,
         }
     }
 }
@@ -254,12 +375,25 @@ pub struct TypeOverride {
     /// `derives-add` / `module` on the same selector — nothing is
     /// generated to patch, derive on, or place.
     pub replace: Option<String>,
-    /// Traits the [`Self::replace`] type provides (kebab-case:
-    /// `"from-str"`, `"from-string-irrefutable"`, `"display"`,
-    /// `"default"`). Empty or omitted means none are assumed. Only
-    /// meaningful together with `replace`.
+    /// Capabilities the [`Self::replace`] type provides (kebab-case
+    /// [`Capability`] names). Empty or omitted means none beyond the
+    /// always-assumed serde pair; the subset [`typify::TypeSpaceImpl`]
+    /// models is forwarded to `with_replacement`, and the rest drives
+    /// the derive-pruning analysis. Only meaningful with `replace`.
     #[serde(default)]
-    pub replace_impls: Vec<ReplaceImpl>,
+    pub replace_impls: Vec<Capability>,
+    /// Attribute bodies appended to every **required** struct field
+    /// holding the [`Self::replace`] type; see
+    /// [`FormatMappingTable::field_attrs`]. Only meaningful with
+    /// `replace`.
+    #[serde(default)]
+    pub field_attrs: Vec<String>,
+    /// Attribute bodies appended to every `Option<...>`-wrapped struct
+    /// field holding the [`Self::replace`] type; see
+    /// [`FormatMappingTable::optional_field_attrs`]. Only meaningful
+    /// with `replace`.
+    #[serde(default)]
+    pub optional_field_attrs: Vec<String>,
 }
 
 /// Per-field override, keyed by `Type.field` (schema name + wire name;
@@ -300,15 +434,16 @@ pub struct StyleConfig {
     /// → `with_format_type`: map `"<instance-type>/<format>"` keys
     /// (instance types `string`, `integer`, `number` — the instance
     /// type keeps `"string/int64"` distinct from `"integer/int64"`) to
-    /// Rust type paths emitted verbatim, e.g.
-    /// `"string/decimal" = "::rust_decimal::Decimal"`. An entry wins
-    /// over typify's built-in format handling and over the
-    /// [`Self::date`] / [`Self::date_time`] / [`Self::uuid`] sugar keys
-    /// for the same format. Mapped types must implement
-    /// `Serialize`/`Deserialize` for the wire format. Malformed keys
-    /// (no `/`) are hard errors at generation time.
+    /// Rust types, either as a bare path shorthand
+    /// (`"string/decimal" = "::rust_decimal::Decimal"`) or the full
+    /// [`FormatMapping`] table form carrying field attributes and
+    /// declared capabilities. An entry wins over typify's built-in
+    /// format handling and over the [`Self::date`] / [`Self::date_time`]
+    /// / [`Self::uuid`] sugar keys for the same format. Mapped types
+    /// must implement `Serialize`/`Deserialize` for the wire format.
+    /// Malformed keys (no `/`) are hard errors at generation time.
     #[serde(default)]
-    pub formats: BTreeMap<String, String>,
+    pub formats: BTreeMap<String, FormatMapping>,
     /// → `with_struct_rename_all`: struct-level `rename_all` case, with
     /// covered per-field renames elided.
     pub rename_all: Option<String>,
@@ -369,6 +504,32 @@ pub struct StyleConfig {
     /// keys are hard errors at generation time.
     #[serde(default)]
     pub fields: BTreeMap<String, FieldOverride>,
+    /// The opt-in end-of-run compile gate (top-level `[verify]` table
+    /// in codegen.toml, `--verify` on the CLI,
+    /// [`Generator::verify_compile`](crate::Generator::verify_compile)).
+    #[serde(default)]
+    pub verify: VerifyConfig,
+}
+
+/// Configuration of the opt-in compile gate: when enabled, the
+/// generated output is `cargo check`-ed in a scratch crate after
+/// generation, and generation fails with the rustc output on error.
+/// See [`crate::verify`].
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub struct VerifyConfig {
+    /// Run the gate after generation. `--verify` and
+    /// [`Generator::verify_compile`](crate::Generator::verify_compile)
+    /// set this too.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Extra raw Cargo dependency lines for the scratch crate — one
+    /// full `name = spec` line each, e.g.
+    /// `'time = { version = "0.3", features = ["serde"] }'` — on top
+    /// of the defaults (serde, serde_with, struct-patch). They must be
+    /// resolvable in the environment running the generator.
+    #[serde(default)]
+    pub dependencies: Vec<String>,
 }
 
 impl Default for StyleConfig {
@@ -383,6 +544,7 @@ impl Default for StyleConfig {
             date_time: None,
             uuid: None,
             formats: BTreeMap::new(),
+            verify: VerifyConfig::default(),
             rename_all: None,
             allof: AllOfMode::Merge,
             enum_default: EnumDefaultMode::SchemaOnly,
@@ -447,6 +609,7 @@ impl StyleConfig {
             date_time: Some("::std::string::String".to_string()),
             uuid: Some("::std::string::String".to_string()),
             formats: BTreeMap::new(),
+            verify: VerifyConfig::default(),
             rename_all: Some("camelCase".to_string()),
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
@@ -539,14 +702,14 @@ impl StyleConfig {
         // malformed key reaching this point is a programming error in
         // directly-supplied style data and fails loudly, like
         // `imports` statements do.
-        for (key, rust_type) in &self.formats {
+        for (key, mapping) in &self.formats {
             let (instance_type, format) = key.split_once('/').unwrap_or_else(|| {
                 panic!(
                     "style formats key {key:?} must be \"<instance-type>/<format>\", \
                      e.g. \"string/date-time\"",
                 )
             });
-            settings.with_format_type(instance_type, format, rust_type);
+            settings.with_format_type(instance_type, format, mapping.type_path());
         }
         if let Some(case) = &self.rename_all {
             settings.with_struct_rename_all(case);
@@ -599,7 +762,10 @@ impl StyleConfig {
                 settings.with_replacement(
                     typify::rust_type_ident(selector),
                     replace,
-                    override_.replace_impls.iter().map(|impl_| impl_.to_typify()),
+                    override_
+                        .replace_impls
+                        .iter()
+                        .filter_map(|capability| capability.to_typify()),
                 );
             }
             if override_.derives_add.is_empty() {
@@ -629,6 +795,7 @@ impl StyleConfig {
             types: BTreeMap<String, TypeOverride>,
             #[serde(default)]
             fields: BTreeMap<String, FieldOverride>,
+            verify: Option<VerifyConfig>,
         }
 
         let parsed: ConfigFile = toml::from_str(raw).context("failed to parse codegen.toml")?;
@@ -645,6 +812,9 @@ impl StyleConfig {
         }
         config.types.extend(parsed.types);
         config.fields.extend(parsed.fields);
+        if let Some(verify) = parsed.verify {
+            config.verify = verify;
+        }
         Ok(config)
     }
 

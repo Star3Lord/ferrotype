@@ -443,6 +443,57 @@ the old engine as default, and record where the wall is.
   entries — pinned by test). No preset uses the new keys, so all
   goldens are byte-unchanged.
 
+- **D19 — mappings carry field attributes and capabilities; output can
+  be compile-gated.** Mapping `string/date-time` onto
+  `::time::OffsetDateTime` (D18) left two hand-edit gaps: every field
+  needed a `#[serde(with = "time::serde::iso8601[::option]")]`
+  attribute, and structs deriving `Default` with a *required*
+  date-time no longer compiled (`OffsetDateTime: Default` doesn't
+  hold). Three additions, all config-driven and applied at the AST
+  level (`src/mappings.rs`):
+  (1) **table-form mappings** — `[style.formats."string/date-time"]`
+  with `type`, `field-attrs`, `optional-field-attrs`, and `impls`
+  (bare-string shorthand still works and declares no capabilities);
+  `[types] replace` gets the same `field-attrs`/`optional-field-attrs`
+  and its `replace-impls` adopts the shared `Capability` vocabulary.
+  Attributes parse into `syn::Attribute`s (hard error naming the
+  config key) and append to every struct field whose type — unwrapping
+  `Option`/`Option<Box<...>>`, full-path comparison tolerating a
+  leading `::` — is the mapped type; required and optional lists never
+  substitute for each other (a `serde(with = ...)` module for `T`
+  cannot handle `Option<T>`; the examples workspace also documents
+  that optional fields need `serde(default, ...)` to keep missing keys
+  deserializing as `None`). `Vec<T>` fields are out of scope for
+  attributes.
+  (2) **capability-aware derives** — `impls` declares what the
+  external type provides (serde + `Debug`/`Clone` always assumed;
+  unknown names are hard errors). An analysis over the generated item
+  graph prunes `Default`/`PartialEq`/`Eq`/`Hash`/`Ord` derives the
+  mapped types cannot satisfy, to a fixpoint: `Default` is constrained
+  only by unwrapped required fields (`Option`/`Vec`/maps default to
+  empty), the equality family by every field including wrapped ones;
+  payload-enum `Default` *synthesis* (the `untagged-enum-defaults`
+  pass) participates as a node — a first-variant payload that lost
+  `Default` skips synthesis — and deep-patch annotations on fields of
+  a type that lost `Default` are dropped (struct_patch's
+  none-as-default merge materializes `T::default()`). Patch companions
+  keep `Default` (their fields are all `Option`) but share the
+  equality-family pruning. Every removal warns on stderr with the
+  causing field/chain.
+  (3) **opt-in compile gate** — `--verify` / `Generator::verify_compile`
+  / `[verify] enabled`: the output is `cargo check`-ed in a scratch
+  crate (edition 2024; serde/serde_with/struct-patch defaults plus
+  `[verify] dependencies` raw lines, user lines winning on name
+  collisions) *before* any file is written; failure carries the rustc
+  output and keeps the scratch crate. Both single-file and tree modes
+  are covered; the gate requires resolvable dependencies and the
+  user's cargo. The examples workspace's `via-cli-config` is the
+  living end-to-end: its sabre config uses the full table form, its
+  regen script passes `--verify`, and the previously hand-edited
+  `ManualApproval` now regenerates byte-equivalent (serde `with`
+  attrs, no `Default` derive) and compiles. Presets are untouched, so
+  openapi-codegen goldens are byte-unchanged.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

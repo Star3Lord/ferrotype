@@ -304,12 +304,23 @@ impl GeneratedTypes {
         crate::tree::write_file_tree(&file, &self.spec_path, dir)
     }
 
+    /// The resolved `[verify]` configuration of this run.
+    pub(crate) fn verify_config(&self) -> &crate::config::VerifyConfig {
+        &self.style.verify
+    }
+
     fn build_file(&self) -> Result<syn::File> {
         let mut file = syn::parse_file(&self.tokens().to_string())
             .context("generated tokens failed to parse as a Rust file")?;
         self.overrides.apply_to_file(&mut file)?;
+        // External type mappings: attach configured field attributes
+        // and prune derives the mapped types cannot satisfy; enums
+        // whose Default synthesis would not compile are skipped below.
+        let mappings = crate::mappings::Mappings::resolve(&self.style)?;
+        let skip_defaults =
+            mappings.apply_to_file(&mut file, self.style.untagged_enum_defaults)?;
         if self.style.untagged_enum_defaults {
-            postprocess::synthesize_enum_defaults(&mut file);
+            postprocess::synthesize_enum_defaults(&mut file, &skip_defaults);
         }
         if self.style.emit_style == EmitStyle::Condensed {
             condense::condense_file(&mut file)?;

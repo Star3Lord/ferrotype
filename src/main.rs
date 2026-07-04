@@ -76,6 +76,13 @@ struct GenerateArgs {
     /// processing. Each file: `{ description: <non-empty>, ops: [...] }`.
     #[arg(long, value_name = "DIR")]
     patches_dir: Option<PathBuf>,
+
+    /// Compile-gate the output: `cargo check` it in a scratch crate and
+    /// fail (writing nothing) on compiler errors. Scratch dependencies
+    /// beyond serde/serde_with/struct-patch come from the config's
+    /// `[verify] dependencies` list.
+    #[arg(long, default_value_t = false)]
+    verify: bool,
 }
 
 #[derive(clap::Args)]
@@ -110,6 +117,9 @@ fn generate(args: GenerateArgs) -> anyhow::Result<()> {
     }
     if let Some(config) = &args.config {
         generator = generator.config_file(config);
+    }
+    if args.verify {
+        generator = generator.verify_compile(true);
     }
 
     if let Some(dir) = &args.output_dir {

@@ -92,6 +92,15 @@ impl Overrides {
                     "type override {selector:?} sets `replace-impls` without `replace`",
                 );
             }
+            if override_.replace.is_none()
+                && !(override_.field_attrs.is_empty() && override_.optional_field_attrs.is_empty())
+            {
+                bail!(
+                    "type override {selector:?} sets `field-attrs`/`optional-field-attrs` \
+                     without `replace`; attributes attach to fields holding the \
+                     replacement type",
+                );
+            }
             let rust_name = typify::rust_type_ident(selector);
             let plan = types.entry(rust_name).or_default();
             if !plan.selector.is_empty() && plan.selector != *selector {

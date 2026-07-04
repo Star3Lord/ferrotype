@@ -392,6 +392,39 @@ deep-patch = true
 type = "::my_crate::PetId"
 ```
 
+Field-scoped decisions layer across three tiers, most specific wins:
+`[style.formats]`/`replace` mapping defaults, then ordered `[[rules]]`
+(later rules override earlier ones key-by-key), then
+`[fields."Type.field"]` — which beats every rule:
+
+```toml
+# Rules match fields by ANDed glob predicates (`*` and `?`): `module`
+# (partition path — requires partitioned output), `struct` (schema key
+# or Rust name), `field` (wire or Rust name), `format` (the property's
+# spec-level "type/format" provenance; named schemas only, one $ref
+# hop), and `type` (the resolved Rust type, Option/Box-unwrapped).
+# The payload is the [fields] vocabulary. A rule matching nothing
+# warns instead of erroring — globs are broad-brush, unlike exact
+# selectors. `deep-patch` payloads feed generation, so they cannot be
+# combined with the post-generation `type` predicate.
+[[rules]]
+match = { module = "*/request", format = "string/date-time", struct = "Create*", field = "*_date_time" }
+apply = { field-attrs = ["serde(with = \"time::serde::iso8601\")"], deep-patch = false }
+
+# [fields] grows the same vocabulary: `field-attrs` replaces (never
+# merges with) mapping/rule attrs for exactly that field — an empty
+# list clears them, an absent key inherits; the field's optionality is
+# known here, so there is one list. `type` accepts the table form,
+# whose `impls` joins the capability-pruning fixpoint (a required
+# field overridden to a non-`default` type strips `Default` from its
+# owner, transitively).
+[fields."CreateBookingRequest.purchaseDateTime"]
+field-attrs = ["serde(default, with = \"time::serde::iso8601::option\")"]
+
+[fields."Order.total"]
+type = { type = "::my_crate::Money", field-attrs = ["serde(with = \"my_crate::money_serde\")"], impls = ["serialize", "deserialize", "default"] }
+```
+
 ```bash
 cargo run -- generate --spec spec.yaml --profile api-client \
     --config codegen.toml --split-request-response --output-dir src/generated

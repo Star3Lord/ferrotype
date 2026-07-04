@@ -494,6 +494,46 @@ the old engine as default, and record where the wall is.
   attrs, no `Default` derive) and compiles. Presets are untouched, so
   openapi-codegen goldens are byte-unchanged.
 
+- **D20 — field-scoped divergence is a three-tier layer cake.**
+  Mapping defaults (D19) are per *type*; real configs diverge per
+  *field*. Two tiers land above the mappings, resolved to one
+  effective decision per generated struct field (`src/rules.rs`) that
+  flows through the existing application machinery in `mappings.rs` —
+  no second application path. (1) `[fields."Type.field"]` grows
+  `field-attrs` (`Option<Vec<...>>`: present **replaces** every
+  mapping/rule attr for that field, `[]` clears, absent inherits — the
+  field's optionality is known here, so one list) and its `type` key
+  gains a table form (`type = { type = "...", field-attrs = [...],
+  impls = [...] }`, bare string still parsing via an untagged enum)
+  whose `impls` joins the D19 capability fixpoint — a required field
+  overridden to a no-`default` type strips `Default` from its owner
+  transitively, same warning format. (2) `[[rules]]`: ordered
+  pattern-scoped overrides between mappings and `[fields]`, evaluated
+  per field in declaration order (later rules override key-by-key;
+  `[fields]` beats all; a rule-applied `type` also strips the field's
+  deep-patch annotation, which named the displaced type's companion).
+  Predicates (ANDed, ≥1 required; hand-rolled `*`/`?` globs, no
+  character classes): `module` (partition path + `[types] module`
+  overrides; requires partitioning — hard error otherwise), `struct` /
+  `field` (schema-key-or-Rust-name / wire-or-Rust-name), `format`
+  (spec provenance: named schemas' direct and `allOf`-branch
+  properties, one `$ref` hop to a named schema; `"type/format"` or
+  bare `"type"`; inline/anonymous sub-schemas carry none and never
+  match), `type` (resolved Rust type in the AST, `Option`/`Box`
+  unwrapped). Timing: `deep-patch` payloads feed the fork's
+  generation-time `with_deep_patch_filter`, so they may only use the
+  pre-generation predicates — combining with the `type` predicate is a
+  hard error; the rules tier resolves in `LoadedSpec::lower` (typed
+  spec model + partition both in hand), deep-patch decisions install
+  as an augmented filter in `build_types`, and attr/type payloads
+  apply post-generation where every predicate is checkable. A rule
+  matching zero fields **warns** (stderr, rule index + predicates)
+  instead of erroring — globs are broad-brush, unlike the exact
+  `[types]`/`[fields]` selectors. The examples workspace demonstrates
+  a `module = "*/response"` / `deep-patch = false` rule (response
+  envelopes are read-only; request-side annotations survive). Presets
+  untouched; goldens byte-unchanged.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

@@ -128,6 +128,7 @@ mod pipeline;
 mod postprocess;
 mod profile;
 mod render;
+mod rules;
 pub mod spec;
 mod tree;
 mod verify;

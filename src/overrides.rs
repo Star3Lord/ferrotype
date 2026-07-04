@@ -141,7 +141,10 @@ impl Overrides {
             }
             plan.selector = selector.clone();
             plan.deep_patch = override_.deep_patch;
-            plan.type_path = override_.type_path.clone();
+            plan.type_path = override_
+                .type_path
+                .as_ref()
+                .map(|replacement| replacement.type_path().to_string());
         }
 
         Ok(Overrides {
@@ -170,6 +173,16 @@ impl Overrides {
     pub(crate) fn deep_patch_filter(
         &self,
     ) -> impl Fn(&str, &str, &str) -> bool + Send + Sync + 'static {
+        self.deep_patch_filter_with_rules(BTreeMap::new())
+    }
+
+    /// [`Self::deep_patch_filter`] with the `[[rules]]` tier's forced
+    /// decisions layered between the `[fields]` tier (which wins) and
+    /// the style-level mode.
+    pub(crate) fn deep_patch_filter_with_rules(
+        &self,
+        rules: BTreeMap<(String, String), bool>,
+    ) -> impl Fn(&str, &str, &str) -> bool + Send + Sync + 'static {
         let plan = self.clone();
         move |owner, field, inner| {
             let key = (owner.to_string(), field.to_string());
@@ -180,6 +193,9 @@ impl Overrides {
                 if let Some(forced) = field_plan.deep_patch {
                     return forced && plan.is_patchable(owner) && plan.is_patchable(inner);
                 }
+            }
+            if let Some(forced) = rules.get(&key) {
+                return *forced && plan.is_patchable(owner) && plan.is_patchable(inner);
             }
             plan.deep_patch_all && plan.is_patchable(owner) && plan.is_patchable(inner)
         }
@@ -501,7 +517,7 @@ fn option_inner_name(ty: &syn::Type) -> Option<String> {
 
 /// Replace a field's Rust type with `type_path`, preserving an
 /// `Option<...>` wrapper when present.
-fn replace_field_type(field: &mut syn::Field, type_path: &str) -> Result<()> {
+pub(crate) fn replace_field_type(field: &mut syn::Field, type_path: &str) -> Result<()> {
     let new_ty: syn::Type = syn::parse_str(type_path)
         .with_context(|| format!("override type {type_path:?} is not a valid Rust type"))?;
     if let syn::Type::Path(type_path) = &mut field.ty

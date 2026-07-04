@@ -104,23 +104,28 @@ impl Mappings {
         Ok(Mappings { entries })
     }
 
-    /// Attach the configured field attributes and prune derives the
-    /// mapped types cannot satisfy. Returns the names of generated
-    /// enums whose `Default` synthesis must be skipped
-    /// ([`crate::postprocess::synthesize_enum_defaults`] consults it).
+    /// Attach the configured field attributes (mapping defaults,
+    /// overridden per field by the resolved `plans` — the rules and
+    /// `[fields]` tiers), apply rule-driven field type replacements,
+    /// and prune derives the mapped types cannot satisfy. Returns the
+    /// names of generated enums whose `Default` synthesis must be
+    /// skipped ([`crate::postprocess::synthesize_enum_defaults`]
+    /// consults it).
     pub(crate) fn apply_to_file(
         &self,
         file: &mut syn::File,
         untagged_enum_defaults: bool,
+        plans: &crate::rules::FieldPlans,
     ) -> Result<BTreeSet<String>> {
-        if self.entries.is_empty() {
+        if self.entries.is_empty() && plans.is_empty() {
             return Ok(BTreeSet::new());
         }
 
-        attach_attrs(&self.entries, &mut file.items);
+        apply_plan_types(plans, &mut file.items)?;
+        attach_attrs(&self.entries, plans, &mut file.items);
 
         let mut nodes: BTreeMap<String, TypeNode> = BTreeMap::new();
-        collect_nodes(&self.entries, &file.items, &mut nodes);
+        collect_nodes(&self.entries, plans, &file.items, &mut nodes);
 
         let mut skip_default_synthesis = BTreeSet::new();
         for &capability in MANAGED {
@@ -175,20 +180,19 @@ impl Mappings {
                 }
                 let deps = node.constraining_deps(capability);
                 let culprit = deps.iter().find_map(|dep| match &dep.target {
-                    DepTarget::External(index) => {
-                        let entry = &self.entries[*index];
-                        (!entry.capabilities.contains(&capability)).then(|| {
-                            format!(
-                                "{} `{}` is `{}` ({}), which does not declare the `{}` \
-                                 capability",
-                                dep.description(),
-                                dep.label,
-                                entry.display_path,
-                                entry.origin,
-                                capability_name(capability),
-                            )
-                        })
-                    }
+                    DepTarget::External {
+                        display,
+                        origin,
+                        capabilities,
+                    } => (!capabilities.contains(&capability)).then(|| {
+                        format!(
+                            "{} `{}` is `{display}` ({origin}), which does not declare \
+                             the `{}` capability",
+                            dep.description(),
+                            dep.label,
+                            capability_name(capability),
+                        )
+                    }),
                     DepTarget::Generated(target) => lost.contains_key(target).then(|| {
                         format!(
                             "{} `{}` is `{target}`, which itself lost `{}`",
@@ -238,7 +242,11 @@ impl MappingEntry {
 /// Parse attribute bodies (`serde(with = "...")`) into
 /// [`syn::Attribute`]s by wrapping each in `#[...]`. Invalid bodies are
 /// hard errors naming the config key.
-fn parse_attr_bodies(origin: &str, key: &str, bodies: &[String]) -> Result<Vec<syn::Attribute>> {
+pub(crate) fn parse_attr_bodies(
+    origin: &str,
+    key: &str,
+    bodies: &[String],
+) -> Result<Vec<syn::Attribute>> {
     let mut attrs = Vec::with_capacity(bodies.len());
     for body in bodies {
         let parsed = syn::Attribute::parse_outer
@@ -262,6 +270,39 @@ fn normalized_tokens(ty: &syn::Type) -> String {
     tokens.strip_prefix(":: ").unwrap_or(&tokens).to_string()
 }
 
+// ─── Field type replacements from the rules tier ────────────────────────────
+
+/// Apply the resolved plans' rule-driven type replacements (the
+/// `[fields]` tier's are applied earlier by `overrides`): swap the
+/// field's type — preserving an `Option<...>` wrapper — and strip any
+/// deep-patch annotation, which named the displaced type's companion.
+fn apply_plan_types(plans: &crate::rules::FieldPlans, items: &mut [syn::Item]) -> Result<()> {
+    for item in items {
+        match item {
+            syn::Item::Mod(module) => {
+                if let Some((_, children)) = &mut module.content {
+                    apply_plan_types(plans, children)?;
+                }
+            }
+            syn::Item::Struct(item_struct) => {
+                let owner = item_struct.ident.to_string();
+                for field in &mut item_struct.fields {
+                    let Some(ident) = &field.ident else { continue };
+                    let Some(plan) = plans.get(&owner, &ident.to_string()) else {
+                        continue;
+                    };
+                    if let Some(type_path) = &plan.replace_type {
+                        crate::overrides::replace_field_type(field, type_path)?;
+                        field.attrs.retain(|attr| !is_deep_patch_attr(attr));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 // ─── Field-attribute attachment ─────────────────────────────────────────────
 
 /// How a struct field holds a mapped type.
@@ -270,16 +311,33 @@ enum FieldMatch {
     Optional(usize),
 }
 
-fn attach_attrs(entries: &[MappingEntry], items: &mut [syn::Item]) {
+fn attach_attrs(
+    entries: &[MappingEntry],
+    plans: &crate::rules::FieldPlans,
+    items: &mut [syn::Item],
+) {
     for item in items {
         match item {
             syn::Item::Mod(module) => {
                 if let Some((_, children)) = &mut module.content {
-                    attach_attrs(entries, children);
+                    attach_attrs(entries, plans, children);
                 }
             }
             syn::Item::Struct(item_struct) => {
+                let owner = item_struct.ident.to_string();
                 for field in &mut item_struct.fields {
+                    // A resolved per-field decision (rules/[fields]
+                    // tiers) replaces the mapping's attrs wholesale —
+                    // most-specific-wins, an empty list clears.
+                    if let Some(plan) = field
+                        .ident
+                        .as_ref()
+                        .and_then(|ident| plans.get(&owner, &ident.to_string()))
+                        && let Some(attrs) = &plan.attrs
+                    {
+                        field.attrs.extend(attrs.iter().cloned());
+                        continue;
+                    }
                     match match_field(entries, &field.ty) {
                         Some(FieldMatch::Required(index)) => {
                             field.attrs.extend(entries[index].field_attrs.iter().cloned());
@@ -320,7 +378,7 @@ fn match_field(entries: &[MappingEntry], ty: &syn::Type) -> Option<FieldMatch> {
 
 /// The `T` of `wrapper<T>` when `ty`'s last path segment is `wrapper`
 /// with exactly one angle-bracketed type argument.
-fn unwrap_wrapper<'a>(ty: &'a syn::Type, wrapper: &str) -> Option<&'a syn::Type> {
+pub(crate) fn unwrap_wrapper<'a>(ty: &'a syn::Type, wrapper: &str) -> Option<&'a syn::Type> {
     let syn::Type::Path(type_path) = ty else {
         return None;
     };
@@ -362,7 +420,11 @@ impl Dep {
 }
 
 enum DepTarget {
-    External(usize),
+    External {
+        display: String,
+        origin: String,
+        capabilities: BTreeSet<Capability>,
+    },
     Generated(String),
 }
 
@@ -413,6 +475,7 @@ impl TypeNode {
 
 fn collect_nodes(
     entries: &[MappingEntry],
+    plans: &crate::rules::FieldPlans,
     items: &[syn::Item],
     nodes: &mut BTreeMap<String, TypeNode>,
 ) {
@@ -441,6 +504,7 @@ fn collect_nodes(
 
     fn walk(
         entries: &[MappingEntry],
+        plans: &crate::rules::FieldPlans,
         names: &BTreeSet<String>,
         items: &[syn::Item],
         nodes: &mut BTreeMap<String, TypeNode>,
@@ -449,10 +513,11 @@ fn collect_nodes(
             match item {
                 syn::Item::Mod(module) => {
                     if let Some((_, children)) = &module.content {
-                        walk(entries, names, children, nodes);
+                        walk(entries, plans, names, children, nodes);
                     }
                 }
                 syn::Item::Struct(item_struct) => {
+                    let owner = item_struct.ident.to_string();
                     let mut deps = Vec::new();
                     for field in &item_struct.fields {
                         let label = field
@@ -460,10 +525,18 @@ fn collect_nodes(
                             .as_ref()
                             .map(|ident| ident.to_string())
                             .unwrap_or_else(|| "0".to_string());
-                        collect_deps(entries, names, &field.ty, false, false, &label, &mut deps);
+                        // A per-field capability declaration (rules /
+                        // [fields] tiers) overrides the mapping's
+                        // per-type one for this field's dependencies.
+                        let field_caps = plans
+                            .get(&owner, &label)
+                            .and_then(|plan| plan.capabilities.as_ref());
+                        collect_deps(
+                            entries, field_caps, names, &field.ty, false, false, &label, &mut deps,
+                        );
                     }
                     nodes.insert(
-                        item_struct.ident.to_string(),
+                        owner,
                         TypeNode {
                             is_enum: false,
                             synthesis_candidate: false,
@@ -484,10 +557,13 @@ fn collect_nodes(
                         has_payload = true;
                         let label = format!("variant `{}`", variant.ident);
                         for field in &variant.fields {
-                            collect_deps(entries, names, &field.ty, false, true, &label, &mut deps);
+                            collect_deps(
+                                entries, None, names, &field.ty, false, true, &label, &mut deps,
+                            );
                             if index == 0 {
                                 collect_deps(
                                     entries,
+                                    None,
                                     names,
                                     &field.ty,
                                     false,
@@ -513,12 +589,17 @@ fn collect_nodes(
             }
         }
     }
-    walk(entries, &names, items, nodes);
+    walk(entries, plans, &names, items, nodes);
 }
 
 /// Record every mapped-external or generated type mentioned by `ty`.
+/// `field_caps`, when set, declares this field's type capabilities
+/// (a rules-/`[fields]`-tier `impls` or table-form type override) and
+/// wins over the per-type mapping entry.
+#[allow(clippy::too_many_arguments)]
 fn collect_deps(
     entries: &[MappingEntry],
+    field_caps: Option<&(BTreeSet<Capability>, String)>,
     names: &BTreeSet<String>,
     ty: &syn::Type,
     wrapped: bool,
@@ -542,6 +623,7 @@ fn collect_deps(
             if let syn::GenericArgument::Type(inner) = arg {
                 collect_deps(
                     entries,
+                    field_caps,
                     names,
                     inner,
                     wrapped || is_defaulting_wrapper,
@@ -555,12 +637,27 @@ fn collect_deps(
     }
 
     let tokens = normalized_tokens(ty);
-    if let Some(index) = entries.iter().position(|entry| entry.type_tokens == tokens) {
+    if let Some((capabilities, origin)) = field_caps {
         out.push(Dep {
             label: label.to_string(),
             wrapped,
             in_variant,
-            target: DepTarget::External(index),
+            target: DepTarget::External {
+                display: tokens,
+                origin: origin.clone(),
+                capabilities: capabilities.clone(),
+            },
+        });
+    } else if let Some(entry) = entries.iter().find(|entry| entry.type_tokens == tokens) {
+        out.push(Dep {
+            label: label.to_string(),
+            wrapped,
+            in_variant,
+            target: DepTarget::External {
+                display: entry.display_path.clone(),
+                origin: entry.origin.clone(),
+                capabilities: entry.capabilities.clone(),
+            },
         });
     } else if type_path.path.segments.len() == 1 && names.contains(&ident) {
         out.push(Dep {

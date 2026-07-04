@@ -118,12 +118,18 @@ impl LoadedSpec {
 
         let spec_model = Spec::from_value(&self.spec)?;
         let schema = spec_model.to_draft07_root()?;
+        // The `[[rules]]` tier resolves here — the one point where the
+        // typed spec model (format provenance) and the partition
+        // (module placement) both exist.
+        let field_rules =
+            crate::rules::FieldRules::resolve(&self.style, &spec_model, partition.as_ref())?;
         Ok(LoweredSchema {
             schema,
             partition,
             settings: self.settings,
             style: self.style,
             overrides: self.overrides,
+            field_rules,
             spec_path: self.spec_path,
         })
     }
@@ -140,6 +146,7 @@ pub struct LoweredSchema {
     settings: TypeSpaceSettings,
     style: StyleConfig,
     overrides: Overrides,
+    field_rules: crate::rules::FieldRules,
     spec_path: PathBuf,
 }
 
@@ -192,7 +199,16 @@ impl LoweredSchema {
 
     /// Run typify: build a [`TypeSpace`] from the settings and populate it
     /// from the lowered schema.
-    pub fn build_types(self) -> Result<GeneratedTypes> {
+    pub fn build_types(mut self) -> Result<GeneratedTypes> {
+        // Rule-tier deep-patch decisions feed typify's generation-time
+        // filter; re-install it augmented only when rules force
+        // something, preserving any `customize`-hook filter otherwise.
+        if !self.field_rules.deep_patch_overrides().is_empty() {
+            self.settings.with_deep_patch_filter(
+                self.overrides
+                    .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone()),
+            );
+        }
         let mut type_space = TypeSpace::new(&self.settings);
         type_space
             .add_root_schema(self.schema)
@@ -202,6 +218,7 @@ impl LoweredSchema {
             partition: self.partition,
             style: self.style,
             overrides: self.overrides,
+            field_rules: self.field_rules,
             spec_path: self.spec_path,
         })
     }
@@ -215,6 +232,7 @@ pub struct GeneratedTypes {
     partition: Option<Partition>,
     style: StyleConfig,
     overrides: Overrides,
+    field_rules: crate::rules::FieldRules,
     spec_path: PathBuf,
 }
 
@@ -313,12 +331,16 @@ impl GeneratedTypes {
         let mut file = syn::parse_file(&self.tokens().to_string())
             .context("generated tokens failed to parse as a Rust file")?;
         self.overrides.apply_to_file(&mut file)?;
-        // External type mappings: attach configured field attributes
-        // and prune derives the mapped types cannot satisfy; enums
-        // whose Default synthesis would not compile are skipped below.
+        // The per-field decision layer: `[style.formats]` / `replace`
+        // mapping defaults, overridden by `[[rules]]` in order, then
+        // the `[fields]` tier — materialized once and applied by the
+        // mappings machinery (attrs, rule type overrides, capability
+        // pruning); enums whose Default synthesis would not compile
+        // are skipped below.
+        let plans = self.field_rules.field_plans(&file, &self.style)?;
         let mappings = crate::mappings::Mappings::resolve(&self.style)?;
         let skip_defaults =
-            mappings.apply_to_file(&mut file, self.style.untagged_enum_defaults)?;
+            mappings.apply_to_file(&mut file, self.style.untagged_enum_defaults, &plans)?;
         if self.style.untagged_enum_defaults {
             postprocess::synthesize_enum_defaults(&mut file, &skip_defaults);
         }

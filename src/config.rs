@@ -396,21 +396,177 @@ pub struct TypeOverride {
     pub optional_field_attrs: Vec<String>,
 }
 
+/// A field-scoped Rust type replacement: the bare path shorthand
+/// (`type = "::my_crate::PetId"`, declaring nothing beyond the
+/// always-assumed serde pair) or the table form declaring attributes
+/// and capabilities:
+///
+/// ```toml
+/// [fields."Pet.createdAt"]
+/// type = { type = "::time::OffsetDateTime", field-attrs = ["serde(with = \"time::serde::iso8601\")"], impls = ["serialize", "deserialize"] }
+/// ```
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum TypeReplacement {
+    /// Bare type-path shorthand.
+    Path(String),
+    /// Full table form.
+    Table(TypeReplacementTable),
+}
+
+/// The table form of a [`TypeReplacement`].
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub struct TypeReplacementTable {
+    /// The Rust type path, emitted verbatim.
+    #[serde(rename = "type")]
+    pub type_path: String,
+    /// Attribute bodies appended to the field. The field's optionality
+    /// is known at this scope, so there is a single list.
+    #[serde(default)]
+    pub field_attrs: Vec<String>,
+    /// Capabilities the type provides ([`Capability`]); feeds the
+    /// derive-pruning analysis exactly like a mapping's `impls`.
+    #[serde(default)]
+    pub impls: Vec<Capability>,
+}
+
+impl From<String> for TypeReplacement {
+    fn from(path: String) -> Self {
+        TypeReplacement::Path(path)
+    }
+}
+
+impl From<&str> for TypeReplacement {
+    fn from(path: &str) -> Self {
+        TypeReplacement::Path(path.to_string())
+    }
+}
+
+impl TypeReplacement {
+    /// The replacement Rust type path.
+    pub fn type_path(&self) -> &str {
+        match self {
+            TypeReplacement::Path(path) => path,
+            TypeReplacement::Table(table) => &table.type_path,
+        }
+    }
+
+    pub(crate) fn field_attrs(&self) -> &[String] {
+        match self {
+            TypeReplacement::Path(_) => &[],
+            TypeReplacement::Table(table) => &table.field_attrs,
+        }
+    }
+
+    pub(crate) fn capabilities(&self) -> &[Capability] {
+        match self {
+            TypeReplacement::Path(_) => &[],
+            TypeReplacement::Table(table) => &table.impls,
+        }
+    }
+}
+
 /// Per-field override, keyed by `Type.field` (schema name + wire name;
-/// generated Rust names are accepted too).
+/// generated Rust names are accepted too). The most specific tier:
+/// its keys beat `[[rules]]` payloads, which beat `[style.formats]` /
+/// `replace` mapping defaults.
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct FieldOverride {
     /// Force the deep-patch annotation on (`true`) or off (`false`) for
-    /// this field, overriding [`StyleConfig::deep_patch`]. Forcing `true`
-    /// on a field that cannot carry the annotation (not an
-    /// `Option<Struct>`, or the inner type's Patch companion is stripped)
-    /// is a hard error.
+    /// this field, overriding [`StyleConfig::deep_patch`] and any
+    /// `[[rules]]` decision. Forcing `true` on a field that cannot
+    /// carry the annotation (not an `Option<Struct>`, or the inner
+    /// type's Patch companion is stripped) is a hard error.
     pub deep_patch: Option<bool>,
-    /// Replace the field's Rust type with this path, verbatim (the
-    /// `Option<...>` wrapper, when present, is preserved).
+    /// Replace the field's Rust type, verbatim (the `Option<...>`
+    /// wrapper, when present, is preserved): a bare path or the
+    /// [`TypeReplacement`] table form carrying attrs and capabilities.
     #[serde(rename = "type")]
-    pub type_path: Option<String>,
+    pub type_path: Option<TypeReplacement>,
+    /// Attribute bodies for exactly this field — most-specific-wins,
+    /// no merging: when present it **replaces** every mapping- or
+    /// rule-derived attribute for the field (`field-attrs = []` clears
+    /// them); absent inherits. The field's optionality is known here,
+    /// so there is deliberately no separate optional list.
+    pub field_attrs: Option<Vec<String>>,
+}
+
+/// One `[[rules]]` entry: an ordered, pattern-scoped override sitting
+/// between the style-level mappings and the `[fields]` tier.
+///
+/// ```toml
+/// [[rules]]
+/// match = { module = "*/request", format = "string/date-time" }
+/// apply = { deep-patch = false }
+/// ```
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Rule {
+    /// The predicates, ANDed; at least one is required.
+    #[serde(rename = "match")]
+    pub match_: RuleMatch,
+    /// The payload applied to every matching field.
+    pub apply: RuleApply,
+}
+
+/// `[[rules]] match` predicates. All optional and ANDed; globs support
+/// `*` (any sequence, including across `/` and `::`) and `?` (any one
+/// character).
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub struct RuleMatch {
+    /// Glob against the owning type's slash-separated module path from
+    /// the partition (plus `[types] module` overrides). Requires
+    /// partitioned output; setting it with partitioning off is a hard
+    /// config error. Types typify synthesizes for inline sub-schemas
+    /// carry no module and never match.
+    pub module: Option<String>,
+    /// Glob against the owning type's schema key **and** generated
+    /// Rust name — either matches.
+    #[serde(rename = "struct")]
+    pub struct_: Option<String>,
+    /// Glob against the field's wire name **and** Rust name — either
+    /// matches.
+    pub field: Option<String>,
+    /// Glob against the property's spec-level `"type/format"`
+    /// provenance (`"string/date-time"`; a format-less property is
+    /// just `"string"`), resolved by walking the typed spec model's
+    /// named schemas — direct properties, `allOf` branch properties,
+    /// and one `$ref` hop to a named scalar schema. Properties of
+    /// inline/anonymous sub-schemas carry no provenance and never
+    /// match.
+    pub format: Option<String>,
+    /// Glob against the field's resolved Rust type path in the
+    /// generated AST (unwrapping `Option`/`Box`, whitespace-free,
+    /// tolerant of a leading `::` in the pattern). Checkable only
+    /// after generation, so it cannot be combined with a `deep-patch`
+    /// payload.
+    #[serde(rename = "type")]
+    pub type_: Option<String>,
+}
+
+/// `[[rules]] apply` payload — the `[fields]` tier vocabulary. Later
+/// rules override earlier ones key-by-key; the `[fields]` tier beats
+/// all rules.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub struct RuleApply {
+    /// Attribute bodies replacing any mapping-derived attrs on the
+    /// matching fields (empty list clears; absent inherits).
+    pub field_attrs: Option<Vec<String>>,
+    /// Replace the matching fields' Rust type (path or table form).
+    #[serde(rename = "type")]
+    pub type_: Option<TypeReplacement>,
+    /// Capabilities of the matching fields' (possibly overridden)
+    /// type, feeding the derive-pruning analysis; overrides what the
+    /// underlying mapping declared, for these fields only.
+    pub impls: Option<Vec<Capability>>,
+    /// Force the deep-patch annotation on or off for the matching
+    /// fields. Feeds the generation-time filter, so the rule may only
+    /// use pre-generation predicates (everything except `type`).
+    pub deep_patch: Option<bool>,
 }
 
 /// The declarative style configuration. Field defaults mean "upstream
@@ -504,6 +660,13 @@ pub struct StyleConfig {
     /// keys are hard errors at generation time.
     #[serde(default)]
     pub fields: BTreeMap<String, FieldOverride>,
+    /// Ordered pattern-scoped overrides (top-level `[[rules]]` tables
+    /// in codegen.toml) between the style-level mappings and the
+    /// `[fields]` tier; see [`Rule`]. A rule matching nothing warns on
+    /// stderr rather than erroring — globs are broad-brush, unlike the
+    /// exact `[types]`/`[fields]` selectors.
+    #[serde(default)]
+    pub rules: Vec<Rule>,
     /// The opt-in end-of-run compile gate (top-level `[verify]` table
     /// in codegen.toml, `--verify` on the CLI,
     /// [`Generator::verify_compile`](crate::Generator::verify_compile)).
@@ -562,6 +725,7 @@ impl Default for StyleConfig {
             imports: Vec::new(),
             types: BTreeMap::new(),
             fields: BTreeMap::new(),
+            rules: Vec::new(),
         }
     }
 }
@@ -667,6 +831,7 @@ impl StyleConfig {
             ],
             types: BTreeMap::new(),
             fields: BTreeMap::new(),
+            rules: Vec::new(),
         }
     }
 
@@ -795,6 +960,8 @@ impl StyleConfig {
             types: BTreeMap<String, TypeOverride>,
             #[serde(default)]
             fields: BTreeMap<String, FieldOverride>,
+            #[serde(default)]
+            rules: Vec<Rule>,
             verify: Option<VerifyConfig>,
         }
 
@@ -812,6 +979,7 @@ impl StyleConfig {
         }
         config.types.extend(parsed.types);
         config.fields.extend(parsed.fields);
+        config.rules.extend(parsed.rules);
         if let Some(verify) = parsed.verify {
             config.verify = verify;
         }

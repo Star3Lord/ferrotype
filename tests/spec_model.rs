@@ -144,6 +144,7 @@ fn nullable_named_object_wraps_without_self_collision() {
         "paths": {},
         "components": { "schemas": {
             "auto-merge": {
+                "title": "Auto merge",
                 "type": "object", "nullable": true,
                 "required": ["enabled_by"],
                 "properties": { "enabled_by": { "type": "string" } }
@@ -215,6 +216,42 @@ fn string_enum_with_mistyped_scalar_members_stringifies() {
             || out.contains("pub struct RetirementIndicator(pub ::std::option::Option<"),
         "nullable enum still folds into Option: {out}",
     );
+}
+
+#[test]
+fn null_default_on_non_nullable_node_is_dropped() {
+    // DigitalOcean-class: `default: null` on a plain oneOf union means
+    // "no default" (null is not a value of the type); typify would
+    // reject or panic on it. Nullable nodes keep theirs — null is the
+    // Option's intrinsic default.
+    let document = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "Holder": {
+                "type": "object",
+                "properties": {
+                    "stop": {
+                        "default": null,
+                        "oneOf": [
+                            { "type": "string" },
+                            { "type": "array", "items": { "type": "string" } }
+                        ]
+                    }
+                }
+            }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("spec_model");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("null_default.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
+    let out = openapi_codegen::Generator::new(&path)
+        .profile(openapi_codegen::StyleProfile::ApiClient)
+        .generate_to_string()
+        .unwrap();
+    assert!(out.contains("pub enum HolderStop"), "{out}");
 }
 
 #[test]

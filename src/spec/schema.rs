@@ -413,7 +413,17 @@ impl Schema {
                 Value::String(description.clone()),
             );
         }
-        if let Some(title) = &self.title {
+        // A nullable typed node renders as `type: [T, "null"]` (above),
+        // and typify names the Option wrapper's INNER type from the
+        // node's `title` when one is present — GitHub titles every
+        // schema with its own name, so the inner would collide with
+        // the wrapper (`X(Option<X>)`). Withhold the title on exactly
+        // that shape; the inner then falls back to typify's
+        // collision-free `{Wrapper}Inner` naming. The description
+        // (the useful doc text) still renders.
+        if let Some(title) = &self.title
+            && !(self.nullable && self.ty.is_some())
+        {
             map.insert("title".to_string(), Value::String(title.clone()));
         }
 
@@ -475,7 +485,15 @@ impl Schema {
             map.insert("enum".to_string(), Value::Array(members));
         }
         if let Some(default) = &self.default {
-            map.insert("default".to_string(), default.clone());
+            // `default: null` on a non-nullable node is the JSON-ism
+            // for "no default" (DigitalOcean writes it on plain oneOf
+            // unions): null is not a value of the type, and typify
+            // either rejects the default or panics rendering it. A
+            // nullable node keeps it — null is the Option's intrinsic
+            // default there.
+            if !default.is_null() || self.nullable {
+                map.insert("default".to_string(), default.clone());
+            }
         }
         for (key, subschemas) in [
             ("allOf", &self.all_of),
@@ -529,11 +547,29 @@ impl Schema {
             map.insert(key.clone(), value.clone());
         }
 
-        // Untyped `nullable: true` nodes ($ref siblings, compositions)
-        // render as `anyOf [T, null]` so typify wraps the type in
-        // `Option` — unless the node is otherwise empty (matching the
-        // historical lowering). Typed nodes rendered `type: [T, "null"]`
-        // above instead.
+        // A nullable `oneOf`/`anyOf` gains a `{type: null}` member
+        // instead of an outer wrap: typify folds it into a unit `Null`
+        // variant (or an Option), whereas the wrap would name the inner
+        // union after the definition itself and collide — GitHub's
+        // `nullable-secret-scanning-first-detected-location` is a
+        // nullable oneOf.
+        if self.nullable && self.ty.is_none() {
+            for key in ["oneOf", "anyOf"] {
+                if let Some(Value::Array(members)) = map.get_mut(key) {
+                    if !members.iter().any(|member| {
+                        member.get("type").and_then(Value::as_str) == Some("null")
+                    }) {
+                        members.push(serde_json::json!({ "type": "null" }));
+                    }
+                    return Value::Object(map);
+                }
+            }
+        }
+
+        // Untyped `nullable: true` nodes ($ref siblings, allOf) render
+        // as `anyOf [T, null]` so typify wraps the type in `Option` —
+        // unless the node is otherwise empty (matching the historical
+        // lowering). Typed nodes rendered `type: [T, "null"]` above.
         if self.nullable && self.ty.is_none() && !map.is_empty() {
             let inner = std::mem::take(&mut map);
             map.insert(

@@ -375,10 +375,24 @@ impl Schema {
         }
 
         // `format` implies `type` when the spec omitted it — port of the
-        // historical inference.
+        // historical inference. A nullable *typed* node renders as the
+        // draft-07 type array `[T, "null"]`: typify's native null form,
+        // under which a named nullable definition becomes
+        // `X(Option<XInner>)` — the `anyOf [T, null]` wrap (still used
+        // for untyped nullables below) names the inner subschema after
+        // the definition itself and collides (`X(Option<X>)`;
+        // real-world corpus: GitHub's 50+ `nullable-*` schemas, see
+        // docs/SPEC_COVERAGE.md).
+        let render_type = |ty: &str| {
+            if self.nullable {
+                serde_json::json!([ty, "null"])
+            } else {
+                Value::String(ty.to_string())
+            }
+        };
         match (&self.ty, &self.format) {
             (Some(ty), _) => {
-                map.insert("type".to_string(), Value::String(ty.as_str().to_string()));
+                map.insert("type".to_string(), render_type(ty.as_str()));
             }
             (None, Some(format)) => {
                 let inferred = match format.as_str() {
@@ -386,7 +400,7 @@ impl Schema {
                     "float" | "double" => "number",
                     _ => "string",
                 };
-                map.insert("type".to_string(), Value::String(inferred.to_string()));
+                map.insert("type".to_string(), render_type(inferred));
             }
             (None, None) => {}
         }
@@ -433,7 +447,32 @@ impl Schema {
             map.insert("items".to_string(), items.to_draft07());
         }
         if !self.enumeration.is_empty() {
-            map.insert("enum".to_string(), Value::Array(self.enumeration.clone()));
+            // A `type: string` enum whose members are booleans or
+            // numbers is a YAML-authoring artifact (`- true` parses as
+            // a boolean; Plaid declares dozens of string enums this
+            // way). The declared type is the author's intent and what
+            // the wire carries: stringify the mistyped scalars. A
+            // nullable enum keeps its `null` member so typify prunes
+            // it into the Option wrapper.
+            let members = self.enumeration.iter().map(|member| {
+                match (&self.ty, member) {
+                    (Some(TypeHint::String), Value::Bool(flag)) => {
+                        Value::String(flag.to_string())
+                    }
+                    (Some(TypeHint::String), Value::Number(number)) => {
+                        Value::String(number.to_string())
+                    }
+                    _ => member.clone(),
+                }
+            });
+            let mut members: Vec<Value> = members.collect();
+            // A nullable typed enum renders `type: [T, "null"]`; the
+            // values list must offer the null typify folds into
+            // `Option`.
+            if self.nullable && self.ty.is_some() && !members.iter().any(Value::is_null) {
+                members.push(Value::Null);
+            }
+            map.insert("enum".to_string(), Value::Array(members));
         }
         if let Some(default) = &self.default {
             map.insert("default".to_string(), default.clone());
@@ -490,10 +529,12 @@ impl Schema {
             map.insert(key.clone(), value.clone());
         }
 
-        // `nullable: true` renders as `anyOf [T, null]` so typify wraps
-        // the type in `Option` — unless the node is otherwise empty
-        // (matching the historical lowering).
-        if self.nullable && !map.is_empty() {
+        // Untyped `nullable: true` nodes ($ref siblings, compositions)
+        // render as `anyOf [T, null]` so typify wraps the type in
+        // `Option` — unless the node is otherwise empty (matching the
+        // historical lowering). Typed nodes rendered `type: [T, "null"]`
+        // above instead.
+        if self.nullable && self.ty.is_none() && !map.is_empty() {
             let inner = std::mem::take(&mut map);
             map.insert(
                 "anyOf".to_string(),

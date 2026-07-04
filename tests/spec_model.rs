@@ -131,6 +131,93 @@ fn spec_model_captures_operations() {
 }
 
 #[test]
+fn nullable_named_object_wraps_without_self_collision() {
+    // A named schema with `nullable: true` lowers to the draft-07
+    // type array `["object", "null"]`, under which typify emits
+    // `X(Option<XInner>)`. The old `anyOf [T, null]` wrap named the
+    // inner subschema after the definition itself — `X(Option<X>)` —
+    // colliding with the real type (GitHub's `nullable-*` schema
+    // family; docs/SPEC_COVERAGE.md).
+    let document = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "auto-merge": {
+                "type": "object", "nullable": true,
+                "required": ["enabled_by"],
+                "properties": { "enabled_by": { "type": "string" } }
+            },
+            "repo": {
+                "type": "object",
+                "properties": { "auto_merge": { "$ref": "#/components/schemas/auto-merge" } }
+            }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("spec_model");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("nullable_named.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
+    let out = openapi_codegen::Generator::new(&path)
+        .profile(openapi_codegen::StyleProfile::ApiClient)
+        .generate_to_string()
+        .unwrap();
+
+    assert!(
+        out.contains("pub struct AutoMerge(pub ::std::option::Option<AutoMergeInner>);"),
+        "{out}",
+    );
+    assert!(out.contains("pub struct AutoMergeInner {"), "{out}");
+    assert_eq!(
+        out.matches("pub struct AutoMerge").count(),
+        2, // the wrapper + the Inner — not two colliding `AutoMerge`s
+        "{out}",
+    );
+}
+
+#[test]
+fn string_enum_with_mistyped_scalar_members_stringifies() {
+    // Plaid-class YAML artifact: `type: string` enums whose members
+    // parsed as booleans/numbers (`- true`). The declared type is the
+    // author's intent; the members stringify instead of failing
+    // generation, and a nullable enum still folds into Option.
+    let document = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "RetirementIndicator": {
+                "type": "string", "nullable": true,
+                "enum": [true, false]
+            },
+            "Holder": {
+                "type": "object",
+                "required": ["indicator"],
+                "properties": {
+                    "indicator": { "$ref": "#/components/schemas/RetirementIndicator" }
+                }
+            }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("spec_model");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("mistyped_enum.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
+    let out = openapi_codegen::Generator::new(&path)
+        .profile(openapi_codegen::StyleProfile::ApiClient)
+        .generate_to_string()
+        .unwrap();
+
+    assert!(out.contains("#[serde(rename = \"true\")]"), "{out}");
+    assert!(out.contains("#[serde(rename = \"false\")]"), "{out}");
+    assert!(
+        out.contains("pub indicator: ::std::option::Option<RetirementIndicator>")
+            || out.contains("pub struct RetirementIndicator(pub ::std::option::Option<"),
+        "nullable enum still folds into Option: {out}",
+    );
+}
+
+#[test]
 fn spec_model_rejects_unsupported_schema_keywords() {
     // Unmodeled schema-bearing keywords are loud errors, not silent
     // passthrough: they would need $ref rewriting inside them.

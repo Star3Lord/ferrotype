@@ -1,1 +1,3 @@
 /target
+/specs/external/*
+!/specs/external/fetch.sh

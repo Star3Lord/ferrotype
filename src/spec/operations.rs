@@ -1,9 +1,9 @@
 //! Operations captured as data (decision D8 in docs/MIGRATION.md).
 //!
-//! Nothing consumes these yet: partitioning still walks the raw document
-//! (step 5 territory) and there is no client emitter (step 6). They exist
-//! so the information stops being discarded at the front door and the
-//! future work has a typed place to attach.
+//! Partitioning still walks the raw document (its reachability walk is
+//! keyed by raw `$ref` strings); the client emitter ([`crate::client`])
+//! consumes this model — one method per [`OperationSpec`], parameters
+//! from [`Param`], request/response types from [`Body`].
 
 use anyhow::Context;
 use serde_json::Value;
@@ -60,6 +60,10 @@ pub struct OperationSpec {
     pub summary: Option<String>,
     pub tags: Vec<String>,
     pub params: Vec<Param>,
+    /// `$ref`-to-`components.parameters` entries, kept opaque as the raw
+    /// reference strings. Nothing resolves them; the client emitter
+    /// errors loudly when one appears on an operation it generates.
+    pub ref_params: Vec<String>,
     pub request: Vec<Body>,
     pub responses: Vec<ResponseSpec>,
     /// Names of the security schemes required, per requirement set.
@@ -109,14 +113,16 @@ fn parse_operation(
     };
 
     let mut params = Vec::new();
+    let mut ref_params = Vec::new();
     if let Some(raw_params) = operation.get("parameters").and_then(Value::as_array) {
         let params_origin = origin.child("parameters");
         for (index, raw) in raw_params.iter().enumerate() {
             let param_origin = params_origin.index(index);
-            // `$ref`-to-components-parameters entries are tolerated but
-            // kept opaque: nothing consumes them yet, and resolving them
-            // belongs to the step that does.
-            if raw.get("$ref").is_some() {
+            // `$ref`-to-components-parameters entries are kept opaque:
+            // recorded so the client emitter can refuse them loudly,
+            // resolved by nothing.
+            if let Some(reference) = raw.get("$ref").and_then(Value::as_str) {
+                ref_params.push(reference.to_string());
                 continue;
             }
             let name = raw
@@ -201,6 +207,7 @@ fn parse_operation(
             })
             .unwrap_or_default(),
         params,
+        ref_params,
         request,
         responses,
         security,

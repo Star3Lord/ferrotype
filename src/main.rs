@@ -27,6 +27,11 @@ enum Command {
     /// (`{"definitions": {...}}`) consumable by `typify::import_types!`
     /// or `cargo typify`.
     Lower(LowerArgs),
+    /// Take ownership of a generated file: verify its `// @generated`
+    /// marker and rewrite the header to `// @ejected`. Regeneration
+    /// then skips the file (never overwrites or deletes it); delete it
+    /// and regenerate to restore the generated version.
+    Eject(EjectArgs),
 }
 
 #[derive(clap::Args)]
@@ -83,6 +88,20 @@ struct GenerateArgs {
     /// `[verify] dependencies` list.
     #[arg(long, default_value_t = false)]
     verify: bool,
+
+    /// Generate an API client alongside the types: a `client` module
+    /// (reqwest-middleware client, auth from securitySchemes, body
+    /// hooks) and — with --output-dir — a user-owned `ext` module.
+    /// The config's `[client]` table holds the finer knobs.
+    #[arg(long, default_value_t = false)]
+    client: bool,
+}
+
+#[derive(clap::Args)]
+struct EjectArgs {
+    /// The generated file to take ownership of.
+    #[arg(value_name = "FILE")]
+    file: PathBuf,
 }
 
 #[derive(clap::Args)]
@@ -104,6 +123,7 @@ fn main() -> anyhow::Result<()> {
     match Cli::parse().command {
         Command::Generate(args) => generate(args),
         Command::Lower(args) => lower(args),
+        Command::Eject(args) => openapi_codegen::eject_file(&args.file),
     }
 }
 
@@ -120,6 +140,9 @@ fn generate(args: GenerateArgs) -> anyhow::Result<()> {
     }
     if args.verify {
         generator = generator.verify_compile(true);
+    }
+    if args.client {
+        generator = generator.client(true);
     }
 
     if let Some(dir) = &args.output_dir {

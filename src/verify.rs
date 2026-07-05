@@ -38,14 +38,28 @@ const DEFAULT_DEPENDENCIES: &[&str] = &[
 /// Well-known crates generated code may reference depending on the
 /// spec and style — typify's chrono/uuid format defaults,
 /// `serde_json::Value` for free-form schemas, `regress` for validating
-/// string newtypes. Each is added to the scratch crate only when the
-/// rendered output actually mentions its marker; user `[verify]
-/// dependencies` lines still win name collisions.
+/// string newtypes, and the client emitter's HTTP surface (reqwest /
+/// reqwest-middleware / async-trait, plus base64 when an OAuth2
+/// provider is emitted). Each is added to the scratch crate only when
+/// the rendered output actually mentions its marker; user `[verify]
+/// dependencies` lines still win name collisions. (The `::reqwest::`
+/// marker keeps its trailing `::` so it cannot fire on
+/// `::reqwest_middleware` alone, mirroring `::uuid::`.)
 const CONDITIONAL_DEPENDENCIES: &[(&str, &str)] = &[
     ("::chrono", r#"chrono = { version = "0.4", features = ["serde"] }"#),
     ("::uuid::", r#"uuid = { version = "1", features = ["serde"] }"#),
     ("::serde_json", r#"serde_json = "1""#),
     ("::regress", r#"regress = "0.10""#),
+    (
+        "::reqwest::",
+        r#"reqwest = { version = "0.13", default-features = false, features = ["json", "form", "query"] }"#,
+    ),
+    (
+        "::reqwest_middleware",
+        r#"reqwest-middleware = { version = "0.5", features = ["json", "query"] }"#,
+    ),
+    ("::async_trait", r#"async-trait = "0.1""#),
+    ("::base64", r#"base64 = "0.22""#),
 ];
 
 /// The conditional dependency lines whose markers appear in any of the

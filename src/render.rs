@@ -97,8 +97,44 @@ pub(crate) fn normalize_docs(items: &mut [syn::Item]) {
                     normalize_attr_docs(&mut field.attrs);
                 }
             }
+            syn::Item::Impl(item_impl) => {
+                for member in &mut item_impl.items {
+                    if let Some(attrs) = impl_member_attrs_mut(member) {
+                        normalize_attr_docs(attrs);
+                    }
+                }
+            }
+            syn::Item::Trait(item_trait) => {
+                for member in &mut item_trait.items {
+                    if let Some(attrs) = trait_member_attrs_mut(member) {
+                        normalize_attr_docs(attrs);
+                    }
+                }
+            }
             _ => {}
         }
+    }
+}
+
+/// The outer attribute list of an impl-block member.
+fn impl_member_attrs_mut(member: &mut syn::ImplItem) -> Option<&mut Vec<syn::Attribute>> {
+    match member {
+        syn::ImplItem::Const(i) => Some(&mut i.attrs),
+        syn::ImplItem::Fn(i) => Some(&mut i.attrs),
+        syn::ImplItem::Type(i) => Some(&mut i.attrs),
+        syn::ImplItem::Macro(i) => Some(&mut i.attrs),
+        _ => None,
+    }
+}
+
+/// The outer attribute list of a trait member.
+fn trait_member_attrs_mut(member: &mut syn::TraitItem) -> Option<&mut Vec<syn::Attribute>> {
+    match member {
+        syn::TraitItem::Const(i) => Some(&mut i.attrs),
+        syn::TraitItem::Fn(i) => Some(&mut i.attrs),
+        syn::TraitItem::Type(i) => Some(&mut i.attrs),
+        syn::TraitItem::Macro(i) => Some(&mut i.attrs),
+        _ => None,
     }
 }
 
@@ -340,7 +376,9 @@ pub(crate) fn space_rendered(source: String) -> String {
 }
 
 /// Collect the start line of every item that needs a blank line before
-/// it, in `items` and recursively in inline module bodies.
+/// it, in `items` and recursively in inline module bodies. Members of
+/// impl and trait blocks are separated the same way (consecutive
+/// one-line members — consts, associated types — stay tight).
 fn collect_gap_lines(items: &[syn::Item], gap_lines: &mut Vec<usize>) {
     for pair in items.windows(2) {
         if !stays_tight(&pair[0], &pair[1]) {
@@ -348,12 +386,44 @@ fn collect_gap_lines(items: &[syn::Item], gap_lines: &mut Vec<usize>) {
         }
     }
     for item in items {
-        if let syn::Item::Mod(module) = item
-            && let Some((_, children)) = &module.content
-        {
-            collect_gap_lines(children, gap_lines);
+        match item {
+            syn::Item::Mod(module) => {
+                if let Some((_, children)) = &module.content {
+                    collect_gap_lines(children, gap_lines);
+                }
+            }
+            syn::Item::Impl(impl_block) => {
+                for pair in impl_block.items.windows(2) {
+                    if !impl_members_stay_tight(&pair[0], &pair[1]) {
+                        gap_lines.push(pair[1].span().start().line);
+                    }
+                }
+            }
+            syn::Item::Trait(trait_block) => {
+                for pair in trait_block.items.windows(2) {
+                    if !trait_members_stay_tight(&pair[0], &pair[1]) {
+                        gap_lines.push(pair[1].span().start().line);
+                    }
+                }
+            }
+            _ => {}
         }
     }
+}
+
+/// Impl members that stay contiguous: anything following an associated
+/// type. This keeps typify's `type Err = ...;` + `fn from_str` ladder
+/// shape (pinned by the pre-client goldens) while separating
+/// consecutive functions and const-then-function runs in the generated
+/// client's multi-method impls.
+fn impl_members_stay_tight(prev: &syn::ImplItem, _next: &syn::ImplItem) -> bool {
+    matches!(prev, syn::ImplItem::Type(_))
+}
+
+/// Trait members that stay contiguous, mirroring
+/// [`impl_members_stay_tight`].
+fn trait_members_stay_tight(prev: &syn::TraitItem, _next: &syn::TraitItem) -> bool {
+    matches!(prev, syn::TraitItem::Type(_))
 }
 
 /// The one-line declaration runs that stay contiguous: `use` blocks

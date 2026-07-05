@@ -128,6 +128,16 @@ impl Generator {
         self.style(move |style| style.verify.enabled = enabled)
     }
 
+    /// Generate the API client alongside the types: a `client` module
+    /// with a concrete `reqwest_middleware`-based `Client`, auth
+    /// providers from `securitySchemes`, and — in directory-tree
+    /// output — the user-owned `ext` module. The programmatic form of
+    /// the `[client]` config table (`enabled` here; the other keys via
+    /// [`Self::style`]). See [`crate::client`].
+    pub fn client(self, enabled: bool) -> Self {
+        self.style(move |style| style.client.enabled = enabled)
+    }
+
     /// Start the staged pipeline: parse the spec and apply patch files and
     /// [`Self::patch_spec_with`] hooks, then stop. The returned
     /// [`LoadedSpec`] exposes the parsed document for arbitrary edits and
@@ -197,16 +207,29 @@ impl Generator {
     /// `<mod>/mod.rs` plus one file per nested partition when
     /// [`Self::split_request_response`] is on) and a root `mod.rs`
     /// declaring them. See [`crate::write_file_tree`] for the exact
-    /// splitting, header, idempotency, and stale-file-cleanup rules.
+    /// splitting, header, idempotency, ejection, and stale-file-cleanup
+    /// rules. With the client's `ext` module enabled, the root `mod.rs`
+    /// declares `pub mod ext;` and a marker-less `ext/mod.rs` scaffold
+    /// is written once (never overwritten).
     pub fn generate_to_dir(&self, dir: impl AsRef<Path>) -> Result<()> {
         let stage = self.load()?.lower()?.build_types()?;
         let verify = stage.verify_config().clone();
-        let file = stage.into_file()?;
+        let (file, ext, _) = stage.tree_parts()?;
         if verify.enabled {
-            let planned = crate::tree::plan_file_tree(&file, &self.spec_path);
+            let mut planned = crate::tree::plan_file_tree(&file, &self.spec_path);
+            if let Some(contents) = &ext {
+                // The scratch crate needs an ext module to satisfy the
+                // root's `pub mod ext;`; the pristine scaffold stands in
+                // for whatever the user's real ext/ holds.
+                planned.insert(PathBuf::from("ext/mod.rs"), contents.clone());
+            }
             crate::verify::verify_tree(&planned, &verify)?;
         }
-        crate::tree::write_file_tree(&file, &self.spec_path, dir)
+        crate::tree::write_file_tree(&file, &self.spec_path, &dir)?;
+        if let Some(contents) = ext {
+            crate::tree::write_ext_scaffold(dir.as_ref(), &contents)?;
+        }
+        Ok(())
     }
 
     /// Run the pipeline up to the post-processed [`syn::File`] AST —

@@ -133,6 +133,7 @@ impl LoadedSpec {
             style: self.style,
             overrides,
             field_rules,
+            spec_model,
             spec_path: self.spec_path,
         })
     }
@@ -150,6 +151,10 @@ pub struct LoweredSchema {
     style: StyleConfig,
     overrides: Overrides,
     field_rules: crate::rules::FieldRules,
+    /// Carried through to [`LoweredSchema::build_types`], where the
+    /// client emitter (when enabled) reads `Spec::operations` /
+    /// `Spec::security_schemes` / `Spec::servers`.
+    spec_model: Spec,
     spec_path: PathBuf,
 }
 
@@ -220,12 +225,31 @@ impl LoweredSchema {
         type_space
             .add_root_schema(self.schema)
             .context("typify type generation failed")?;
+        // Client-plan resolution happens here — the one point where the
+        // typed spec model, the resolved style, the (possibly
+        // user-edited) partition, and the populated TypeSpace all
+        // exist — so every v1 client boundary fails loudly before any
+        // output is rendered.
+        let client_plan = if self.style.client.enabled {
+            Some(
+                crate::client::ClientPlan::resolve(
+                    &self.spec_model,
+                    &self.style,
+                    self.partition.as_ref(),
+                    &type_space,
+                )
+                .context("client generation failed")?,
+            )
+        } else {
+            None
+        };
         Ok(GeneratedTypes {
             type_space,
             partition: self.partition,
             style: self.style,
             overrides: self.overrides,
             field_rules: self.field_rules,
+            client_plan,
             spec_path: self.spec_path,
         })
     }
@@ -240,6 +264,7 @@ pub struct GeneratedTypes {
     style: StyleConfig,
     overrides: Overrides,
     field_rules: crate::rules::FieldRules,
+    client_plan: Option<crate::client::ClientPlan>,
     spec_path: PathBuf,
 }
 
@@ -266,22 +291,14 @@ impl GeneratedTypes {
     /// here, so earlier [`LoweredSchema::partition_mut`] edits and
     /// `[types.*] module` overrides apply) and includes the style's
     /// trait imports, but no post-processing: that only happens in
-    /// [`Self::into_file`].
+    /// [`Self::into_file`]. With the client enabled, the generated
+    /// `pub mod client` follows the type modules.
     pub fn tokens(&self) -> TokenStream {
         let trait_imports = parse_imports(&self.style.imports);
-        match &self.partition {
+        let types = match &self.partition {
             Some(partition) => {
-                let mut rust_partition = partition.to_rust_partition(&self.type_space);
-                // `[types."Name"] module = "..."` overrides win over
-                // every computed assignment (including the split-mode
-                // simple-enum routing). Selector existence is validated
-                // in `into_file`.
-                for (selector, override_) in &self.style.types {
-                    if let Some(module) = &override_.module {
-                        rust_partition
-                            .insert(typify::rust_type_ident(selector), module.clone());
-                    }
-                }
+                let rust_partition =
+                    resolved_rust_partition(partition, &self.type_space, &self.style);
                 let imports = partition.module_imports(&trait_imports);
                 self.type_space.to_stream_partitioned(
                     &rust_partition,
@@ -296,6 +313,16 @@ impl GeneratedTypes {
                     #body
                 }
             }
+        };
+        match &self.client_plan {
+            Some(plan) => {
+                let client = crate::client::client_tokens(plan);
+                quote! {
+                    #types
+                    #client
+                }
+            }
+            None => types,
         }
     }
 
@@ -322,11 +349,41 @@ impl GeneratedTypes {
     /// Split the generated module tree into a directory of files rooted
     /// at `dir` and write them; equivalent to [`Self::into_file`]
     /// followed by [`write_file_tree`](crate::write_file_tree) with the
-    /// generator's spec path. This is the staged-pipeline counterpart of
+    /// generator's spec path — plus, when the client's `ext` module is
+    /// enabled, a `pub mod ext;` declaration in the root `mod.rs` and a
+    /// write-once `ext/mod.rs` scaffold. This is the staged-pipeline
+    /// counterpart of
     /// [`Generator::generate_to_dir`](crate::Generator::generate_to_dir).
     pub fn render_to_dir(self, dir: impl AsRef<Path>) -> Result<()> {
-        let file = self.build_file()?;
-        crate::tree::write_file_tree(&file, &self.spec_path, dir)
+        let dir = dir.as_ref();
+        let (file, ext, spec_path) = self.tree_parts()?;
+        crate::tree::write_file_tree(&file, &spec_path, dir)?;
+        if let Some(contents) = ext {
+            crate::tree::write_ext_scaffold(dir, &contents)?;
+        }
+        Ok(())
+    }
+
+    /// The directory-tree output artifacts: the post-processed AST —
+    /// with a `pub mod ext;` declaration appended when the client's
+    /// user-owned ext module is enabled — plus the `ext/mod.rs`
+    /// scaffold contents (written once, only if absent) and the spec
+    /// path for headers.
+    pub(crate) fn tree_parts(self) -> Result<(syn::File, Option<String>, PathBuf)> {
+        // The ext module only exists in tree output: a single rendered
+        // file has no directory to host user-owned files, so
+        // single-file mode never declares `pub mod ext;`.
+        let ext = (self.client_plan.is_some() && self.style.client.ext_module)
+            .then(|| crate::client::ext_scaffold(&self.spec_path));
+        let spec_path = self.spec_path.clone();
+        let mut file = self.build_file()?;
+        if ext.is_some() {
+            file.items.push(syn::parse_quote! {
+                /// User-owned extensions; scaffolded once, never regenerated.
+                pub mod ext;
+            });
+        }
+        Ok((file, ext, spec_path))
     }
 
     /// The resolved `[verify]` configuration of this run.
@@ -356,6 +413,26 @@ impl GeneratedTypes {
         }
         Ok(file)
     }
+}
+
+/// The final Rust-type-name → module map for partitioned output:
+/// [`Partition::to_rust_partition`] (where split-mode simple-enum
+/// routing resolves) with `[types."Name"] module = "..."` overrides
+/// applied on top. Shared by [`GeneratedTypes::tokens`] and the client
+/// plan's type-reference resolution so both see identical placement.
+/// Selector existence is validated in [`GeneratedTypes::into_file`].
+pub(crate) fn resolved_rust_partition(
+    partition: &Partition,
+    type_space: &TypeSpace,
+    style: &StyleConfig,
+) -> std::collections::HashMap<String, String> {
+    let mut rust_partition = partition.to_rust_partition(type_space);
+    for (selector, override_) in &style.types {
+        if let Some(module) = &override_.module {
+            rust_partition.insert(typify::rust_type_ident(selector), module.clone());
+        }
+    }
+    rust_partition
 }
 
 /// Parse the style's `use ...;` statements into one preamble stream.

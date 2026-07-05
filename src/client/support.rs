@@ -1,0 +1,157 @@
+//! Emission of the generated `client::support` module: `OperationInfo`,
+//! the `Error` enum (hand-rolled impls, no thiserror), the body-hook
+//! type alias, percent-encoding for path segments, and the text-first
+//! JSON decode helpers.
+
+use proc_macro2::TokenStream;
+use quote::quote;
+
+/// The `pub mod support { ... }` body. Identical for every spec — the
+/// per-spec surface lives in the client and auth modules.
+pub(super) fn support_tokens() -> TokenStream {
+    quote! {
+        /// Identifies one API operation to hooks and error rendering.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub struct OperationInfo {
+            /// The spec's `operationId`, verbatim.
+            pub operation_id: &'static str,
+            /// The uppercase HTTP method.
+            pub method: &'static str,
+            /// The spec's path template, e.g. `/pets/{petId}`.
+            pub path: &'static str,
+        }
+
+        #[doc = "A registered request-body hook: runs against every serialized JSON \
+                 request body before it is sent. See `ClientBuilder::body_hook`."]
+        pub type BodyHook = dyn ::std::ops::Fn(&OperationInfo, &mut ::serde_json::Value)
+            + ::std::marker::Send
+            + ::std::marker::Sync;
+
+        /// Errors surfaced by generated client methods.
+        #[derive(Debug)]
+        pub enum Error {
+            /// Authorizing the request failed (e.g. an OAuth2 token
+            /// fetch); the message carries the underlying detail.
+            Auth {
+                op: &'static str,
+                message: ::std::string::String,
+            },
+            /// Serializing the request body to JSON failed.
+            Serialize {
+                op: &'static str,
+                source: ::serde_json::Error,
+            },
+            /// Building or sending the request failed (connection,
+            /// middleware, or reading the response body).
+            Request {
+                op: &'static str,
+                source: ::reqwest_middleware::Error,
+            },
+            /// The server answered outside the 2xx range; the raw
+            /// response body is carried for diagnostics.
+            Status {
+                op: &'static str,
+                status: ::reqwest::StatusCode,
+                body: ::std::string::String,
+            },
+            /// A 2xx response body failed to decode: `source` carries
+            /// serde's line/column diagnostics and `body` the raw text.
+            Decode {
+                op: &'static str,
+                source: ::serde_json::Error,
+                body: ::std::string::String,
+            },
+        }
+
+        impl ::std::fmt::Display for Error {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                match self {
+                    Error::Auth { op, message } => {
+                        write!(f, "{op}: authorization failed: {message}")
+                    }
+                    Error::Serialize { op, source } => {
+                        write!(f, "{op}: request body serialization failed: {source}")
+                    }
+                    Error::Request { op, source } => {
+                        write!(f, "{op}: request failed: {source}")
+                    }
+                    Error::Status { op, status, body } => {
+                        write!(f, "{op}: response failed ({status}): {body}")
+                    }
+                    Error::Decode { op, source, body } => {
+                        write!(
+                            f,
+                            "{op}: response decode failed: {source} (line {line}, column {column}); raw body: {body}",
+                            line = source.line(),
+                            column = source.column(),
+                        )
+                    }
+                }
+            }
+        }
+
+        impl ::std::error::Error for Error {
+            fn source(&self) -> ::std::option::Option<&(dyn ::std::error::Error + 'static)> {
+                match self {
+                    Error::Serialize { source, .. } | Error::Decode { source, .. } => {
+                        ::std::option::Option::Some(source)
+                    }
+                    Error::Request { source, .. } => ::std::option::Option::Some(source),
+                    Error::Auth { .. } | Error::Status { .. } => ::std::option::Option::None,
+                }
+            }
+        }
+
+        /// Percent-encode one path segment: RFC 3986 unreserved
+        /// characters pass through, everything else is encoded byte by
+        /// byte (UTF-8).
+        pub fn encode_path(segment: &str) -> ::std::string::String {
+            let mut encoded = ::std::string::String::with_capacity(segment.len());
+            for byte in segment.bytes() {
+                match byte {
+                    b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
+                        encoded.push(byte as char);
+                    }
+                    other => {
+                        encoded.push_str(&::std::format!("%{other:02X}"));
+                    }
+                }
+            }
+            encoded
+        }
+
+        #[doc = "Read a response as text and decode it as JSON.\n\nNon-2xx statuses \
+                 become [`Error::Status`] carrying the raw body. The 2xx body is read \
+                 as text first and decoded via `serde_json::from_str` (rather than \
+                 `Response::json`) so decode failures surface serde's line/column \
+                 diagnostics alongside the raw body ([`Error::Decode`])."]
+        pub async fn decode_json<T: ::serde::de::DeserializeOwned>(
+            op: &'static str,
+            response: ::reqwest::Response,
+        ) -> ::std::result::Result<T, Error> {
+            let status = response.status();
+            let body = response.text().await.map_err(|source| Error::Request {
+                op,
+                source: source.into(),
+            })?;
+            if !status.is_success() {
+                return ::std::result::Result::Err(Error::Status { op, status, body });
+            }
+            ::serde_json::from_str(&body).map_err(|source| Error::Decode { op, source, body })
+        }
+
+        /// Check a body-less success response: non-2xx statuses become
+        /// [`Error::Status`] carrying the raw body.
+        pub async fn expect_success(
+            op: &'static str,
+            response: ::reqwest::Response,
+        ) -> ::std::result::Result<(), Error> {
+            let status = response.status();
+            if status.is_success() {
+                return ::std::result::Result::Ok(());
+            }
+            let body = response.text().await.unwrap_or_default();
+            ::std::result::Result::Err(Error::Status { op, status, body })
+        }
+    }
+}

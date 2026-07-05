@@ -681,6 +681,46 @@ pub struct StyleConfig {
     /// [`Generator::verify_compile`](crate::Generator::verify_compile)).
     #[serde(default)]
     pub verify: VerifyConfig,
+    /// The opt-in API client generation (top-level `[client]` table in
+    /// codegen.toml, `--client` on the CLI,
+    /// [`Generator::client`](crate::Generator::client)).
+    #[serde(default)]
+    pub client: ClientConfig,
+}
+
+/// Configuration of the opt-in API client generation (top-level
+/// `[client]` table in codegen.toml, `--client` on the CLI,
+/// [`Generator::client`](crate::Generator::client)). See
+/// [`crate::client`] for what gets generated.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case", default)]
+pub struct ClientConfig {
+    /// Generate the `client` module (a concrete
+    /// `reqwest-middleware`-based client with auth from
+    /// `securitySchemes`). Off by default: existing outputs are
+    /// byte-identical until this is turned on.
+    pub enabled: bool,
+    /// Fold spec'd auth header parameters (an explicit `Authorization`
+    /// header parameter, or a header named by an `apiKey` security
+    /// scheme) out of generated method signatures — the auth provider
+    /// owns those headers. Default `true`; set `false` to keep them as
+    /// ordinary string parameters.
+    pub suppress_auth_headers: bool,
+    /// Scaffold a user-owned `ext/` module next to the generated output
+    /// and declare `pub mod ext;` from the generated root. `ext/mod.rs`
+    /// is written once, without the `// @generated` marker, and never
+    /// touched again. Directory-tree output only. Default `true`.
+    pub ext_module: bool,
+}
+
+impl Default for ClientConfig {
+    fn default() -> Self {
+        ClientConfig {
+            enabled: false,
+            suppress_auth_headers: true,
+            ext_module: true,
+        }
+    }
 }
 
 /// Configuration of the opt-in compile gate: when enabled, the
@@ -717,6 +757,7 @@ impl Default for StyleConfig {
             uuid: None,
             formats: BTreeMap::new(),
             verify: VerifyConfig::default(),
+            client: ClientConfig::default(),
             rename_all: None,
             allof: AllOfMode::Merge,
             enum_default: EnumDefaultMode::SchemaOnly,
@@ -783,6 +824,7 @@ impl StyleConfig {
             uuid: Some("::std::string::String".to_string()),
             formats: BTreeMap::new(),
             verify: VerifyConfig::default(),
+            client: ClientConfig::default(),
             rename_all: Some("camelCase".to_string()),
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
@@ -972,6 +1014,7 @@ impl StyleConfig {
             #[serde(default)]
             rules: Vec<Rule>,
             verify: Option<VerifyConfig>,
+            client: Option<ClientConfig>,
         }
 
         let parsed: ConfigFile = toml::from_str(raw).context("failed to parse codegen.toml")?;
@@ -991,6 +1034,9 @@ impl StyleConfig {
         config.rules.extend(parsed.rules);
         if let Some(verify) = parsed.verify {
             config.verify = verify;
+        }
+        if let Some(client) = parsed.client {
+            config.client = client;
         }
         Ok(config)
     }

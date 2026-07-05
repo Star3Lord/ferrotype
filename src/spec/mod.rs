@@ -83,12 +83,15 @@ pub struct Spec {
     /// `components.schemas`, keyed by the verbatim schema name.
     pub schemas: BTreeMap<String, Schema>,
     /// Every operation (paths × methods), flattened, in document order.
-    /// Captured as data for the future client emitter; nothing consumes
-    /// these yet (decision D8 in docs/MIGRATION.md).
+    /// Captured as data at load (decision D8 in docs/MIGRATION.md);
+    /// consumed by the client emitter ([`crate::Generator::client`]).
     pub operations: Vec<OperationSpec>,
-    /// `components.securitySchemes`, kept opaque until the client
-    /// emitter needs them typed.
+    /// `components.securitySchemes`, kept as raw values; the client
+    /// emitter types the subset it generates providers for.
     pub security_schemes: BTreeMap<String, Value>,
+    /// `servers[*].url`, in document order. The client emitter reads
+    /// `servers[0]` as the default base URL.
+    pub servers: Vec<String>,
 }
 
 impl Spec {
@@ -149,11 +152,24 @@ impl Spec {
             })
             .unwrap_or_default();
 
+        let servers = document
+            .get("servers")
+            .and_then(Value::as_array)
+            .map(|servers| {
+                servers
+                    .iter()
+                    .filter_map(|server| server.get("url").and_then(Value::as_str))
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default();
+
         Ok(Spec {
             meta,
             schemas,
             operations,
             security_schemes,
+            servers,
         })
     }
 

@@ -568,11 +568,67 @@ the old engine as default, and record where the wall is.
   (which wins). Patchability decisions install into the override
   plan's `is_patchable` in `lower()` and the deep-patch filter
   re-installs augmented in `build_types`, so cross-type annotation
-  pruning into de-patched types keeps working. The examples
+  pruning into de-patched types keeps working.   The examples
   workspace's response-module rule upgraded from `deep-patch = false`
   to the stronger `patch = false` (response envelopes lose the entire
   patch surface), and the BFM generation is wired end-to-end through
   the gate.
+
+- **D22 — the client emitter is a concrete reqwest-middleware client
+  with generated auth, a typed hook seam, and marker-based
+  ejection.** Step 6 lands as pure openapi-codegen (`src/client/`,
+  zero fork changes): `[client] enabled` / `--client` /
+  `Generator::client(true)` append a `pub mod client` — `Client`,
+  `ClientBuilder`, one async method per operation, `auth` and
+  `support` submodules — emitted via quote! into the normal AST →
+  render pipeline so doc normalization, item spacing, and
+  prettyplease apply for free (the spacing pass learned to separate
+  impl/trait members; the pre-existing `type Err` + `fn from_str`
+  ladders stay tight, pinned by the untouched goldens). The data
+  path is the one D8 reserved: `Spec::operations` (now joined by
+  `servers` and opaque `$ref`-parameter records) carries through
+  `LoweredSchema` into `build_types`, where `ClientPlan::resolve`
+  validates against the populated TypeSpace — the one point where
+  spec model, resolved style, user-edited partition, and generated
+  names all exist — so every v1 boundary fails loudly with its
+  Origin before rendering: JSON bodies only, `$ref` body schemas
+  only (inline errors hint "patch it into components.schemas"), one
+  success schema per operation, scalar inline params only. Shape
+  decisions, made with the consumer: **concrete client only** (no
+  trait layer, no mockall — wiremock covers testing);
+  **reqwest-middleware** for the pipeline seam (retries/tracing
+  compose as middleware, `From<reqwest::Client>` keeps the plain
+  case free); **auth generated from securitySchemes** (`NoAuth` /
+  `StaticBearer` always; `BasicAuth` / `ApiKey` as declared;
+  `OAuth2ClientCredentials` reproducing the hand-written Sabre
+  client: form-encoded client-credentials grant, double-base64
+  `Basic` header under `x-base64-encode-client-credentials`, TTL
+  cache on `std::sync::Mutex` + `Instant` with the guard never held
+  across an await — a racing double-fetch is accepted over
+  serializing calls; no tokio in generated code), with spec'd auth
+  header params folded out of signatures (`suppress-auth-headers`);
+  **the body-hook seam** (`serde_json::Value` between serialization
+  and send, `OperationInfo`-aware) so cross-cutting request edits
+  like fill-if-unset PCC are a three-line `ext/` closure instead of
+  a per-type trait; and **the text-first response path** (non-2xx →
+  `Error::Status` with raw body; 2xx decoded from text so
+  `Error::Decode` carries serde line/column plus the payload).
+  Ownership is marker-based and general: the tree writer now skips
+  (never overwrites, never deletes) any generated-path file whose
+  first line lacks `// @generated`, the `eject` subcommand rewrites
+  a generated header to `// @ejected — was generated from <spec>;
+  delete this file and regenerate to restore.`, and `ext/mod.rs` is
+  scaffolded once *without* the marker — born ejected, always
+  declared from the generated root, a directory so `pcc.rs` and
+  friends grow beside it untouched. openapi-codegen itself takes no
+  reqwest/tokio dependencies: client goldens are pinned as text
+  (petstore single-file, sabre split tree with ext), the verify gate
+  auto-declares reqwest / reqwest-middleware / async-trait / base64
+  off output markers (D21 mechanism), and real compilation + wire
+  behavior live in the examples workspace's `via-cli-client` crate —
+  wiremock pins one token fetch across two calls, the ext/ PCC hook
+  filling `targetPcc` without clobbering a caller's value, and both
+  error surfaces.
 
 ## Results (2026-07-03)
 
@@ -604,3 +660,7 @@ the old engine as default, and record where the wall is.
   the raw-`Value` BFS) comes first; auth schemes are parsed but untyped;
   `examples`/`discriminator` are preserved but unused (doc/test
   synthesis and discriminator-aware oneOf mapping are open).
+  *(Updated 2026-07-05: step 6 landed as D22 — operations and auth
+  schemes are consumed by the client emitter; the partition still
+  walks the raw document, and `examples`/`discriminator` remain
+  open.)*

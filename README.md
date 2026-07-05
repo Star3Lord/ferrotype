@@ -181,6 +181,129 @@ cargo run -- generate \
 Mount the result with a `#[path]` attribute (see
 `examples/sabre_booking_tree.rs`) or copy it into a crate's `src/`.
 
+## Generated API client
+
+Opt-in: `--client` on the CLI, `Generator::client(true)` in the
+library, or a `[client]` table in codegen.toml. Off by default — with
+it off, every output is byte-identical to before the feature existed.
+With it on, the output grows a `client` module next to the types (in
+tree output: `client/{mod,auth,support}.rs`, plus a user-owned `ext/`):
+
+```rust
+use bindings::client::{Client, auth::OAuth2ClientCredentials};
+
+let client = Client::builder()          // base URL defaults to servers[0]
+    .auth(OAuth2ClientCredentials::new(client_id, client_secret))
+    .body_hook(bindings::ext::pcc::fill_target_pcc("G7HE"))
+    .build();
+
+let response = client.cancel_booking(&request).await?;
+```
+
+**The client is concrete** — no trait layer, no generated mocks. It
+holds the base URL, a `reqwest_middleware::ClientWithMiddleware` (pass
+a middleware stack for retries/tracing, or a plain `reqwest::Client`,
+accepted via `From`), an `Arc<dyn AuthProvider>`, and the registered
+body hooks. One `pub async fn <operation_id>` per operation: path
+parameters are percent-encoded, `Option` query parameters are skipped
+when `None`, scalar parameter types follow the resolved style's format
+mappings (the api-client preset's uuid/date-time → `String` become
+`&str` parameters; the plain profile keeps `&uuid::Uuid`).
+
+**Request path.** The body serializes to `serde_json::Value`, every
+`ClientBuilder::body_hook(|op_info, &mut value| …)` runs in
+registration order, then the value is sent. Hooks are the typed seam
+for cross-cutting request edits — a fill-if-unset tenant/PCC field is a
+three-line closure in `ext/` instead of a trait implemented over every
+request type.
+
+**Response path.** Non-2xx → `Error::Status { op, status, body }` with
+the raw body. 2xx bodies are read as **text first** and decoded via
+`serde_json::from_str`, so a decode failure is
+`Error::Decode { op, source, body }` carrying serde's line/column
+diagnostics *and* the raw payload — not reqwest's opaque "error
+decoding response body". Errors are hand-rolled `Display` +
+`std::error::Error` impls; no thiserror in generated code.
+
+**Auth from `securitySchemes`.** The `client::auth` module holds
+`trait AuthProvider` (`async fn authorize(request, &OperationInfo)`,
+`#[async_trait]`, dyn-usable) plus providers derived from the spec:
+`NoAuth` (the builder default) and `StaticBearer` always; `BasicAuth`
+and `ApiKey` (header/query) when declared; and for oauth2
+`clientCredentials` schemes, `OAuth2ClientCredentials` — a
+client-credentials token fetch with a TTL cache (`std::sync::Mutex` +
+`Instant`, no tokio dependency; the guard is never held across an
+await), the spec's `tokenUrl` baked in as an overridable default, and
+`x-base64-encode-client-credentials: true` honored by base64-encoding
+id and secret individually before the standard basic-auth encoding.
+Spec'd auth header parameters (an explicit `Authorization` header
+parameter, or a header named by an `apiKey` scheme) are folded out of
+method signatures — the provider owns those headers
+(`suppress-auth-headers = false` keeps them).
+
+Three escalation levels to change auth behavior, no codegen fork
+needed: configure the generated provider (token URL, encoding, HTTP
+client) → pass your own `impl AuthProvider` from `ext/` to
+`ClientBuilder::auth` → eject `client/auth.rs` and own it.
+
+**Config keys** (`[client]` table; kebab-case, unknown keys are hard
+errors):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `false` | generate the `client` module |
+| `suppress-auth-headers` | `true` | fold spec'd auth header params out of signatures |
+| `ext-module` | `true` | scaffold + declare the user-owned `ext/` (tree output) |
+
+**The `ext/` module** (directory-tree output only) is the user-owned
+home for code that belongs next to the generated output: impls on
+generated types, helper types, hook functions. `ext/mod.rs` is
+scaffolded once *without* the `// @generated` marker — born ejected —
+and `pub mod ext;` is always declared from the generated root. Nothing
+under `ext/` is ever overwritten or deleted; grow it into
+`ext/pcc.rs`, `ext/hooks.rs`, … freely.
+
+**Ejection** generalizes that ownership story to any generated file:
+
+```bash
+openapi-codegen eject src/generated/sabre_booking/client/auth.rs
+```
+
+verifies the `// @generated` marker and rewrites the header to
+`// @ejected — was generated from <spec>; delete this file and
+regenerate to restore.` Regeneration *skips* files without the marker
+(with a stderr note) and never deletes them; un-eject by deleting the
+file and regenerating. Single-file output supports the client too
+(`pub mod client { … }` is appended), but ejection and `ext/` need the
+directory tree — there is no file to own inside one document.
+
+**v1 boundaries** (loud errors carrying the schema's origin, per
+project policy — refuse rather than guess; the patch mechanism is the
+escape hatch): JSON bodies only; request/response schemas must be
+`$ref`s to named schemas (inline schemas error with a "patch it into
+components.schemas" hint); one success schema per operation; scalar
+inline parameters only (no `$ref` parameters); http bearer/basic,
+apiKey header/query, and oauth2 clientCredentials schemes (pass a
+custom provider for anything else).
+
+Generated-code dependencies stay minimal — reqwest,
+reqwest-middleware, serde, serde_json, async-trait, and base64 only
+when an OAuth2 provider is emitted:
+
+```toml
+async-trait = "0.1"
+base64 = "0.22"                # only with an OAuth2 provider
+reqwest = { version = "0.13", features = ["json", "form", "query"] }
+reqwest-middleware = { version = "0.5", features = ["json", "query"] }
+```
+
+The `--verify` gate auto-declares each of these in its scratch crate
+when the rendered output references it. The examples workspace's
+`via-cli-client` crate is the living end-to-end story: checked-in
+`--client` output, an `ext/` PCC hook, and wiremock round-trips pinning
+the OAuth2 token cache (one fetch for two calls), the hook landing on
+the wire, and both error surfaces.
+
 ## CLI
 
 ```bash
@@ -200,8 +323,20 @@ cargo run -- generate \
     --split-request-response \
     --output-dir examples/generated_tree/sabre_booking
 
+# Same, plus the generated API client (client/ + ext/ in the tree)
+cargo run -- generate \
+    --spec specs/sabre-booking/spec.openapi.yaml \
+    --patches-dir specs/sabre-booking/patches \
+    --profile api-client \
+    --split-request-response \
+    --client \
+    --output-dir examples/generated_tree/sabre_booking_client
+
 # Lower only: spec → JSON Schema, for typify::import_types! / cargo-typify
 cargo run -- lower --spec specs/petstore.yaml --output petstore.schema.json
+
+# Take ownership of one generated file (regeneration then skips it)
+cargo run -- eject examples/generated_tree/sabre_booking_client/client/auth.rs
 ```
 
 Install it for use from other crates' scripts with

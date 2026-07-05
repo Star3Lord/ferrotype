@@ -236,7 +236,7 @@ fn operation_method(operation: &OperationPlan) -> TokenStream {
         None => quote! { () },
     };
 
-    let url = url_expression(operation);
+    let url = url_statements(operation);
     let query = query_statements(operation);
     let headers = header_statements(operation);
     let send_body = operation.body.as_ref().map(|_| {
@@ -270,7 +270,7 @@ fn operation_method(operation: &OperationPlan) -> TokenStream {
                 method: #http_method,
                 path: #path,
             };
-            let url = #url;
+            #url
             let mut request = self
                 .client
                 .request(::reqwest::Method::#http_method_ident, url);
@@ -312,11 +312,15 @@ fn param_signature(param: &ParamPlan) -> TokenStream {
     }
 }
 
-/// The `format!(...)` expression building the request URL: the path
-/// template with each `{param}` replaced by a percent-encoded argument.
-fn url_expression(operation: &OperationPlan) -> TokenStream {
+/// Statements building the request URL: each path parameter is
+/// percent-encoded into a let binding shadowing the parameter name
+/// (prettyplease formats macro arguments token-by-token, so non-trivial
+/// expressions stay out of the `format!` call), then the path template
+/// renders as one `format!` over plain identifiers.
+fn url_statements(operation: &OperationPlan) -> TokenStream {
     let mut format_string = String::from("{}");
     let mut args: Vec<TokenStream> = Vec::new();
+    let mut bindings: Vec<TokenStream> = Vec::new();
 
     let mut rest = operation.path.as_str();
     while let Some(start) = rest.find('{') {
@@ -334,20 +338,26 @@ fn url_expression(operation: &OperationPlan) -> TokenStream {
             .expect("template params validated in plan resolution");
         let name = &param.rust_name;
         format_string.push_str("{}");
-        args.push(match &param.ty {
-            ParamType::String => quote! { support::encode_path(#name) },
-            ParamType::Copy(_) | ParamType::Display(_) => {
-                quote! { support::encode_path(&#name.to_string()) }
-            }
+        bindings.push(match &param.ty {
+            ParamType::String => quote! {
+                let #name = support::encode_path(#name);
+            },
+            ParamType::Copy(_) | ParamType::Display(_) => quote! {
+                let #name = support::encode_path(&#name.to_string());
+            },
         });
+        args.push(quote! { #name });
         rest = &after[end + 1..];
     }
     format_string.push_str(&rest.replace('{', "{{").replace('}', "}}"));
 
     if args.is_empty() {
-        quote! { ::std::format!(#format_string, self.base_url) }
+        quote! { let url = ::std::format!(#format_string, self.base_url); }
     } else {
-        quote! { ::std::format!(#format_string, self.base_url, #(#args),*) }
+        quote! {
+            #(#bindings)*
+            let url = ::std::format!(#format_string, self.base_url, #(#args),*);
+        }
     }
 }
 

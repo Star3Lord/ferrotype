@@ -284,27 +284,26 @@ fn oauth2_tokens(plan: &OAuth2Plan) -> TokenStream {
                 use ::base64::Engine as _;
                 let engine = ::base64::engine::general_purpose::STANDARD;
                 let credentials = if self.base64_encode_client_credentials {
-                    ::std::format!(
-                        "{}:{}",
-                        engine.encode(&self.client_id),
-                        engine.encode(&self.client_secret),
-                    )
+                    let id = engine.encode(&self.client_id);
+                    let secret = engine.encode(&self.client_secret);
+                    ::std::format!("{id}:{secret}")
                 } else {
                     ::std::format!("{}:{}", self.client_id, self.client_secret)
                 };
-                ::std::format!("Basic {}", engine.encode(credentials))
+                let encoded = engine.encode(credentials);
+                ::std::format!("Basic {encoded}")
             }
 
-            /// The cached access token, refreshed when missing or expired.
+            #[doc = "The cached access token, refreshed when missing or expired.\n\n\
+                     Lock discipline: lock, check, clone, drop — the mutex guard is \
+                     never held across an await. Two callers racing an expired token \
+                     may both fetch; each stores a valid token and the last store \
+                     wins, so the duplicate fetch is accepted rather than \
+                     serializing every call through the cache."]
             async fn access_token(
                 &self,
                 op: &OperationInfo,
             ) -> ::std::result::Result<::std::string::String, Error> {
-                // Lock, check, clone, drop: the guard must never be held
-                // across an await. Two callers racing an expired token may
-                // both fetch; each stores a valid token and the last store
-                // wins, so the duplicate fetch is accepted rather than
-                // serializing every call through the cache.
                 {
                     let guard = self
                         .token

@@ -434,7 +434,12 @@ fn resolve_body(
         .schema
         .as_ref()
         .with_context(|| format!("request body at {} has no schema", body.origin))?;
-    Ok(Some(schema_type_ref(schema, &body.origin, rust_names, modules)?))
+    Ok(Some(schema_type_ref(
+        schema,
+        &body.origin.child("schema"),
+        rust_names,
+        modules,
+    )?))
 }
 
 /// Resolve the success response type: every 2xx arm must carry the same
@@ -478,8 +483,9 @@ fn resolve_response(
                 .schema
                 .as_ref()
                 .with_context(|| format!("response at {} has no schema", body.origin))?;
-            let name = ref_schema_name(schema, &body.origin)?;
-            schema_refs.entry(name).or_insert_with(|| body.origin.clone());
+            let schema_origin = body.origin.child("schema");
+            let name = ref_schema_name(schema, &schema_origin)?;
+            schema_refs.entry(name).or_insert(schema_origin);
         }
     }
 

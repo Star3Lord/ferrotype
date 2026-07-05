@@ -173,3 +173,60 @@ fn golden_sabre_tree() {
     let golden = read_golden_tree("examples/generated_tree/sabre_booking");
     assert_tree_bytes("sabre tree vs golden", &golden, &planned);
 }
+
+// ─── Client goldens ──────────────────────────────────────────────────────────
+//
+// The `--client` outputs are pinned as text only: openapi-codegen
+// deliberately takes no reqwest/tokio dependencies, so compilation of
+// client output is proven by the verify gate and by the
+// `via-cli-client` crate in the examples workspace (which also runs
+// wiremock round-trips against it).
+
+/// Single-file petstore output with the client enabled (NoAuth: the
+/// spec has no securitySchemes). Regenerate with:
+///
+/// ```text
+/// cargo run -- generate --spec specs/petstore.yaml --profile api-client \
+///     --partition-by-operation --client --output examples/generated/petstore_client.rs
+/// ```
+#[test]
+fn golden_petstore_client_partitioned() {
+    let generated = generator(PETSTORE_SPEC, None, Mode::Partitioned)
+        .client(true)
+        .generate_to_string()
+        .unwrap();
+    let golden = std::fs::read_to_string("examples/generated/petstore_client.rs").unwrap();
+    assert_bytes("petstore client partitioned vs golden", &golden, &generated);
+}
+
+/// Folder-tree sabre output with the client enabled: the split
+/// request/response layout plus `client/{mod,auth,support}.rs` (OAuth2
+/// client-credentials from the patched securitySchemes) and the
+/// user-owned `ext/mod.rs`. Regenerate with:
+///
+/// ```text
+/// cargo run -- generate --spec specs/sabre-booking/spec.openapi.yaml \
+///     --patches-dir specs/sabre-booking/patches --profile api-client \
+///     --split-request-response --client \
+///     --output-dir examples/generated_tree/sabre_booking_client
+/// ```
+///
+/// Generation runs into a fresh temp directory (never the checked-in
+/// golden), which also pins the write-once `ext/mod.rs` story: a fresh
+/// run scaffolds ext/mod.rs with exactly the checked-in bytes, while
+/// regenerating over the golden directory leaves the existing
+/// (marker-less, user-owned) file untouched — both paths land on the
+/// same content, so the byte comparison holds either way.
+#[test]
+fn golden_sabre_client_tree() {
+    let dir = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("sabre_client_golden");
+    let _ = std::fs::remove_dir_all(&dir);
+    generator(SABRE_SPEC, Some(SABRE_PATCHES), Mode::Split)
+        .client(true)
+        .generate_to_dir(&dir)
+        .unwrap();
+
+    let generated = read_golden_tree(dir.to_str().unwrap());
+    let golden = read_golden_tree("examples/generated_tree/sabre_booking_client");
+    assert_tree_bytes("sabre client tree vs golden", &golden, &generated);
+}

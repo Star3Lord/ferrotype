@@ -261,7 +261,7 @@ mod tests {
         assert!(user_wins.contains("1.0.100"), "{user_wins}");
     }
 
-    /// All four well-known markers are detected, each at most once.
+    /// All well-known markers are detected, each at most once.
     #[test]
     fn conditional_dependency_detection() {
         let auto = detect_conditional_dependencies(
@@ -273,6 +273,36 @@ mod tests {
             .into_iter(),
         );
         assert_eq!(auto.len(), 4, "{auto:?}");
+    }
+
+    /// The client-output markers bring in the HTTP surface. The
+    /// `::reqwest_middleware` marker alone must not trip the plain
+    /// `::reqwest::` dependency (mirroring the `::uuid::` pattern), and
+    /// base64 only rides along with an emitted OAuth2/credential path.
+    #[test]
+    fn client_dependency_detection() {
+        let auto = detect_conditional_dependencies(std::iter::once(
+            "client: ::reqwest_middleware::ClientWithMiddleware,",
+        ));
+        assert_eq!(auto.len(), 1, "{auto:?}");
+        assert!(auto[0].starts_with("reqwest-middleware"), "{auto:?}");
+
+        let auto = detect_conditional_dependencies(
+            [
+                "let mut request = self.client.request(::reqwest::Method::POST, url);",
+                "client: ::reqwest_middleware::ClientWithMiddleware,",
+                "#[::async_trait::async_trait]",
+                "use ::base64::Engine as _;",
+            ]
+            .into_iter(),
+        );
+        assert_eq!(auto.len(), 4, "{auto:?}");
+        for name in ["reqwest =", "reqwest-middleware", "async-trait", "base64"] {
+            assert!(
+                auto.iter().any(|line| line.starts_with(name)),
+                "{name} missing from {auto:?}",
+            );
+        }
     }
 
     /// Unresolved-crate failures produce the `[verify] dependencies`

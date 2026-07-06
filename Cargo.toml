@@ -20,8 +20,8 @@ default = []
 schemars = []
 
 [dependencies]
-# The local typify fork; the whole point of this crate is to exercise it.
-typify = { path = "../typify/typify" }
+# The typify fork; the whole point of this crate is to exercise it.
+typify = { git = "https://github.com/Star3Lord/typify.git", branch = "ergonomic-codegen" }
 
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }

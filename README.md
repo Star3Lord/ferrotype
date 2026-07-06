@@ -1,4 +1,4 @@
-# openapi-codegen
+# Ferrotype
 
 Generate ergonomic Rust types from OpenAPI specs. Point it at an OpenAPI
 3.x document and it produces API-client-style types — bare `Option<T>`
@@ -30,45 +30,49 @@ load (YAML/JSON)
   → format (prettyplease) → write (idempotent)
 ```
 
-- **`src/load.rs`** — spec parsing and patch application. Patch files are
-  `{ description: <non-empty>, ops: [<RFC 6902 op>...] }`; `op: test`
-  entries let a patch assert preconditions so future spec revisions fail
-  loudly instead of silently drifting.
-- **`src/partition.rs`** — walks every operation's request/response `$ref`
-  closure; schemas reachable from exactly one operation land in
-  `pub mod <snake_operation_id>`, everything else in `pub mod shared`.
-  The opt-in split mode walks each role's closure separately and
-  produces nested `<op>/{request,response}` +
-  `shared/{request,response,enums,common}` module paths (see
-  [below](#requestresponse-splitting-and-folder-output)).
-- **`src/spec/`** — the typed `Spec` model: dialect-tolerant
-  normalization (3.0.x + Swagger-2.0-converted), preserving
-  `discriminator`/`examples`/operations for future consumers; renders the
-  draft-07 document typify consumes.
-- **`src/config.rs`** — style as data: [`StyleConfig`], the presets, the
-  `codegen.toml` loader, and the mapping onto the fork's
-  `TypeSpaceSettings` knobs.
-- **`src/overrides.rs`** — per-type / per-field override resolution: the
-  deep-patch predicate handed to the fork, patch-machinery stripping,
-  field type replacement, and hard-error selector validation.
-- **`src/condense.rs`** — the condensed emit style, as a token-verified
-  AST transformation (see [below](#readable-output--emit-style)).
-- **`src/render.rs`** — the shared rendering passes both output modes
-  finish with: doc-comment normalization (stacked `/// ` lines, split,
-  spaced, soft-wrapped; schema-in-docs blocks exempt), the condensed
-  style's macro polish, and the item-spacing pass (a blank line between
-  adjacent items, token-verified).
-- **`src/postprocess.rs`** — synthesizes `impl Default` for enums typify
-  can't default (untagged `oneOf` with no unit variant).
-- **`src/tree.rs`** — the folder-tree writer: splits the generated module
-  tree into one file per partition module.
+- `src/load.rs` — spec parsing and patch application. Patch files are
+`{ description: <non-empty>, ops: [<RFC 6902 op>...] }`; `op: test`
+entries let a patch assert preconditions so future spec revisions fail
+loudly instead of silently drifting.
+- `src/partition.rs` — walks every operation's request/response `$ref`
+closure; schemas reachable from exactly one operation land in
+`pub mod <snake_operation_id>`, everything else in `pub mod shared`.
+The opt-in split mode walks each role's closure separately and
+produces nested `<op>/{request,response}` +
+`shared/{request,response,enums,common}` module paths (see
+[below](#requestresponse-splitting-and-folder-output)).
+- `src/spec/` — the typed `Spec` model: dialect-tolerant
+normalization (3.0.x + Swagger-2.0-converted), preserving
+`discriminator`/`examples`/operations for future consumers; renders the
+draft-07 document typify consumes.
+- `src/config.rs` — style as data: [`StyleConfig`], the presets, the
+`codegen.toml` loader, and the mapping onto the fork's
+`TypeSpaceSettings` knobs.
+- `src/overrides.rs` — per-type / per-field override resolution: the
+deep-patch predicate handed to the fork, patch-machinery stripping,
+field type replacement, and hard-error selector validation.
+- `src/condense.rs` — the condensed emit style, as a token-verified
+AST transformation (see [below](#readable-output--emit-style)).
+- `src/render.rs` — the shared rendering passes both output modes
+finish with: doc-comment normalization (stacked `///`  lines, split,
+spaced, soft-wrapped; schema-in-docs blocks exempt), the condensed
+style's macro polish, and the item-spacing pass (a blank line between
+adjacent items, token-verified).
+- `src/postprocess.rs` — synthesizes `impl Default` for enums typify
+can't default (untagged `oneOf` with no unit variant).
+- `src/tree.rs` — the folder-tree writer: splits the generated module
+tree into one file per partition module.
+
+
 
 ## Style profiles
 
-| Profile | Output |
-|---|---|
-| `typify` | Upstream typify output, unchanged. |
+
+| Profile      | Output                                  |
+| ------------ | --------------------------------------- |
+| `typify`     | Upstream typify output, unchanged.      |
 | `api-client` | The ergonomic client shape (see below). |
+
 
 `api-client` generates structs like:
 
@@ -105,7 +109,7 @@ Two opt-in refinements of the per-operation partition, modeled on a
 hand-maintained types crate (one folder per operation, request and
 response trees kept apart, shared enums in one place):
 
-**`--split-request-response`** (library:
+`--split-request-response` (library:
 `Generator::split_request_response(true)`, implies
 `--partition-by-operation`) classifies every operation's `$ref` entry
 points by role — `requestBody` and parameter schemas are *request*,
@@ -113,13 +117,15 @@ points by role — `requestBody` and parameter schemas are *request*,
 separately. Each schema's `(operation, role)` usages across the whole
 spec decide its module:
 
-| Usage | Module |
-|---|---|
-| exactly one `(op, role)` | `<op>::request` / `<op>::response` |
-| several ops, request-only | `shared::request` |
-| several ops, response-only | `shared::response` |
-| shared + simple enum (all unit variants) | `shared::enums` |
-| both roles / orphans / inline-schema types | `shared::common` |
+
+| Usage                                      | Module                             |
+| ------------------------------------------ | ---------------------------------- |
+| exactly one `(op, role)`                   | `<op>::request` / `<op>::response` |
+| several ops, request-only                  | `shared::request`                  |
+| several ops, response-only                 | `shared::response`                 |
+| shared + simple enum (all unit variants)   | `shared::enums`                    |
+| both roles / orphans / inline-schema types | `shared::common`                   |
+
 
 `shared::enums` wins over the role rows: atomic enums are safe to share
 across request and response shapes, so they live together regardless of
@@ -137,7 +143,7 @@ whole request tree into `shared::common`. The reference still compiles
 root's module, exactly how the hand-written crate imports
 `cancel_booking::request::CancelBookingRequest` from the response file.
 
-**`--output-dir <DIR>`** (library: `Generator::generate_to_dir`, staged
+`--output-dir <DIR>` (library: `Generator::generate_to_dir`, staged
 pipeline: `GeneratedTypes::render_to_dir`; conflicts with `--output`)
 writes the module tree as real files instead of one document:
 
@@ -225,7 +231,7 @@ diagnostics *and* the raw payload — not reqwest's opaque "error
 decoding response body". Errors are hand-rolled `Display` +
 `std::error::Error` impls; no thiserror in generated code.
 
-**Auth from `securitySchemes`.** The `client::auth` module holds
+**Auth from** `securitySchemes`**.** The `client::auth` module holds
 `trait AuthProvider` (`async fn authorize(request, &OperationInfo)`,
 `#[async_trait]`, dyn-usable) plus providers derived from the spec:
 `NoAuth` (the builder default) and `StaticBearer` always; `BasicAuth`
@@ -249,13 +255,15 @@ client) → pass your own `impl AuthProvider` from `ext/` to
 **Config keys** (`[client]` table; kebab-case, unknown keys are hard
 errors):
 
-| Key | Default | Meaning |
-|---|---|---|
-| `enabled` | `false` | generate the `client` module |
-| `suppress-auth-headers` | `true` | fold spec'd auth header params out of signatures |
-| `ext-module` | `true` | scaffold + declare the user-owned `ext/` (tree output) |
 
-**The `ext/` module** (directory-tree output only) is the user-owned
+| Key                     | Default | Meaning                                                |
+| ----------------------- | ------- | ------------------------------------------------------ |
+| `enabled`               | `false` | generate the `client` module                           |
+| `suppress-auth-headers` | `true`  | fold spec'd auth header params out of signatures       |
+| `ext-module`            | `true`  | scaffold + declare the user-owned `ext/` (tree output) |
+
+
+**The** `ext/` **module** (directory-tree output only) is the user-owned
 home for code that belongs next to the generated output: impls on
 generated types, helper types, hook functions. `ext/mod.rs` is
 scaffolded once *without* the `// @generated` marker — born ejected —
@@ -270,8 +278,7 @@ openapi-codegen eject src/generated/sabre_booking/client/auth.rs
 ```
 
 verifies the `// @generated` marker and rewrites the header to
-`// @ejected — was generated from <spec>; delete this file and
-regenerate to restore.` Regeneration *skips* files without the marker
+`// @ejected — was generated from <spec>; delete this file and regenerate to restore.` Regeneration *skips* files without the marker
 (with a stderr note) and never deletes them; un-eject by deleting the
 file and regenerating. Single-file output supports the client too
 (`pub mod client { … }` is appended), but ejection and `ext/` need the
@@ -421,6 +428,8 @@ typify::import_types!(
     conditional_derives = [ { feature = "schemars", body = schemars::JsonSchema } ],
 );
 ```
+
+
 
 ## Examples
 
@@ -635,7 +644,7 @@ packed form (`src/render.rs`, decision D16 in
 Doc comments are normalized the same way for both styles: the raw
 `#[doc]` strings typify carries (cramped `///text`, `/** ... */`
 blocks for multi-line descriptions, unwrapped spec-length lines)
-render as stacked `/// ` lines — one leading doc space with each
+render as stacked `///`  lines — one leading doc space with each
 line's own indentation preserved, multi-line descriptions split
 line-per-line, and long lines soft-wrapped at word boundaries to 92
 content characters without re-flowing the spec's own line structure.
@@ -659,15 +668,15 @@ emit-style = "condensed"   # default: "expanded"
 
 Under `condensed`:
 
-- **One `support` module per generation unit** (a `support.rs` file at
-  the tree root in `--output-dir` mode) holds the single `error`
-  module — one `ConversionError` type instead of an identical copy per
-  module — and the `impl_string_enum!` macro, whose definition is
-  emitted readably formatted and documents exactly the impls it
-  expands to.
+- **One** `support` **module per generation unit** (a `support.rs` file at
+the tree root in `--output-dir` mode) holds the single `error`
+module — one `ConversionError` type instead of an identical copy per
+module — and the `impl_string_enum!` macro, whose definition is
+emitted readably formatted and documents exactly the impls it
+expands to.
 - **One invocation per enum** replaces the impl ladder. The variant →
-  wire-string mapping is right there, and `default = Variant` shows the
-  `Default` selection:
+wire-string mapping is right there, and `default = Variant` shows the
+`Default` selection:
 
 ```rust
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -687,10 +696,10 @@ impl_string_enum!(FareRuleRestrictionEnum {
 } default = Changeable);
 ```
 
-- **Every module that used to duplicate `pub mod error { ... }`**
-  re-exports the shared one (`pub use super::…::support::error;`), so
-  `<module>::error::ConversionError` paths in consumer code keep
-  resolving.
+- **Every module that used to duplicate** `pub mod error { ... }`
+re-exports the shared one (`pub use super::…::support::error;`), so
+`<module>::error::ConversionError` paths in consumer code keep
+resolving.
 
 Capabilities are identical, by construction: the condensation is a
 token-verified AST transformation over typify's output — a ladder is
@@ -719,7 +728,7 @@ The schema-to-Rust semantics live in the fork behind opt-in
 [`StyleConfig`] data onto those knobs, and owns every decision typify
 structurally can't host (per-type/per-field overrides, condensed
 emission, partitioning, trees). See
-[`../typify/FORK_FEATURES.md`](../typify/FORK_FEATURES.md) for the full
+`[../typify/FORK_FEATURES.md](../typify/FORK_FEATURES.md)` for the full
 feature-by-feature mapping to settings, macro keys, and CLI flags. The
 fork's defaults match upstream byte-for-byte — its upstream test goldens
 are unchanged — so rebasing it onto upstream `main` stays cheap; every

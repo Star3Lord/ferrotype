@@ -630,6 +630,35 @@ the old engine as default, and record where the wall is.
   filling `targetPcc` without clobbering a caller's value, and both
   error surfaces.
 
+- **D23 — wire fidelity over spec fidelity: open enums and
+  required-ness rewrites (plus the fork's automatic patch-companion
+  rename mirror).** A live wire-compat audit of the Sabre consumer
+  (hand-written DTO crate vs generated types, driven by real captured
+  traffic) surfaced three classes of drift between what specs declare
+  and what wires do; each got the architectural fix rather than a
+  point patch. (1) *Renamed fields lost their wire key in patch
+  companions*: `struct_patch` doesn't carry field serde attrs to the
+  `{Type}Patch` companion, so an explicit `#[serde(rename =
+  "GetHotelAvailRQ")]` left the companion listening on
+  `getHotelAvailRq` and silently dropping the caller's entire patch.
+  Fixed in the fork, unconditionally: any struct whose derive list
+  carries `Patch` mirrors every field-naming serde option as
+  `#[patch(attribute(serde(...)))]` — an unmirrored rename is never
+  correct, so there is no knob. (2) *Closed enums reject live values*:
+  `[style] open-enums = "Other"` (the fork's
+  `with_open_string_enums`) gives every plain string enum a trailing
+  `#[serde(untagged)] Other(String)` catch-all that round-trips
+  undocumented values losslessly; the condensed emit style grew a
+  matching `open = Other` invocation clause (second macro arm, open
+  Display/irrefutable FromStr). (3) *Specs overstate required-ness*:
+  the `[[rules]]` tier gained the pre-generation `optional = true`
+  payload, which strips matching properties from the lowered schema's
+  `required` lists (module/struct/field/format predicates only, like
+  `deep-patch`; later `optional = false` restates the spec for a
+  narrower match). Consumers point these at request modules where
+  the server tolerates omission and at response fields observed
+  absent on the live wire.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

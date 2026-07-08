@@ -613,6 +613,106 @@ fn patch_payload_with_field_predicates_or_mixed_payload_errors() {
     assert!(error.contains("single-scope") && error.contains("split"), "{error}");
 }
 
+// ─── `optional` payload: required-ness rewrites ──────────────────────────────
+
+#[test]
+fn optional_rule_unrequires_matching_fields() {
+    // `createdAt` is required in the spec; a module-scoped
+    // `optional = true` rule drops it from `required`, so it comes out
+    // `Option<String>` like every other non-required field.
+    let out = generator_for("optional_rule", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.rules.push(rule(
+                RuleMatch {
+                    module: Some("*/request".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    optional: Some(true),
+                    ..Default::default()
+                },
+            ));
+        })
+        .generate_to_string()
+        .unwrap();
+    let created_at = out
+        .lines()
+        .find(|line| line.contains("pub created_at"))
+        .expect("created_at field present");
+    assert!(
+        created_at.contains("Option"),
+        "required field must become Option under `optional = true`: {created_at}",
+    );
+}
+
+#[test]
+fn later_optional_false_restates_the_spec() {
+    // A broad `optional = true` followed by a narrow `optional = false`
+    // leaves the narrow field's spec required-ness intact.
+    let out = generator_for("optional_rule_override", op_spec())
+        .split_request_response(true)
+        .style(|style| {
+            style.rules.push(rule(
+                RuleMatch {
+                    module: Some("*/request".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    optional: Some(true),
+                    ..Default::default()
+                },
+            ));
+            style.rules.push(rule(
+                RuleMatch {
+                    field: Some("createdAt".to_string()),
+                    ..Default::default()
+                },
+                RuleApply {
+                    optional: Some(false),
+                    ..Default::default()
+                },
+            ));
+        })
+        .generate_to_string()
+        .unwrap();
+    let created_at = out
+        .lines()
+        .find(|line| line.contains("pub created_at"))
+        .expect("created_at field present");
+    assert!(
+        !created_at.contains("Option"),
+        "`optional = false` must restate the spec's required-ness: {created_at}",
+    );
+}
+
+#[test]
+fn optional_with_type_predicate_errors() {
+    let error = format!(
+        "{:#}",
+        generator_for("optional_type_pred", op_spec())
+            .split_request_response(true)
+            .style(|style| {
+                style.rules.push(rule(
+                    RuleMatch {
+                        type_: Some("*String".to_string()),
+                        ..Default::default()
+                    },
+                    RuleApply {
+                        optional: Some(true),
+                        ..Default::default()
+                    },
+                ));
+            })
+            .generate_to_string()
+            .unwrap_err(),
+    );
+    assert!(
+        error.contains("optional") && error.contains("before generation"),
+        "{error}",
+    );
+}
+
 // ─── Config errors and warnings ──────────────────────────────────────────────
 
 #[test]

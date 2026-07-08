@@ -172,6 +172,62 @@ fn schema_default_and_no_default_render_the_right_clause() {
 }
 
 #[test]
+fn open_enums_key_produces_catch_all_and_condenses() {
+    let spec = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "Kind": { "type": "string", "enum": ["yes", "no"], "default": "yes" }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("emit_style");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("open_enums.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&spec).unwrap()).unwrap();
+
+    // Expanded: the catch-all variant and the open ladder shapes.
+    let expanded = Generator::new(&path)
+        .profile(StyleProfile::ApiClient)
+        .style(|style| style.open_enums = Some("Other".to_string()))
+        .generate_to_string()
+        .unwrap();
+    assert!(expanded.contains("Other(::std::string::String)"), "{expanded}");
+    assert!(expanded.contains("#[serde(untagged)]"), "{expanded}");
+    assert!(
+        expanded.contains("Ok(Self::Other(value.to_string()))"),
+        "irrefutable FromStr: {expanded}",
+    );
+
+    // Condensed: the same enum collapses to one invocation carrying the
+    // `open` clause (and the schema default).
+    let condensed = Generator::new(&path)
+        .profile(StyleProfile::ApiClient)
+        .style(|style| {
+            style.open_enums = Some("Other".to_string());
+            style.emit_style = EmitStyle::Condensed;
+        })
+        .generate_to_string()
+        .unwrap();
+    assert!(
+        condensed.contains("} open = Other default = Yes);"),
+        "{condensed}",
+    );
+    assert!(
+        !condensed.contains("impl ::std::fmt::Display for Kind"),
+        "open ladder must condense: {condensed}",
+    );
+
+    // Config plumbing: the kebab-case key round-trips.
+    let config = StyleConfig::from_toml_str(
+        "profile = \"api-client\"\n[style]\nopen-enums = \"Other\"\n",
+        StyleConfig::api_client(),
+    )
+    .unwrap();
+    assert_eq!(config.open_enums.as_deref(), Some("Other"));
+}
+
+#[test]
 fn condensed_reserves_the_support_module_name() {
     let spec = serde_json::json!({
         "openapi": "3.0.0",

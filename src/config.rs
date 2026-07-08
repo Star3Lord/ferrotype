@@ -567,6 +567,17 @@ pub struct RuleApply {
     /// fields. Feeds the generation-time filter, so the rule may only
     /// use pre-generation predicates (everything except `type`).
     pub deep_patch: Option<bool>,
+    /// `optional = true` drops the matching properties from their
+    /// schema's `required` list before generation, so they come out as
+    /// `Option<T>` regardless of what the spec declares. Use it when a
+    /// spec overstates required-ness relative to the live wire (typical
+    /// for request vocabularies where the server tolerates omission).
+    /// Applied to the lowered schema, so it may only use
+    /// pre-generation predicates (everything except `type`); later
+    /// rules override earlier ones. `optional = false` restates the
+    /// spec's required-ness (an override hatch for a broader earlier
+    /// rule) — it never *adds* to `required`.
+    pub optional: Option<bool>,
     /// A **type-level** decision: strip (`false`) or keep (`true`) the
     /// whole `struct_patch` surface of the matching types — derive,
     /// companion, patch attrs, and annotations referencing them — with
@@ -616,6 +627,13 @@ pub struct StyleConfig {
     pub allof: AllOfMode,
     /// → `with_enum_first_variant_default`.
     pub enum_default: EnumDefaultMode,
+    /// → `with_open_string_enums`: give every plain string enum a
+    /// trailing `#[serde(untagged)] <Name>(String)` catch-all variant,
+    /// so wire values outside the documented set round-trip instead of
+    /// failing to deserialize. The value names the catch-all variant
+    /// (`open-enums = "Other"`). Enums already declaring a variant with
+    /// that name stay closed; opened enums drop `Copy`.
+    pub open_enums: Option<String>,
     /// → `with_elide_option_field_defaults`: drop the `default` +
     /// `skip_serializing_if = "Option::is_none"` pair on `Option<T>`
     /// fields (a struct-level `skip_serializing_none` attr is assumed).
@@ -761,6 +779,7 @@ impl Default for StyleConfig {
             rename_all: None,
             allof: AllOfMode::Merge,
             enum_default: EnumDefaultMode::SchemaOnly,
+            open_enums: None,
             elide_option_defaults: false,
             schema_in_docs: true,
             string_newtype_conveniences: false,
@@ -828,6 +847,7 @@ impl StyleConfig {
             rename_all: Some("camelCase".to_string()),
             allof: AllOfMode::Compose,
             enum_default: EnumDefaultMode::FirstUnitVariant,
+            open_enums: None,
             elide_option_defaults: true,
             schema_in_docs: false,
             string_newtype_conveniences: true,
@@ -935,6 +955,9 @@ impl StyleConfig {
         }
         if self.enum_default == EnumDefaultMode::FirstUnitVariant {
             settings.with_enum_first_variant_default(true);
+        }
+        if let Some(variant) = &self.open_enums {
+            settings.with_open_string_enums(variant);
         }
         if self.elide_option_defaults {
             settings.with_elide_option_field_defaults(true);
@@ -1072,6 +1095,7 @@ fn merge_style_table(mut config: StyleConfig, table: toml::Table) -> Result<Styl
             "rename-all" => set!(rename_all),
             "allof" => set!(allof),
             "enum-default" => set!(enum_default),
+            "open-enums" => set!(open_enums),
             "elide-option-defaults" => set!(elide_option_defaults),
             "schema-in-docs" => set!(schema_in_docs),
             "string-newtype-conveniences" => set!(string_newtype_conveniences),

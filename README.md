@@ -470,6 +470,13 @@ deep-patch = "all-option-structs"
 # every `#[patch(...)]` attribute, and all deep-patch annotations
 # (api-client default: true).
 patch = true
+# Open string enums (the fork's `with_open_string_enums`): every plain
+# string enum gains a trailing `#[serde(untagged)] Other(String)`
+# catch-all, so wire values outside the documented set round-trip
+# losslessly instead of failing to deserialize. The value names the
+# catch-all variant; enums already declaring it stay closed; opened
+# enums drop `Copy`. Use when the spec's enums lag the live wire.
+open-enums = "Other"
 
 # Map schema `type`+`format` pairs to arbitrary Rust types (the fork's
 # `with_format_type`): instance types string/integer/number, any format.
@@ -554,6 +561,16 @@ Field-scoped decisions layer across three tiers, most specific wins:
 [[rules]]
 match = { module = "*/request", format = "string/date-time", struct = "Create*", field = "*_date_time" }
 apply = { field-attrs = ["serde(with = \"time::serde::iso8601\")"], deep-patch = false }
+
+# `optional = true` drops the matching properties from their schema's
+# `required` list before generation (they come out `Option<T>`), for
+# specs that overstate required-ness relative to the live wire. Like
+# `deep-patch` it rewrites generation input, so it cannot use the
+# post-generation `type` predicate; a later `optional = false` restates
+# the spec for a narrower match (it never ADDS required-ness).
+[[rules]]
+match = { module = "*/request" }
+apply = { optional = true }
 
 # `patch` is a TYPE-level payload: it strips (or, over a `patch = false`
 # baseline, restores) the whole struct_patch surface — derive,

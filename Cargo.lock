@@ -888,7 +888,7 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 [[package]]
 name = "typify"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#6402a63b3e795dd86bac7ca70dbafd8308153002"
+source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
 dependencies = [
  "typify-impl",
  "typify-macro",
@@ -897,7 +897,7 @@ dependencies = [
 [[package]]
 name = "typify-impl"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#6402a63b3e795dd86bac7ca70dbafd8308153002"
+source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
 dependencies = [
  "heck",
  "log",
@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "typify-macro"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#6402a63b3e795dd86bac7ca70dbafd8308153002"
+source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
 dependencies = [
  "proc-macro2",
  "quote",

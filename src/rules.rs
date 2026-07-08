@@ -98,6 +98,7 @@ struct ResolvedRule {
     impls: Option<BTreeSet<Capability>>,
     deep_patch: Option<bool>,
     patch: Option<bool>,
+    optional: Option<bool>,
 }
 
 struct ResolvedTypeOverride {
@@ -121,6 +122,10 @@ pub(crate) struct FieldRules {
     /// Rust type → forced patchability from type-level `patch` rules
     /// (the exact `[types]` entry still wins inside `is_patchable`).
     patch: BTreeMap<String, bool>,
+    /// (schema key, wire property) → forced optionality from `optional`
+    /// rules, applied to the lowered schema's `required` lists by
+    /// [`Self::apply_optionality`] before typify runs.
+    optional: BTreeMap<(String, String), bool>,
     /// Rules that definitively matched during the pre-generation pass
     /// (only meaningful for rules without a `type` predicate).
     matched_pre: Vec<bool>,
@@ -160,6 +165,7 @@ impl FieldRules {
                 && a.impls.is_none()
                 && a.deep_patch.is_none()
                 && a.patch.is_none()
+                && a.optional.is_none()
             {
                 bail!("{origin} applies nothing; give `apply` at least one key");
             }
@@ -168,6 +174,7 @@ impl FieldRules {
                     || a.type_.is_some()
                     || a.impls.is_some()
                     || a.deep_patch.is_some()
+                    || a.optional.is_some()
                 {
                     bail!(
                         "{origin} mixes the type-level `patch` payload with field-level \
@@ -189,6 +196,14 @@ impl FieldRules {
                      deep-patch decisions feed typify at generation time, before resolved \
                      Rust types exist — match on `module`/`struct`/`field`/`format` \
                      instead",
+                );
+            }
+            if a.optional.is_some() && m.type_.is_some() {
+                bail!(
+                    "{origin} combines an `optional` payload with the `type` predicate: \
+                     optionality rewrites the lowered schema before generation, before \
+                     resolved Rust types exist — match on `module`/`struct`/`field`/\
+                     `format` instead",
                 );
             }
             if a.deep_patch == Some(true) && a.type_.is_some() {
@@ -216,17 +231,20 @@ impl FieldRules {
                 impls: a.impls.as_ref().map(|caps| caps.iter().copied().collect()),
                 deep_patch: a.deep_patch,
                 patch: a.patch,
+                optional: a.optional,
             });
         }
 
         let modules = module_map(style, partition);
         let meta = index_spec(spec, &modules);
 
-        // Pre-generation rule evaluation: deep-patch decisions, in
-        // declaration order (later rules override), over every spec
-        // row. A `type` payload implies deep-patch suppression — the
-        // annotation would name the displaced type's companion.
+        // Pre-generation rule evaluation: deep-patch and optionality
+        // decisions, in declaration order (later rules override), over
+        // every spec row. A `type` payload implies deep-patch
+        // suppression — the annotation would name the displaced type's
+        // companion.
         let mut deep_patch: BTreeMap<(String, String), bool> = BTreeMap::new();
+        let mut optional: BTreeMap<(String, String), bool> = BTreeMap::new();
         let mut matched_pre = vec![false; rules.len()];
         for (key, row) in &meta {
             for (index, rule) in rules.iter().enumerate() {
@@ -241,6 +259,12 @@ impl FieldRules {
                     deep_patch.insert(key.clone(), forced);
                 } else if rule.type_override.is_some() {
                     deep_patch.insert(key.clone(), false);
+                }
+                if let Some(forced) = rule.optional {
+                    optional.insert(
+                        (row.schema_key.clone(), row.wire_name.clone()),
+                        forced,
+                    );
                 }
             }
         }
@@ -279,8 +303,28 @@ impl FieldRules {
             meta,
             deep_patch,
             patch,
+            optional,
             matched_pre,
         })
+    }
+
+    /// Apply the rules tier's `optional = true` decisions to the lowered
+    /// schema: each targeted wire property is removed from its schema's
+    /// `required` list (the schema's own and any inline `allOf`
+    /// branch's), so typify emits `Option<T>`. `optional = false`
+    /// restates the spec, i.e. removes nothing.
+    pub(crate) fn apply_optionality(&self, root: &mut schemars::schema::RootSchema) {
+        for ((schema_key, wire_name), forced) in &self.optional {
+            if !forced {
+                continue;
+            }
+            let Some(schemars::schema::Schema::Object(schema)) =
+                root.definitions.get_mut(schema_key)
+            else {
+                continue;
+            };
+            unrequire(schema, wire_name);
+        }
     }
 
     /// The rules tier's generation-time deep-patch decisions, for
@@ -486,6 +530,24 @@ impl FieldRules {
             }
         }
         Ok(())
+    }
+}
+
+/// Remove `property` from a schema object's `required` list, and from
+/// any inline `allOf` branch's (referenced branches are separate named
+/// definitions and get their own rows).
+fn unrequire(schema: &mut schemars::schema::SchemaObject, property: &str) {
+    if let Some(object) = &mut schema.object {
+        object.required.remove(property);
+    }
+    if let Some(subschemas) = &mut schema.subschemas
+        && let Some(branches) = &mut subschemas.all_of
+    {
+        for branch in branches {
+            if let schemars::schema::Schema::Object(branch) = branch {
+                unrequire(branch, property);
+            }
+        }
     }
 }
 

@@ -44,8 +44,63 @@ pub mod error {
 /// pairs (erring with `self::error::ConversionError`), the
 /// `TryFrom<&str>` / `TryFrom<&String>` / `TryFrom<String>`
 /// ladder via `FromStr`, and — when a `default = Variant`
-/// clause is present — `Default`.
+/// clause is present — `Default`. With an `open = Variant`
+/// clause (an open enum's untagged catch-all), `Display`
+/// writes the carried string and `FromStr` is irrefutable —
+/// unknown input parses into the catch-all.
 macro_rules! impl_string_enum {
+    ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } open = $open:ident $(default = $default:ident)?) => {
+        impl ::std::fmt::Display for $Type {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                match self {
+                    $(Self::$variant => f.write_str($raw),)*
+                    Self::$open(value) => f.write_str(value.as_str()),
+                }
+            }
+        }
+        impl ::std::str::FromStr for $Type {
+            type Err = self::error::ConversionError;
+            fn from_str(
+                value: &str
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                match value {
+                    $($raw => Ok(Self::$variant),)*
+                    _ => Ok(Self::$open(value.to_string())),
+                }
+            }
+        }
+        impl ::std::convert::TryFrom<&str> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: &str
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        impl ::std::convert::TryFrom<&::std::string::String> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: &::std::string::String
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        impl ::std::convert::TryFrom<::std::string::String> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: ::std::string::String
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        $(
+            impl ::std::default::Default for $Type {
+                fn default() -> Self {
+                    $Type::$default
+                }
+            }
+        )?
+    };
     ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } $(default = $default:ident)?) => {
         impl ::std::fmt::Display for $Type {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {

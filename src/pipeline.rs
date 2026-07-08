@@ -117,13 +117,16 @@ impl LoadedSpec {
         };
 
         let spec_model = Spec::from_value(&self.spec)?;
-        let schema = spec_model.to_draft07_root()?;
+        let mut schema = spec_model.to_draft07_root()?;
         // The `[[rules]]` tier resolves here — the one point where the
         // typed spec model (format provenance) and the partition
         // (module placement) both exist. Type-level patch decisions
-        // flow into the override plan's patchability immediately.
+        // flow into the override plan's patchability immediately, and
+        // `optional` decisions rewrite the lowered schema's `required`
+        // lists before typify sees them.
         let field_rules =
             crate::rules::FieldRules::resolve(&self.style, &spec_model, partition.as_ref())?;
+        field_rules.apply_optionality(&mut schema);
         let mut overrides = self.overrides;
         overrides.set_rule_patchability(field_rules.patch_overrides().clone());
         Ok(LoweredSchema {

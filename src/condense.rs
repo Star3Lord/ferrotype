@@ -12,7 +12,8 @@
 //!   is token-identical to the ladder it replaces;
 //! - each string enum's ladder becomes one
 //!   `impl_string_enum!(Name { Variant => "wire", … } default = Variant);`
-//!   invocation;
+//!   invocation (open enums — the fork's `with_open_string_enums`
+//!   catch-all — add an `open = Variant` clause before `default`);
 //! - each module that duplicated `error` re-exports `support::error`
 //!   instead, so every historical `<module>::error::ConversionError`
 //!   path keeps resolving.
@@ -170,29 +171,29 @@ fn condense_ladders(items: &mut Vec<syn::Item>) -> bool {
 /// present and token-equal to what the macro would expand to.
 fn condense_one_ladder(items: &mut Vec<syn::Item>, item_enum: &syn::ItemEnum) -> bool {
     let type_name = item_enum.ident.to_string();
-    // Unit variants only — anything else is not a string enum.
-    if item_enum.variants.is_empty()
-        || item_enum
-            .variants
-            .iter()
-            .any(|variant| !matches!(variant.fields, syn::Fields::Unit))
-    {
+    // A closed string enum is all unit variants; an open one (the
+    // fork's `with_open_string_enums`) additionally carries a trailing
+    // one-field tuple catch-all. Anything else is not a string enum.
+    let Some(open_variant) = string_enum_catch_all(item_enum) else {
         return false;
-    }
+    };
 
     // Locate this enum's Display impl and extract the pairs.
     let Some(display_index) = find_trait_impl(items, &type_name, &["fmt", "Display"]) else {
         return false;
     };
-    let Some(pairs) = extract_display_pairs(impl_at(items, display_index), &item_enum.ident)
-    else {
+    let Some(pairs) = extract_display_pairs(
+        impl_at(items, display_index),
+        &item_enum.ident,
+        open_variant.as_ref(),
+    ) else {
         return false;
     };
 
     // Build the expected ladder from the extracted pairs and require a
     // token-equal match for every rung.
     let type_ident = &item_enum.ident;
-    let expected = expected_ladder(type_ident, &pairs);
+    let expected = expected_ladder(type_ident, &pairs, open_variant.as_ref());
     let mut ladder_indices = vec![display_index];
     for expected_impl in expected.iter().skip(1) {
         let found = items.iter().enumerate().position(|(index, item)| {
@@ -231,12 +232,13 @@ fn condense_one_ladder(items: &mut Vec<syn::Item>, item_enum: &syn::ItemEnum) ->
     // are removed.
     let variant_idents = pairs.iter().map(|(variant, _)| variant);
     let raws = pairs.iter().map(|(_, raw)| raw);
+    let open_clause = open_variant.map(|variant| quote! { open = #variant });
     let default_clause = default_variant.map(|variant| quote! { default = #variant });
     // Trailing comma inside the repetition: the reflowed pretty form
     // (`polish_invocations`) writes one, and its token-fidelity gate
     // compares against these tokens.
     let invocation: syn::Item = syn::parse2(quote! {
-        impl_string_enum!(#type_ident { #(#variant_idents => #raws,)* } #default_clause);
+        impl_string_enum!(#type_ident { #(#variant_idents => #raws,)* } #open_clause #default_clause);
     })
     .expect("macro invocation tokens always parse");
 
@@ -289,11 +291,38 @@ fn impl_self_ty_name(item_impl: &syn::ItemImpl) -> Option<String> {
     }
 }
 
+/// `Some(None)` for a closed string enum (all unit variants),
+/// `Some(Some(ident))` for an open one — all units plus a trailing
+/// one-field tuple catch-all (the fork's `with_open_string_enums`
+/// shape) — and `None` for anything that is not a string enum.
+fn string_enum_catch_all(item_enum: &syn::ItemEnum) -> Option<Option<syn::Ident>> {
+    let variants: Vec<&syn::Variant> = item_enum.variants.iter().collect();
+    let (last, units) = variants.split_last()?;
+    if units
+        .iter()
+        .any(|variant| !matches!(variant.fields, syn::Fields::Unit))
+    {
+        return None;
+    }
+    match &last.fields {
+        syn::Fields::Unit => Some(None),
+        syn::Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
+            Some(Some(last.ident.clone()))
+        }
+        _ => None,
+    }
+}
+
 /// Extract `(Variant, "wire")` pairs from a `Display` impl of the shape
 /// the ladder uses: `match *self { Self::V => f.write_str("raw"), … }`.
+/// For an open enum the final arm is the catch-all
+/// (`Self::Other(value) => f.write_str(value.as_str())`); it contributes
+/// no pair and must name `open_variant` — the token-equality gate
+/// against [`expected_ladder`] then pins its exact shape.
 fn extract_display_pairs(
     item_impl: &syn::ItemImpl,
     type_ident: &syn::Ident,
+    open_variant: Option<&syn::Ident>,
 ) -> Option<Vec<(syn::Ident, syn::LitStr)>> {
     let fmt_fn = item_impl.items.iter().find_map(|item| match item {
         syn::ImplItem::Fn(f) if f.sig.ident == "fmt" => Some(f),
@@ -304,7 +333,23 @@ fn extract_display_pairs(
     };
 
     let mut pairs = Vec::with_capacity(match_expr.arms.len());
-    for arm in &match_expr.arms {
+    for (index, arm) in match_expr.arms.iter().enumerate() {
+        // Open enums: the catch-all is the final arm, a tuple pattern
+        // naming the catch-all variant.
+        if let syn::Pat::TupleStruct(tuple) = &arm.pat {
+            let is_last = index + 1 == match_expr.arms.len();
+            let names_catch_all = open_variant.is_some_and(|open| {
+                tuple
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| &segment.ident == open)
+            });
+            if is_last && names_catch_all {
+                continue;
+            }
+            return None;
+        }
         // Pattern: `Self::Variant` or `TypeName::Variant`.
         let syn::Pat::Path(pat_path) = &arm.pat else {
             return None;
@@ -372,18 +417,34 @@ fn extract_default_variant(
 
 /// The five ladder impls the macro expands to for the given pairs, as
 /// token streams (Display first — its index anchors the comparison).
+/// With `open_variant`, the Display and FromStr rungs take the open
+/// shape: `match self` with a catch-all write arm, and an irrefutable
+/// FromStr.
 fn expected_ladder(
     type_ident: &syn::Ident,
     pairs: &[(syn::Ident, syn::LitStr)],
+    open_variant: Option<&syn::Ident>,
 ) -> Vec<TokenStream> {
     let variants: Vec<&syn::Ident> = pairs.iter().map(|(variant, _)| variant).collect();
     let raws: Vec<&syn::LitStr> = pairs.iter().map(|(_, raw)| raw).collect();
+    let display_scrutinee = match open_variant {
+        Some(_) => quote! { self },
+        None => quote! { *self },
+    };
+    let display_fallback = open_variant.map(|open| {
+        quote! { Self::#open(value) => f.write_str(value.as_str()), }
+    });
+    let from_str_fallback = match open_variant {
+        Some(open) => quote! { _ => Ok(Self::#open(value.to_string())), },
+        None => quote! { _ => Err("invalid value".into()), },
+    };
     vec![
         quote! {
             impl ::std::fmt::Display for #type_ident {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                    match *self {
+                    match #display_scrutinee {
                         #(Self::#variants => f.write_str(#raws),)*
+                        #display_fallback
                     }
                 }
             }
@@ -397,7 +458,7 @@ fn expected_ladder(
                 {
                     match value {
                         #(#raws => Ok(Self::#variants),)*
-                        _ => Err("invalid value".into()),
+                        #from_str_fallback
                     }
                 }
             }
@@ -524,8 +585,67 @@ pub(crate) fn impl_string_enum_macro() -> TokenStream {
         /// pairs (erring with `self::error::ConversionError`), the
         /// `TryFrom<&str>` / `TryFrom<&String>` / `TryFrom<String>`
         /// ladder via `FromStr`, and — when a `default = Variant`
-        /// clause is present — `Default`.
+        /// clause is present — `Default`. With an `open = Variant`
+        /// clause (an open enum's untagged catch-all), `Display`
+        /// writes the carried string and `FromStr` is irrefutable —
+        /// unknown input parses into the catch-all.
         macro_rules! impl_string_enum {
+            ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } open = $open:ident $(default = $default:ident)?) => {
+                impl ::std::fmt::Display for $Type {
+                    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                        match self {
+                            $(Self::$variant => f.write_str($raw),)*
+                            Self::$open(value) => f.write_str(value.as_str()),
+                        }
+                    }
+                }
+                impl ::std::str::FromStr for $Type {
+                    type Err = self::error::ConversionError;
+
+                    fn from_str(value: &str) ->
+                        ::std::result::Result<Self, self::error::ConversionError>
+                    {
+                        match value {
+                            $($raw => Ok(Self::$variant),)*
+                            _ => Ok(Self::$open(value.to_string())),
+                        }
+                    }
+                }
+                impl ::std::convert::TryFrom<&str> for $Type {
+                    type Error = self::error::ConversionError;
+
+                    fn try_from(value: &str) ->
+                        ::std::result::Result<Self, self::error::ConversionError>
+                    {
+                        value.parse()
+                    }
+                }
+                impl ::std::convert::TryFrom<&::std::string::String> for $Type {
+                    type Error = self::error::ConversionError;
+
+                    fn try_from(value: &::std::string::String) ->
+                        ::std::result::Result<Self, self::error::ConversionError>
+                    {
+                        value.parse()
+                    }
+                }
+                impl ::std::convert::TryFrom<::std::string::String> for $Type {
+                    type Error = self::error::ConversionError;
+
+                    fn try_from(value: ::std::string::String) ->
+                        ::std::result::Result<Self, self::error::ConversionError>
+                    {
+                        value.parse()
+                    }
+                }
+                $(
+                    impl ::std::default::Default for $Type {
+                        fn default() -> Self {
+                            $Type::$default
+                        }
+                    }
+                )?
+            };
             ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } $(default = $default:ident)?) => {
                 impl ::std::fmt::Display for $Type {
                     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -595,6 +715,58 @@ pub(crate) fn impl_string_enum_macro() -> TokenStream {
 /// replaces. `tests/emit_style.rs` pins this text token-identical to
 /// the emitted macro, so the two cannot drift apart.
 pub(crate) const IMPL_STRING_ENUM_MACRO_PRETTY: &str = r#"macro_rules! impl_string_enum {
+    ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } open = $open:ident $(default = $default:ident)?) => {
+        impl ::std::fmt::Display for $Type {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                match self {
+                    $(Self::$variant => f.write_str($raw),)*
+                    Self::$open(value) => f.write_str(value.as_str()),
+                }
+            }
+        }
+        impl ::std::str::FromStr for $Type {
+            type Err = self::error::ConversionError;
+            fn from_str(
+                value: &str
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                match value {
+                    $($raw => Ok(Self::$variant),)*
+                    _ => Ok(Self::$open(value.to_string())),
+                }
+            }
+        }
+        impl ::std::convert::TryFrom<&str> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: &str
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        impl ::std::convert::TryFrom<&::std::string::String> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: &::std::string::String
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        impl ::std::convert::TryFrom<::std::string::String> for $Type {
+            type Error = self::error::ConversionError;
+            fn try_from(
+                value: ::std::string::String
+            ) -> ::std::result::Result<Self, self::error::ConversionError> {
+                value.parse()
+            }
+        }
+        $(
+            impl ::std::default::Default for $Type {
+                fn default() -> Self {
+                    $Type::$default
+                }
+            }
+        )?
+    };
     ($Type:ident { $($variant:ident => $raw:literal),* $(,)? } $(default = $default:ident)?) => {
         impl ::std::fmt::Display for $Type {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -765,15 +937,31 @@ fn reflow_invocation(item: &syn::ItemMacro, indent: &str) -> Option<Vec<String>>
         }
         _ => return None,
     };
-    let default_variant = match rest {
-        [] => None,
-        [
-            TokenTree::Ident(kw),
-            TokenTree::Punct(eq),
-            TokenTree::Ident(variant),
-        ] if kw == "default" && eq.as_char() == '=' => Some(variant.clone()),
-        _ => return None,
-    };
+    // Trailing clauses, in canonical order: `open = Ident` then
+    // `default = Ident`, each at most once.
+    let mut open_variant: Option<proc_macro2::Ident> = None;
+    let mut default_variant: Option<proc_macro2::Ident> = None;
+    let mut rest = rest;
+    while !rest.is_empty() {
+        match rest {
+            [
+                TokenTree::Ident(kw),
+                TokenTree::Punct(eq),
+                TokenTree::Ident(variant),
+                tail @ ..,
+            ] if eq.as_char() == '=' => {
+                if kw == "open" && open_variant.is_none() && default_variant.is_none() {
+                    open_variant = Some(variant.clone());
+                } else if kw == "default" && default_variant.is_none() {
+                    default_variant = Some(variant.clone());
+                } else {
+                    return None;
+                }
+                rest = tail;
+            }
+            _ => return None,
+        }
+    }
 
     // Pairs: Ident, '=>' (joint '=' + '>'), Literal, [','].
     let mut pairs: Vec<(proc_macro2::Ident, proc_macro2::Literal)> = Vec::new();
@@ -803,10 +991,15 @@ fn reflow_invocation(item: &syn::ItemMacro, indent: &str) -> Option<Vec<String>>
     for (variant, raw) in &pairs {
         reflowed.push(format!("{indent}    {variant} => {raw},"));
     }
-    reflowed.push(match &default_variant {
-        Some(variant) => format!("{indent}}} default = {variant});"),
-        None => format!("{indent}}});"),
-    });
+    let mut closer = format!("{indent}}}");
+    if let Some(variant) = &open_variant {
+        closer.push_str(&format!(" open = {variant}"));
+    }
+    if let Some(variant) = &default_variant {
+        closer.push_str(&format!(" default = {variant}"));
+    }
+    closer.push_str(");");
+    reflowed.push(closer);
 
     // Fidelity gate: the reflowed text must hold the same tokens.
     let reparsed: syn::ItemMacro = syn::parse_str(&reflowed.join("\n")).ok()?;

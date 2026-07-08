@@ -219,9 +219,17 @@ impl Generator {
             let mut planned = crate::tree::plan_file_tree(&file, &self.spec_path);
             if let Some(contents) = &ext {
                 // The scratch crate needs an ext module to satisfy the
-                // root's `pub mod ext;`; the pristine scaffold stands in
-                // for whatever the user's real ext/ holds.
-                planned.insert(PathBuf::from("ext/mod.rs"), contents.clone());
+                // root's `pub mod ext;`. Mount the user's real ext/ when
+                // one exists — generated code may reference helpers living
+                // there (config field-attrs naming `...::ext::...` paths),
+                // so the gate must compile against what the user actually
+                // wrote. A fresh tree falls back to the pristine scaffold.
+                let user_ext = crate::tree::plan_ext_dir(dir.as_ref());
+                if user_ext.is_empty() {
+                    planned.insert(PathBuf::from("ext/mod.rs"), contents.clone());
+                } else {
+                    planned.extend(user_ext);
+                }
             }
             crate::verify::verify_tree(&planned, &verify)?;
         }

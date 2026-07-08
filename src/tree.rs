@@ -88,6 +88,36 @@ pub fn write_file_tree(
     remove_stale_generated(dir, Path::new(""), &written)
 }
 
+/// The user's real `ext/` directory under `dir`, as `dir`-relative
+/// path → contents pairs for the verify gate's scratch crate. Empty
+/// when the tree is fresh (no `ext/` yet) or unreadable — the caller
+/// falls back to the pristine scaffold.
+pub(crate) fn plan_ext_dir(dir: &Path) -> BTreeMap<PathBuf, String> {
+    fn collect(root: &Path, dir: &Path, files: &mut BTreeMap<PathBuf, String>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                collect(root, &path, files);
+            } else if path.extension().is_some_and(|ext| ext == "rs")
+                && let Ok(contents) = std::fs::read_to_string(&path)
+                && let Ok(rel) = path.strip_prefix(root)
+            {
+                files.insert(PathBuf::from("ext").join(rel), contents);
+            }
+        }
+    }
+    let mut files = BTreeMap::new();
+    collect(&dir.join("ext"), &dir.join("ext"), &mut files);
+    // A directory without a mod.rs cannot satisfy `pub mod ext;`.
+    if !files.contains_key(Path::new("ext/mod.rs")) {
+        return BTreeMap::new();
+    }
+    files
+}
+
 /// Write the user-owned `ext/mod.rs` scaffold, once: if the file
 /// already exists — scaffolded earlier, possibly edited since — it is
 /// left byte-untouched. The scaffold carries no `// @generated` marker,

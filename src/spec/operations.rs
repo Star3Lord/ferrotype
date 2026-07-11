@@ -145,7 +145,10 @@ fn parse_operation(
             params.push(Param {
                 name: name.to_string(),
                 location,
-                required: raw.get("required").and_then(Value::as_bool).unwrap_or(false),
+                required: raw
+                    .get("required")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
                 schema,
                 description: raw
                     .get("description")

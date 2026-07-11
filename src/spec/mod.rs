@@ -65,6 +65,58 @@ impl std::fmt::Display for Origin {
     }
 }
 
+/// The non-null inner definition to hoist out of a rendered nullable
+/// schema, for the two shapes where typify would otherwise name the
+/// inner after the definition itself (see
+/// [`Spec::to_draft07_definitions`]); `None` when the rendered schema is
+/// fine as-is. The second tuple element is a description for the
+/// wrapper, for the shape whose source node carried its metadata at the
+/// level the wrapper replaces.
+fn hoistable_nullable_inner(schema: &Schema, rendered: &Value) -> Option<(Value, Option<Value>)> {
+    // Shape 1: the untyped `nullable: true` wrap,
+    // `{"anyOf": [inner, {"type": "null"}]}` with nothing else on the
+    // node (metadata lives inside the inner, where it stays). A pure
+    // `$ref` inner generates no named type and stays put.
+    if schema.nullable && schema.ty.is_none() {
+        let map = rendered.as_object()?;
+        if map.len() != 1 {
+            return None;
+        }
+        let members = map.get("anyOf")?.as_array()?;
+        let [inner, null_member] = members.as_slice() else {
+            return None;
+        };
+        if null_member.get("type").and_then(Value::as_str) != Some("null") {
+            return None;
+        }
+        let inner_map = inner.as_object()?;
+        let pure_ref = inner_map.len() == 1 && inner_map.contains_key("$ref");
+        return (!pure_ref).then(|| (inner.clone(), None));
+    }
+
+    // Shape 2: a single-typed string enum with a literal `null` member
+    // (rendered with `type: "string"`, not a type array): typify prunes
+    // the null into an Option and needs a distinct name for the variant
+    // enum. The hoisted inner drops the null member; the wrap supplies
+    // the nullability, and inherits the node's description so the
+    // wrapper newtype keeps its doc. (Nullable *typed* enums render as
+    // `type: [T, "null"]` arrays, which typify already inner-names.)
+    let map = rendered.as_object()?;
+    if map.get("type").and_then(Value::as_str) != Some("string") {
+        return None;
+    }
+    let members = map.get("enum")?.as_array()?;
+    if !members.iter().any(Value::is_null) {
+        return None;
+    }
+    let mut inner = map.clone();
+    inner.insert(
+        "enum".to_string(),
+        Value::Array(members.iter().filter(|m| !m.is_null()).cloned().collect()),
+    );
+    Some((Value::Object(inner), map.get("description").cloned()))
+}
+
 /// Document-level metadata.
 #[derive(Debug, Clone, Default)]
 pub struct SpecMeta {
@@ -175,28 +227,71 @@ impl Spec {
 
     /// Render `components.schemas` as a draft-07 `definitions` map — the
     /// bridge feeding the typify engine. Reproduces the historical
-    /// lowering exactly: `#/components/schemas/` refs become
-    /// `#/definitions/`, `nullable: true` becomes an `anyOf` with `null`,
-    /// missing `type` is inferred from `format`, boolean exclusive bounds
-    /// take draft-07's numeric form, and OpenAPI-only metadata
+    /// lowering: `#/components/schemas/` refs become `#/definitions/`,
+    /// `nullable: true` becomes an `anyOf` with `null`, missing `type` is
+    /// inferred from `format`, boolean exclusive bounds take draft-07's
+    /// numeric form, and OpenAPI-only metadata
     /// (`example`/`examples`/`xml`/`externalDocs`/`discriminator`) is
     /// absent (the model keeps `discriminator` and examples; the render
     /// drops them for the strict draft-07 parser).
+    ///
+    /// Two nullable shapes are additionally restructured, because typify
+    /// hands the definition's own name to the inner subschema of the
+    /// `Option` it builds, colliding with the `Option`'s newtype wrapper
+    /// (`X(Option<X>)`, E0428). Each hoists the non-null inner into a
+    /// synthetic `{name}Inner` definition, mirroring the distinct naming
+    /// typify gives the typed `type: [T, "null"]` form
+    /// (`X(Option<XInner>)`):
+    ///
+    /// - a **named** untyped `nullable: true` wrapper (Plaid's nullable
+    ///   `allOf` compositions), rendered `anyOf [inner, null]` — pure
+    ///   `$ref` inners generate no named type and stay inline;
+    /// - a **named** single-typed string enum whose members include a
+    ///   literal `null` without `nullable: true` (Plaid's
+    ///   `PayFrequencyValue` family) — typify prunes the null member
+    ///   into an `Option` around the variant enum.
+    ///
+    /// A spec that already defines `{name}Inner` skips the hoist (typify
+    /// then reports the collision loudly).
     pub fn to_draft07_definitions(&self) -> serde_json::Map<String, Value> {
-        self.schemas
-            .iter()
-            .map(|(name, schema)| (name.clone(), schema.to_draft07()))
-            .collect()
+        let mut definitions = serde_json::Map::new();
+        for (name, schema) in &self.schemas {
+            let rendered = schema.to_draft07();
+            let inner_name = format!("{name}Inner");
+            let inner = (!self.schemas.contains_key(&inner_name))
+                .then(|| hoistable_nullable_inner(schema, &rendered))
+                .flatten();
+            match inner {
+                Some((inner, wrapper_description)) => {
+                    let mut wrapper = serde_json::Map::new();
+                    if let Some(description) = wrapper_description {
+                        wrapper.insert("description".to_string(), description);
+                    }
+                    wrapper.insert(
+                        "anyOf".to_string(),
+                        serde_json::json!([
+                            { "$ref": format!("#/definitions/{inner_name}") },
+                            { "type": "null" },
+                        ]),
+                    );
+                    definitions.insert(inner_name, inner);
+                    definitions.insert(name.clone(), Value::Object(wrapper));
+                }
+                None => {
+                    definitions.insert(name.clone(), rendered);
+                }
+            }
+        }
+        definitions
     }
 
     /// [`Self::to_draft07_definitions`] wrapped as the
     /// [`RootSchema`](schemars::schema::RootSchema) that typify consumes.
     pub fn to_draft07_root(&self) -> Result<schemars::schema::RootSchema> {
-        let root: schemars::schema::RootSchema =
-            serde_json::from_value(serde_json::json!({
-                "definitions": Value::Object(self.to_draft07_definitions()),
-            }))
-            .context("failed to deserialize the rendered schemas as a JSON Schema root")?;
+        let root: schemars::schema::RootSchema = serde_json::from_value(serde_json::json!({
+            "definitions": Value::Object(self.to_draft07_definitions()),
+        }))
+        .context("failed to deserialize the rendered schemas as a JSON Schema root")?;
         Ok(root)
     }
 }

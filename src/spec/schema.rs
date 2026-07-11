@@ -203,10 +203,9 @@ impl Schema {
                         .with_context(|| format!("properties at {child} is not an object"))?;
                     for (name, property) in properties {
                         let property_origin = child.child(name);
-                        schema.properties.insert(
-                            name.clone(),
-                            Schema::from_value(property, property_origin)?,
-                        );
+                        schema
+                            .properties
+                            .insert(name.clone(), Schema::from_value(property, property_origin)?);
                     }
                 }
                 "required" => {
@@ -293,9 +292,11 @@ impl Schema {
                 "minItems" => schema.min_items = Some(number_at(value, &child)?),
                 "maxItems" => schema.max_items = Some(number_at(value, &child)?),
                 "uniqueItems" => {
-                    schema.unique_items = Some(value.as_bool().with_context(|| {
-                        format!("uniqueItems at {child} is not a boolean")
-                    })?);
+                    schema.unique_items = Some(
+                        value
+                            .as_bool()
+                            .with_context(|| format!("uniqueItems at {child} is not a boolean"))?,
+                    );
                 }
                 "minProperties" => schema.min_properties = Some(number_at(value, &child)?),
                 "maxProperties" => schema.max_properties = Some(number_at(value, &child)?),
@@ -346,9 +347,10 @@ impl Schema {
                 match non_null.as_slice() {
                     [] => self.ty = Some(TypeHint::Null),
                     [single] => {
-                        self.ty = Some(TypeHint::parse(single).with_context(|| {
-                            format!("unknown type {single:?} at {origin}")
-                        })?);
+                        self.ty = Some(
+                            TypeHint::parse(single)
+                                .with_context(|| format!("unknown type {single:?} at {origin}"))?,
+                        );
                     }
                     several => bail!(
                         "union type {several:?} at {origin} is not supported \
@@ -464,17 +466,16 @@ impl Schema {
             // the wire carries: stringify the mistyped scalars. A
             // nullable enum keeps its `null` member so typify prunes
             // it into the Option wrapper.
-            let members = self.enumeration.iter().map(|member| {
-                match (&self.ty, member) {
-                    (Some(TypeHint::String), Value::Bool(flag)) => {
-                        Value::String(flag.to_string())
-                    }
+            let members = self
+                .enumeration
+                .iter()
+                .map(|member| match (&self.ty, member) {
+                    (Some(TypeHint::String), Value::Bool(flag)) => Value::String(flag.to_string()),
                     (Some(TypeHint::String), Value::Number(number)) => {
                         Value::String(number.to_string())
                     }
                     _ => member.clone(),
-                }
-            });
+                });
             let mut members: Vec<Value> = members.collect();
             // A nullable typed enum renders `type: [T, "null"]`; the
             // values list must offer the null typify folds into
@@ -560,9 +561,10 @@ impl Schema {
         if self.nullable && self.ty.is_none() {
             for key in ["oneOf", "anyOf"] {
                 if let Some(Value::Array(members)) = map.get_mut(key) {
-                    if !members.iter().any(|member| {
-                        member.get("type").and_then(Value::as_str) == Some("null")
-                    }) {
+                    if !members
+                        .iter()
+                        .any(|member| member.get("type").and_then(Value::as_str) == Some("null"))
+                    {
                         members.push(serde_json::json!({ "type": "null" }));
                     }
                     return Value::Object(map);

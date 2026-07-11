@@ -163,7 +163,6 @@ impl Generator {
 
         let mut settings = TypeSpaceSettings::default();
         style.apply_to_settings(&mut settings);
-        settings.with_deep_patch_filter(overrides.deep_patch_filter());
         for hook in &self.customize {
             hook(&mut settings);
         }

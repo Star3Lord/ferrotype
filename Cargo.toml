@@ -21,7 +21,7 @@ schemars = []
 
 [dependencies]
 # The typify fork; the whole point of this crate is to exercise it.
-typify = { git = "https://github.com/Star3Lord/typify.git", branch = "ergonomic-codegen" }
+typify = { git = "https://github.com/Star3Lord/typify.git", branch = "cursor/ergonomic-codegen-v2-bc-927cce80-d804-4053-9b7f-70395ab36303-121d" }
 
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }

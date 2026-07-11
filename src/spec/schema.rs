@@ -485,13 +485,17 @@ impl Schema {
             map.insert("enum".to_string(), Value::Array(members));
         }
         if let Some(default) = &self.default {
-            // `default: null` on a non-nullable node is the JSON-ism
-            // for "no default" (DigitalOcean writes it on plain oneOf
-            // unions): null is not a value of the type, and typify
-            // either rejects the default or panics rendering it. A
-            // nullable node keeps it — null is the Option's intrinsic
-            // default there.
-            if !default.is_null() || self.nullable {
+            // `default: null` is representable only by omission. On a
+            // non-nullable node it's the JSON-ism for "no default"
+            // (DigitalOcean writes it on plain oneOf unions): null is
+            // not a value of the type, and typify either rejects the
+            // default or panics rendering it. On a *nullable* node null
+            // is already the `Option`'s intrinsic default — typify
+            // treats a missing default identically, whereas a literal
+            // null default on the rendered `type: [T, "null"]` schema
+            // leaks onto the inner non-null type during typify's Option
+            // conversion and fails default validation there.
+            if !default.is_null() {
                 map.insert("default".to_string(), default.clone());
             }
         }

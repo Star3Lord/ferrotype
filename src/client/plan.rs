@@ -122,8 +122,10 @@ impl ClientPlan {
         let auth = resolve_auth(spec)?;
         let auth_header_names = auth_header_names(spec);
 
-        let rust_names: BTreeMap<String, String> =
-            type_space.definition_rust_names().into_iter().collect();
+        let rust_names: BTreeMap<String, String> = type_space
+            .iter_definitions()
+            .map(|(schema_key, ty)| (schema_key.to_string(), ty.name()))
+            .collect();
         let modules =
             partition.map(|partition| crate::pipeline::resolved_rust_partition(partition, type_space, style));
 

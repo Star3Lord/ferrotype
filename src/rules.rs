@@ -278,7 +278,7 @@ impl FieldRules {
         for (index, rule) in rules.iter().enumerate() {
             let Some(forced) = rule.patch else { continue };
             for schema_key in spec.schemas.keys() {
-                let rust_type = typify::rust_type_ident(schema_key);
+                let rust_type = crate::idents::rust_type_ident(schema_key);
                 if let Some(pattern) = &rule.match_.module {
                     let Some(module) = modules.get(&rust_type) else {
                         continue;
@@ -360,8 +360,8 @@ impl FieldRules {
             if let Some((type_part, field_part)) = selector.split_once('.') {
                 field_tier.insert(
                     (
-                        typify::rust_type_ident(type_part),
-                        typify::rust_field_ident(field_part),
+                        crate::idents::rust_type_ident(type_part),
+                        crate::idents::rust_field_ident(field_part),
                     ),
                     override_,
                 );
@@ -563,13 +563,13 @@ fn matches_pre(m: &RuleMatch, row: &RowMeta) -> bool {
         }
     }
     if let Some(pattern) = &m.struct_ {
-        let rust = typify::rust_type_ident(&row.schema_key);
+        let rust = crate::idents::rust_type_ident(&row.schema_key);
         if !glob_match(pattern, &row.schema_key) && !glob_match(pattern, &rust) {
             return false;
         }
     }
     if let Some(pattern) = &m.field {
-        let rust = typify::rust_field_ident(&row.wire_name);
+        let rust = crate::idents::rust_field_ident(&row.wire_name);
         if !glob_match(pattern, &row.wire_name) && !glob_match(pattern, &rust) {
             return false;
         }
@@ -611,11 +611,11 @@ fn module_map(style: &StyleConfig, partition: Option<&Partition>) -> BTreeMap<St
     let mut modules: BTreeMap<String, String> = BTreeMap::new();
     if let Some(partition) = partition {
         for (schema_key, module) in &partition.by_schema {
-            modules.insert(typify::rust_type_ident(schema_key), module.clone());
+            modules.insert(crate::idents::rust_type_ident(schema_key), module.clone());
         }
         for (selector, override_) in &style.types {
             if let Some(module) = &override_.module {
-                modules.insert(typify::rust_type_ident(selector), module.clone());
+                modules.insert(crate::idents::rust_type_ident(selector), module.clone());
             }
         }
     }
@@ -634,7 +634,7 @@ fn index_spec(
 ) -> BTreeMap<(String, String), RowMeta> {
     let mut meta = BTreeMap::new();
     for (schema_key, schema) in &spec.schemas {
-        let rust_type = typify::rust_type_ident(schema_key);
+        let rust_type = crate::idents::rust_type_ident(schema_key);
         let module = modules.get(&rust_type).cloned();
         let mut properties: Vec<(&String, &Schema)> = schema.properties.iter().collect();
         for branch in &schema.all_of {
@@ -644,7 +644,7 @@ fn index_spec(
         }
         for (wire_name, property) in properties {
             meta.insert(
-                (rust_type.clone(), typify::rust_field_ident(wire_name)),
+                (rust_type.clone(), crate::idents::rust_field_ident(wire_name)),
                 RowMeta {
                     schema_key: schema_key.clone(),
                     wire_name: wire_name.clone(),

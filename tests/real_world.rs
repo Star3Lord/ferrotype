@@ -130,7 +130,7 @@ fn generate_with_workarounds(
             if renames.contains_key(key) {
                 continue;
             }
-            let ident = typify::rust_type_ident(key);
+            let ident = openapi_codegen::rust_type_ident(key);
             if duplicates.contains(&ident) {
                 let n = ordinal.entry(ident).or_insert(1);
                 *n += 1;
@@ -154,7 +154,7 @@ fn dedupe_titles(node: &mut Value, duplicates: &std::collections::BTreeSet<Strin
     match node {
         Value::Object(map) => {
             if let Some(Value::String(title)) = map.get("title") {
-                let ident = typify::rust_type_ident(title);
+                let ident = openapi_codegen::rust_type_ident(title);
                 if duplicates.contains(&ident) {
                     let count = seen.entry(ident).or_default();
                     *count += 1;
@@ -406,7 +406,7 @@ fn harvest_examples(document: &Value) -> Vec<WirePair> {
     let mut push = |key: &str, label: String, payload: &Value| {
         pairs.push(WirePair {
             label,
-            rust_type: typify::rust_type_ident(key),
+            rust_type: openapi_codegen::rust_type_ident(key),
             payload: payload.clone(),
         });
     };
@@ -497,7 +497,7 @@ fn fixture_pairs(spec: &str) -> Vec<WirePair> {
             serde_json::from_str(&std::fs::read_to_string(entry.path()).unwrap()).unwrap();
         pairs.push(WirePair {
             label: format!("fixture/{key}"),
-            rust_type: typify::rust_type_ident(key),
+            rust_type: openapi_codegen::rust_type_ident(key),
             payload,
         });
     }
@@ -555,8 +555,8 @@ fn wire_roundtrips(spec: &str, path: &Path) {
     for pair in &mut pairs {
         // Re-key types whose schemas the rename workaround moved.
         for (old, new) in &renames {
-            if pair.rust_type == typify::rust_type_ident(old) {
-                pair.rust_type = typify::rust_type_ident(new);
+            if pair.rust_type == openapi_codegen::rust_type_ident(old) {
+                pair.rust_type = openapi_codegen::rust_type_ident(new);
             }
         }
     }

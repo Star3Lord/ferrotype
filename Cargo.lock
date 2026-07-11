@@ -888,7 +888,7 @@ checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 [[package]]
 name = "typify"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
+source = "git+https://github.com/Star3Lord/typify.git?branch=cursor%2Fergonomic-codegen-v2-bc-927cce80-d804-4053-9b7f-70395ab36303-121d#8158f1c34a720e35077185871ced0c2905cc31da"
 dependencies = [
  "typify-impl",
  "typify-macro",
@@ -897,7 +897,7 @@ dependencies = [
 [[package]]
 name = "typify-impl"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
+source = "git+https://github.com/Star3Lord/typify.git?branch=cursor%2Fergonomic-codegen-v2-bc-927cce80-d804-4053-9b7f-70395ab36303-121d#8158f1c34a720e35077185871ced0c2905cc31da"
 dependencies = [
  "heck",
  "log",
@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "typify-macro"
 version = "0.7.0"
-source = "git+https://github.com/Star3Lord/typify.git?branch=ergonomic-codegen#a360978ebce63aa5d088702615293f169c5d8022"
+source = "git+https://github.com/Star3Lord/typify.git?branch=cursor%2Fergonomic-codegen-v2-bc-927cce80-d804-4053-9b7f-70395ab36303-121d#8158f1c34a720e35077185871ced0c2905cc31da"
 dependencies = [
  "proc-macro2",
  "quote",

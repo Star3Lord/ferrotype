@@ -312,10 +312,11 @@ impl Partition {
     }
 
     /// Translate this schema-name → module-name partition into the
-    /// Rust-type-name → module-name map that
-    /// [`typify::TypeSpace::to_stream_partitioned`] consumes.
-    /// [`typify::TypeSpace::definition_rust_names`] is the bridge: it
-    /// accounts for typify's Pascal-case sanitization of schema keys.
+    /// Rust-type-name → module-name map that the partitioned emitter
+    /// ([`crate::modules`]) consumes.
+    /// [`typify::TypeSpace::iter_definitions`] is the bridge: it pairs
+    /// each definition key with its generated type, accounting for
+    /// typify's Pascal-case sanitization of schema keys.
     ///
     /// In split mode this is also where the [`SHARED_ENUMS_MODULE`]
     /// routing happens: a schema assigned to one of the shared role
@@ -331,10 +332,10 @@ impl Partition {
             BTreeSet::new()
         };
         type_space
-            .definition_rust_names()
-            .into_iter()
-            .filter_map(|(schema_key, rust_name)| {
-                let module = self.by_schema.get(&schema_key)?;
+            .iter_definitions()
+            .filter_map(|(schema_key, ty)| {
+                let module = self.by_schema.get(schema_key)?;
+                let rust_name = ty.name();
                 let module = if self.split_request_response
                     && is_shared_role_module(module)
                     && simple_enums.contains(&rust_name)

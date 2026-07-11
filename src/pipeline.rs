@@ -58,7 +58,11 @@ use crate::{Result, condense, postprocess};
 /// stage.settings_mut().with_schema_in_docs(true);
 ///
 /// let stage = stage.build_types()?;      // GeneratedTypes: populated TypeSpace
-/// let names = stage.type_space().definition_rust_names();
+/// let names: Vec<(String, String)> = stage
+///     .type_space()
+///     .iter_definitions()
+///     .map(|(key, ty)| (key.to_string(), ty.name()))
+///     .collect();
 ///
 /// let mut file = stage.into_file()?;     // syn::File, post-processing applied
 /// file.items.push(syn::parse_quote! { pub const GENERATED: bool = true; });
@@ -127,6 +131,14 @@ impl LoadedSpec {
         let field_rules =
             crate::rules::FieldRules::resolve(&self.style, &spec_model, partition.as_ref())?;
         field_rules.apply_optionality(&mut schema);
+        // `constrained-strings = "plain"` is a pre-typify decision too:
+        // dropping `pattern`/`minLength`/`maxLength` here means no
+        // validating newtype is ever generated, exactly like the old
+        // fork's unconstrained-string handling (string enums keep their
+        // constraints — enum values are still validated against them).
+        if self.style.constrained_strings == crate::config::ConstraintMode::Plain {
+            strip_string_constraints(&mut schema);
+        }
         let mut overrides = self.overrides;
         overrides.set_rule_patchability(field_rules.patch_overrides().clone());
         Ok(LoweredSchema {
@@ -210,20 +222,7 @@ impl LoweredSchema {
 
     /// Run typify: build a [`TypeSpace`] from the settings and populate it
     /// from the lowered schema.
-    pub fn build_types(mut self) -> Result<GeneratedTypes> {
-        // Rule-tier deep-patch and type-level patch decisions feed
-        // typify's generation-time filter (the load-time install
-        // predates rules resolution); re-install it augmented only
-        // when rules force something, preserving any `customize`-hook
-        // filter otherwise.
-        if !self.field_rules.deep_patch_overrides().is_empty()
-            || !self.field_rules.patch_overrides().is_empty()
-        {
-            self.settings.with_deep_patch_filter(
-                self.overrides
-                    .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone()),
-            );
-        }
+    pub fn build_types(self) -> Result<GeneratedTypes> {
         let mut type_space = TypeSpace::new(&self.settings);
         type_space
             .add_root_schema(self.schema)
@@ -273,7 +272,7 @@ pub struct GeneratedTypes {
 
 impl GeneratedTypes {
     /// The populated type space, e.g. for
-    /// [`typify::TypeSpace::definition_rust_names`] or
+    /// [`typify::TypeSpace::iter_definitions`] or
     /// [`typify::TypeSpace::iter_types`].
     pub fn type_space(&self) -> &TypeSpace {
         &self.type_space
@@ -303,11 +302,13 @@ impl GeneratedTypes {
                 let rust_partition =
                     resolved_rust_partition(partition, &self.type_space, &self.style);
                 let imports = partition.module_imports(&trait_imports);
-                self.type_space.to_stream_partitioned(
+                crate::modules::partitioned_stream(
+                    &self.type_space,
                     &rust_partition,
                     partition.default_module(),
                     &imports,
                 )
+                .expect("every partitioned type id comes from this type space")
             }
             None => {
                 let body = self.type_space.to_stream();
@@ -397,6 +398,15 @@ impl GeneratedTypes {
     fn build_file(&self) -> Result<syn::File> {
         let mut file = syn::parse_file(&self.tokens().to_string())
             .context("generated tokens failed to parse as a Rust file")?;
+        // The decoration pass runs first, so every downstream pass sees
+        // the same decorated shape the old typify fork used to emit:
+        // derive lists, attribute stacks, rename_all + rename elision,
+        // Option serde-noise elision, deep-patch annotations and naming
+        // mirrors, enum first-variant defaults, newtype conveniences.
+        let deep_patch = self
+            .overrides
+            .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone());
+        crate::decorate::decorate_file(&mut file, &self.style, &deep_patch)?;
         self.overrides.apply_to_file(&mut file)?;
         // The per-field decision layer: `[style.formats]` / `replace`
         // mapping defaults, overridden by `[[rules]]` in order, then
@@ -432,10 +442,88 @@ pub(crate) fn resolved_rust_partition(
     let mut rust_partition = partition.to_rust_partition(type_space);
     for (selector, override_) in &style.types {
         if let Some(module) = &override_.module {
-            rust_partition.insert(typify::rust_type_ident(selector), module.clone());
+            rust_partition.insert(crate::idents::rust_type_ident(selector), module.clone());
         }
     }
     rust_partition
+}
+
+/// Strip `pattern` / `minLength` / `maxLength` from every non-enum
+/// string-typed schema in the lowered document — the pre-typify form of
+/// `constrained-strings = "plain"`. Enum schemas keep their constraints
+/// (typify still validates enum values against them, exactly as the old
+/// constraint handling did).
+fn strip_string_constraints(root: &mut RootSchema) {
+    fn walk_schema(schema: &mut schemars::schema::Schema) {
+        if let schemars::schema::Schema::Object(object) = schema {
+            walk_object(object);
+        }
+    }
+
+    fn walk_object(object: &mut schemars::schema::SchemaObject) {
+        if object.enum_values.is_none() {
+            object.string = None;
+        }
+        if let Some(subschemas) = &mut object.subschemas {
+            for list in [
+                &mut subschemas.all_of,
+                &mut subschemas.any_of,
+                &mut subschemas.one_of,
+            ]
+            .into_iter()
+            .flatten()
+            {
+                for subschema in list.iter_mut() {
+                    walk_schema(subschema);
+                }
+            }
+            for boxed in [
+                &mut subschemas.not,
+                &mut subschemas.if_schema,
+                &mut subschemas.then_schema,
+                &mut subschemas.else_schema,
+            ]
+            .into_iter()
+            .flatten()
+            {
+                walk_schema(boxed);
+            }
+        }
+        if let Some(array) = &mut object.array {
+            match &mut array.items {
+                Some(schemars::schema::SingleOrVec::Single(item)) => walk_schema(item),
+                Some(schemars::schema::SingleOrVec::Vec(items)) => {
+                    items.iter_mut().for_each(walk_schema)
+                }
+                None => {}
+            }
+            if let Some(additional) = &mut array.additional_items {
+                walk_schema(additional);
+            }
+            if let Some(contains) = &mut array.contains {
+                walk_schema(contains);
+            }
+        }
+        if let Some(object_validation) = &mut object.object {
+            for property in object_validation.properties.values_mut() {
+                walk_schema(property);
+            }
+            for property in object_validation.pattern_properties.values_mut() {
+                walk_schema(property);
+            }
+            if let Some(additional) = &mut object_validation.additional_properties {
+                walk_schema(additional);
+            }
+            if let Some(names) = &mut object_validation.property_names {
+                walk_schema(names);
+            }
+        }
+    }
+
+    walk_object(&mut root.schema);
+    for schema in root.definitions.values_mut() {
+        walk_schema(schema);
+    }
 }
 
 /// Parse the style's `use ...;` statements into one preamble stream.
@@ -445,9 +533,9 @@ fn parse_imports(imports: &[String]) -> TokenStream {
     imports
         .iter()
         .map(|statement| {
-            statement
-                .parse::<TokenStream>()
-                .unwrap_or_else(|error| panic!("style import {statement:?} failed to parse: {error}"))
+            statement.parse::<TokenStream>().unwrap_or_else(|error| {
+                panic!("style import {statement:?} failed to parse: {error}")
+            })
         })
         .collect()
 }

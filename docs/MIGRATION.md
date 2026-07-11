@@ -659,6 +659,62 @@ the old engine as default, and record where the wall is.
   the server tolerates omission and at response fields observed
   absent on the live wire.
 
+- **D24 — the fork's knob surface retired; decoration moves here
+  (typify `ergonomic-codegen-v2`).** The typify fork condensed its ~20
+  style knobs into six wire-shape mechanisms (its `FORK_FEATURES.md`
+  is the fork-side migration guide): subset-matching conversions
+  (`with_conversion` now matches input schemas carrying *extra*
+  keywords, most-specific-wins), `with_optional_properties(Explicit)`,
+  `with_all_of_strategy(Compose)`, `with_open_enum_variant`,
+  `with_schema_in_docs`, and caller-assembled module output
+  (`to_stream_for` + `iter_definitions` + `Type::id`), plus
+  first-class OpenAPI ingestion. This crate absorbed everything else,
+  keeping every checked-in golden byte-identical:
+  (1) *Settings mapping* — the optionality trio becomes the `Explicit`
+  policy; `date`/`date-time`/`uuid` sugar, `[style.formats]` entries,
+  and `integers = "plain"` become subset conversions (formats register
+  first; ties keep the earliest conversion, preserving the old
+  precedence). `constrained-strings = "plain"` cannot be a conversion
+  — a `{type: string}` subset would also capture enums and formatted
+  strings — so it strips `pattern`/`minLength`/`maxLength` from
+  non-enum string schemas in the lowered document instead.
+  (2) *The decoration pass* (`src/decorate.rs`, first AST pass, so
+  every downstream pass sees the shape the old fork emitted): ordered
+  per-kind derive lists (replacing typify's base set, with per-type
+  `derives-add` re-applied), unconditional/conditional attrs and
+  derives at their configured positions, struct `rename_all` with
+  covered-rename elision, the `default` + `skip_serializing_if`
+  elision on `Option` fields, deep-patch annotations driven by the
+  same overrides predicate that fed the fork's retired
+  `with_deep_patch_filter`, the D23 patch-companion naming mirror,
+  enum first-unit-variant `Default` impls, string-newtype convenience
+  impls, and hand-written `impl Default` suppression where a derive
+  now covers it.
+  (3) *Partitioned emission* (`src/modules.rs`) — the old
+  `to_stream_partitioned` semantics rebuilt on `to_stream_for`: one
+  self-contained subset per leaf (own `error` module; `defaults` fns
+  are now per-subset rather than the old global duplication),
+  import-materialized empty modules, lexicographic nesting.
+  (4) *Selector resolution* (`src/idents.rs`) — the fork no longer
+  exports `rust_type_ident`/`rust_field_ident`, so this crate ports
+  typify's sanitize verbatim (`iter_definitions` remains the
+  authoritative bridge wherever a populated `TypeSpace` exists).
+  (5) *Lowering-side collision hoists* — the old fork's naming fixes
+  (`{name}Inner` for Option inners and null-member enums) lived in
+  typify; the v2 branch inner-names only the typed `type: [T, "null"]`
+  form. Both collision classes are visible in the document, so the
+  draft-07 render now hoists them into synthetic `{name}Inner`
+  definitions (nullable `allOf` wrappers; single-typed string enums
+  with a literal `null` member), and `default: null` is always omitted
+  (it is the `Option`'s intrinsic default; rendering it leaked onto
+  the inner type of typify's Option conversion). One fork-emission
+  conflict is repaired in decoration: a newtype over a
+  conversion-produced native `String` carries `From<String>`, whose
+  std blanket `TryFrom<String>` collides with typify's manual impl —
+  the manual impl is dropped (the old fork skipped emitting it).
+  The full real-world audit (github, stripe, plaid, digitalocean,
+  museum-3.1, docker — matrix + wire) is green on the new branch.
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

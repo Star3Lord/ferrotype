@@ -131,14 +131,6 @@ impl LoadedSpec {
         let field_rules =
             crate::rules::FieldRules::resolve(&self.style, &spec_model, partition.as_ref())?;
         field_rules.apply_optionality(&mut schema);
-        // `constrained-strings = "plain"` is a pre-typify decision too:
-        // dropping `pattern`/`minLength`/`maxLength` here means no
-        // validating newtype is ever generated, exactly like the old
-        // fork's unconstrained-string handling (string enums keep their
-        // constraints — enum values are still validated against them).
-        if self.style.constrained_strings == crate::config::ConstraintMode::Plain {
-            strip_string_constraints(&mut schema);
-        }
         let mut overrides = self.overrides;
         overrides.set_rule_patchability(field_rules.patch_overrides().clone());
         Ok(LoweredSchema {
@@ -412,12 +404,19 @@ impl GeneratedTypes {
         // mapping defaults, overridden by `[[rules]]` in order, then
         // the `[fields]` tier — materialized once and applied by the
         // mappings machinery (attrs, rule type overrides, capability
-        // pruning); enums whose Default synthesis would not compile
-        // are skipped below.
+        // pruning seeded by both config-declared external capabilities
+        // and typify's `Default`-satisfiability knowledge); enums whose
+        // Default synthesis would not compile are skipped below.
         let plans = self.field_rules.field_plans(&file, &self.style)?;
         let mappings = crate::mappings::Mappings::resolve(&self.style)?;
-        let skip_defaults =
-            mappings.apply_to_file(&mut file, self.style.untagged_enum_defaults, &plans)?;
+        let default_incapable =
+            crate::mappings::typify_default_incapable(&self.type_space, &self.style);
+        let skip_defaults = mappings.apply_to_file(
+            &mut file,
+            self.style.untagged_enum_defaults,
+            &plans,
+            &default_incapable,
+        )?;
         if self.style.untagged_enum_defaults {
             postprocess::synthesize_enum_defaults(&mut file, &skip_defaults);
         }
@@ -446,84 +445,6 @@ pub(crate) fn resolved_rust_partition(
         }
     }
     rust_partition
-}
-
-/// Strip `pattern` / `minLength` / `maxLength` from every non-enum
-/// string-typed schema in the lowered document — the pre-typify form of
-/// `constrained-strings = "plain"`. Enum schemas keep their constraints
-/// (typify still validates enum values against them, exactly as the old
-/// constraint handling did).
-fn strip_string_constraints(root: &mut RootSchema) {
-    fn walk_schema(schema: &mut schemars::schema::Schema) {
-        if let schemars::schema::Schema::Object(object) = schema {
-            walk_object(object);
-        }
-    }
-
-    fn walk_object(object: &mut schemars::schema::SchemaObject) {
-        if object.enum_values.is_none() {
-            object.string = None;
-        }
-        if let Some(subschemas) = &mut object.subschemas {
-            for list in [
-                &mut subschemas.all_of,
-                &mut subschemas.any_of,
-                &mut subschemas.one_of,
-            ]
-            .into_iter()
-            .flatten()
-            {
-                for subschema in list.iter_mut() {
-                    walk_schema(subschema);
-                }
-            }
-            for boxed in [
-                &mut subschemas.not,
-                &mut subschemas.if_schema,
-                &mut subschemas.then_schema,
-                &mut subschemas.else_schema,
-            ]
-            .into_iter()
-            .flatten()
-            {
-                walk_schema(boxed);
-            }
-        }
-        if let Some(array) = &mut object.array {
-            match &mut array.items {
-                Some(schemars::schema::SingleOrVec::Single(item)) => walk_schema(item),
-                Some(schemars::schema::SingleOrVec::Vec(items)) => {
-                    items.iter_mut().for_each(walk_schema)
-                }
-                None => {}
-            }
-            if let Some(additional) = &mut array.additional_items {
-                walk_schema(additional);
-            }
-            if let Some(contains) = &mut array.contains {
-                walk_schema(contains);
-            }
-        }
-        if let Some(object_validation) = &mut object.object {
-            for property in object_validation.properties.values_mut() {
-                walk_schema(property);
-            }
-            for property in object_validation.pattern_properties.values_mut() {
-                walk_schema(property);
-            }
-            if let Some(additional) = &mut object_validation.additional_properties {
-                walk_schema(additional);
-            }
-            if let Some(names) = &mut object_validation.property_names {
-                walk_schema(names);
-            }
-        }
-    }
-
-    walk_object(&mut root.schema);
-    for schema in root.definitions.values_mut() {
-        walk_schema(schema);
-    }
 }
 
 /// Parse the style's `use ...;` statements into one preamble stream.

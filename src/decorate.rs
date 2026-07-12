@@ -203,23 +203,6 @@ fn walk_items(items: &mut Vec<syn::Item>, cx: &Context_) -> Result<()> {
         });
     }
 
-    // A newtype whose inner type is a conversion-produced native
-    // `::std::string::String` carries `impl From<String> for X`; the std
-    // blanket `impl<T, U: Into<T>> TryFrom<U> for T` then already
-    // provides `TryFrom<String>`, so typify's manual `TryFrom<String>`
-    // impl is a conflicting implementation (E0119). The old fork skipped
-    // the manual impl in exactly this case; drop it here.
-    let from_string_types: BTreeSet<String> = items
-        .iter()
-        .filter_map(|item| impl_of_owned_string(item, "From"))
-        .collect();
-    if !from_string_types.is_empty() {
-        items.retain(|item| {
-            impl_of_owned_string(item, "TryFrom")
-                .is_none_or(|name| !from_string_types.contains(&name))
-        });
-    }
-
     // Synthesized items (enum first-variant Default, string-newtype
     // conveniences) splice into the module's item list; collect the
     // insertions first, then apply back-to-front so indices stay valid.
@@ -563,20 +546,19 @@ fn enum_default_insertion(
 }
 
 /// How a `#[serde(transparent)]` newtype over `String` came to be, read
-/// off the shape of its `FromStr` impl — the discriminator between
-/// typify's internal string entry and a conversion-produced native
-/// `::std::string::String` (whose emitted tuple field types look the
-/// same).
+/// off the shape of its `FromStr` impl. (typify treats native
+/// `::std::string::String` conversion targets as strings too, so those
+/// wrappers also carry the infallible `FromStr` and classify as
+/// unconstrained.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum StringNewtypeKind {
-    /// Plain named string schema: infallible `FromStr`.
+    /// Plain string schema: infallible `FromStr`.
     Unconstrained,
     /// Validated string schema: `FromStr` returning `ConversionError`.
     Constrained,
-    /// Wrapper around a conversion target (a native
-    /// `::std::string::String`): `FromStr` proxied through the inner
-    /// type. The old fork's `is_str` gate excluded these.
-    Native,
+    /// A `FromStr` shape this pass doesn't recognize (a `String`-named
+    /// foreign inner, say): left untouched.
+    Unrecognized,
 }
 
 /// Classify a transparent `String` newtype by its `FromStr` impl in the
@@ -612,7 +594,7 @@ fn string_newtype_kind(
     } else if tokens.contains("ConversionError") {
         Some(StringNewtypeKind::Constrained)
     } else {
-        Some(StringNewtypeKind::Native)
+        Some(StringNewtypeKind::Unrecognized)
     }
 }
 
@@ -621,16 +603,16 @@ fn string_newtype_kind(
 /// intrinsic impls (`Deref`, `From<Self> for String`, a schema-default
 /// `Default`) and before the constraint impls. Constrained newtypes get
 /// only the read-side impls — construction must go through the
-/// validating path — and wrappers around conversion targets get
-/// nothing, matching the old fork's `is_str` gate; impls the module
-/// already carries are never duplicated.
+/// validating path; impls the module already carries (typify's own
+/// `Display` proxy on unconstrained string newtypes) are never
+/// duplicated.
 fn newtype_convenience_insertion(
     items: &[syn::Item],
     index: usize,
     item_struct: &syn::ItemStruct,
 ) -> Option<(usize, Vec<syn::Item>)> {
     let kind = string_newtype_kind(items, item_struct)?;
-    if kind == StringNewtypeKind::Native {
+    if kind == StringNewtypeKind::Unrecognized {
         return None;
     }
 
@@ -695,42 +677,6 @@ fn newtype_convenience_insertion(
         }
     }
     Some((position, new_items))
-}
-
-/// The self-type name of `item` when it is an
-/// `impl {trait_name}<String> for X` block whose argument is an *owned*
-/// `String` (`&str` / `&String` arguments are references and never
-/// match).
-fn impl_of_owned_string(item: &syn::Item, trait_name: &str) -> Option<String> {
-    let syn::Item::Impl(item_impl) = item else {
-        return None;
-    };
-    let (_, trait_path, _) = item_impl.trait_.as_ref()?;
-    let last = trait_path.segments.last()?;
-    if last.ident != trait_name {
-        return None;
-    }
-    let syn::PathArguments::AngleBracketed(args) = &last.arguments else {
-        return None;
-    };
-    let mut type_args = args.args.iter().filter_map(|arg| match arg {
-        syn::GenericArgument::Type(ty) => Some(ty),
-        _ => None,
-    });
-    let syn::Type::Path(arg_path) = type_args.next()? else {
-        return None;
-    };
-    if arg_path.path.segments.last()?.ident != "String" {
-        return None;
-    }
-    match &*item_impl.self_ty {
-        syn::Type::Path(type_path) => type_path
-            .path
-            .segments
-            .last()
-            .map(|segment| segment.ident.to_string()),
-        _ => None,
-    }
 }
 
 /// The self-type name of `item` when it is an

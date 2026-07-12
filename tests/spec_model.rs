@@ -219,12 +219,12 @@ fn string_enum_with_mistyped_scalar_members_stringifies() {
 }
 
 #[test]
-fn nullable_allof_wrapper_hoists_inner_definition() {
+fn nullable_allof_wrapper_names_inner_distinctly() {
     // Plaid-class: a named untyped `nullable: true` allOf composition
-    // renders as `anyOf [inner, null]`; typify hands the definition's
-    // name to the inner subschema, colliding with the Option's newtype
-    // wrapper (`X(Option<X>)`, E0428). The render hoists the inner into
-    // a `{name}Inner` definition instead.
+    // renders as `anyOf [inner, null]`; typify forms an Option whose
+    // newtype wrapper takes the definition's name and names the inner
+    // `{name}Inner` (the render withholds a self-referential `title`,
+    // which would override that suggestion — see `Schema::to_draft07`).
     let document = serde_json::json!({
         "openapi": "3.0.0",
         "info": { "title": "t", "version": "1" },
@@ -267,12 +267,13 @@ fn nullable_allof_wrapper_hoists_inner_definition() {
 }
 
 #[test]
-fn null_member_string_enum_hoists_inner_definition() {
+fn null_member_string_enum_names_inner_distinctly() {
     // Plaid-class: a named `type: string` enum with a literal `null`
     // member (no `nullable: true`) prunes the null into an Option whose
-    // wrapper takes the definition's name; the variant enum needs a
-    // distinct one. The render hoists the null-free enum into
-    // `{name}Inner`.
+    // wrapper takes the definition's name; typify names the variant
+    // enum `{name}Inner`, and the render withholds the self-titled
+    // `title` that would override that suggestion (this spec titles the
+    // schema with its own name).
     let document = serde_json::json!({
         "openapi": "3.0.0",
         "info": { "title": "t", "version": "1" },

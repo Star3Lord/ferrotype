@@ -415,16 +415,24 @@ impl Schema {
                 Value::String(description.clone()),
             );
         }
-        // A nullable typed node renders as `type: [T, "null"]` (above),
-        // and typify names the Option wrapper's INNER type from the
-        // node's `title` when one is present — GitHub titles every
-        // schema with its own name, so the inner would collide with
-        // the wrapper (`X(Option<X>)`). Withhold the title on exactly
-        // that shape; the inner then falls back to typify's
-        // collision-free `{Wrapper}Inner` naming. The description
-        // (the useful doc text) still renders.
+        // Option-forming constructions carry the node's `title` into the
+        // *inner* (non-null) schema — the typed-nullable render swaps the
+        // instance type in place, the untyped-nullable wrap moves the
+        // whole node inside `anyOf [inner, null]`, and typify's
+        // null-member enum handling reads the enum's own metadata — and
+        // typify names such inners `{Wrapper}Inner` only as a
+        // *suggestion*, which a title overrides. GitHub and Plaid title
+        // every schema with its own name, so the inner would collide
+        // with the Option's newtype wrapper (`X(Option<X>)`, E0428).
+        // Withhold the title on exactly those shapes; the description
+        // (the useful doc text) still renders. Nullable multi-member
+        // unions are exempt: their `null` joins the member list and the
+        // title stays at the node level, where it names no inner.
+        let title_reaches_option_inner = (self.nullable
+            && (self.ty.is_some() || (self.one_of.is_empty() && self.any_of.is_empty())))
+            || (self.ty == Some(TypeHint::String) && self.enumeration.iter().any(Value::is_null));
         if let Some(title) = &self.title
-            && !(self.nullable && self.ty.is_some())
+            && !title_reaches_option_inner
         {
             map.insert("title".to_string(), Value::String(title.clone()));
         }

@@ -100,10 +100,12 @@ pub enum OptionalFields {
     AlwaysOption,
 }
 
-/// What to do with string/integer constraints. `Plain` strips string
-/// constraints from the lowered schema before typify sees them (see
-/// [`crate::pipeline`]) and maps integer formats to their plain Rust
-/// types via subset conversions (`with_conversion`).
+/// What to do with string/integer constraints. `Plain` maps constrained
+/// shapes to their plain Rust types via subset conversions
+/// (`with_conversion`): a `{type: string}` conversion for strings (safe
+/// because conversions never match schemas whose `enum`/`const` they
+/// don't specify, with the built-in format handling restated as
+/// more-specific conversions), and per-format integer conversions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ConstraintMode {
@@ -902,28 +904,27 @@ impl StyleConfig {
 
     /// Apply every typify-settings-backed key to `settings`. The keys
     /// typify has no setting for split across this crate's two levers:
-    /// pre-typify schema handling (the `constrained-strings` strip, the
-    /// `[[rules]]` `optional` rewrites) and the post-generation AST
-    /// passes — the decoration pass ([`crate::decorate`]) for derives /
-    /// attrs / `rename_all` / option-noise elision / patch machinery /
-    /// enum defaults / newtype conveniences, plus the override, mapping,
-    /// and condense passes.
+    /// pre-typify schema handling (the `[[rules]]` `optional` rewrites)
+    /// and the post-generation AST passes — the decoration pass
+    /// ([`crate::decorate`]) for derives / attrs / `rename_all` /
+    /// option-noise elision / patch machinery / enum defaults / newtype
+    /// conveniences, plus the override, mapping, and condense passes.
     pub fn apply_to_settings(&self, settings: &mut TypeSpaceSettings) {
         use typify::TypeSpaceImpl;
 
         if self.optional_fields == OptionalFields::AlwaysOption {
             settings.with_optional_properties(typify::OptionalProperties::Explicit);
         }
-        // `constrained_strings == Plain` is applied to the lowered
-        // schema instead (see `LoadedSpec::lower`): a `{type: string}`
-        // subset conversion would also capture string enums and
-        // formatted strings, which the old constraint handling never
-        // touched.
 
-        // `[style.formats]` entries register first: a conversion for the
-        // same `(type, format)` pair ties with the date/uuid sugar and
-        // the integers=Plain table below at equal specificity, and
-        // typify keeps the earliest-registered conversion among equals.
+        // Conversion registration order encodes precedence among equal
+        // specificity (typify keeps the earliest-registered conversion
+        // among equals): `[style.formats]` entries first, then the
+        // date/uuid sugar keys, then the `constrained-strings = "plain"`
+        // restatement of typify's built-in string formats, then the
+        // integers=Plain table, and last the catch-all `{type: string}`
+        // conversion (less specific than every format conversion, so its
+        // position matters only for exact `{type: string}` user entries,
+        // which win).
         //
         // Key shape is validated with a clean error in
         // `Overrides::resolve` (always run by `Generator::load`); a
@@ -947,9 +948,12 @@ impl StyleConfig {
             settings.with_conversion(
                 format_schema(instance_type, format),
                 mapping.type_path(),
-                format_conversion_impls(instance_type, format)
-                    .iter()
-                    .copied(),
+                conversion_impls(
+                    instance_type,
+                    Some(format),
+                    mapping.type_path(),
+                    mapping.capabilities(),
+                ),
             );
         }
         for (format, type_path) in [
@@ -961,7 +965,64 @@ impl StyleConfig {
                 settings.with_conversion(
                     format_schema(schemars::schema::InstanceType::String, format),
                     type_path,
-                    [TypeSpaceImpl::Display, TypeSpaceImpl::FromStr].into_iter(),
+                    conversion_impls(
+                        schemars::schema::InstanceType::String,
+                        Some(format),
+                        type_path,
+                        &[],
+                    ),
+                );
+            }
+        }
+        if self.constrained_strings == ConstraintMode::Plain {
+            // Restate typify's built-in string-format handling as
+            // conversions so the catch-all below can't swallow it (a
+            // user conversion for the same format, registered above,
+            // still wins the tie), then map every remaining plain
+            // string — conversions never match schemas whose
+            // `enum`/`const` they don't specify, so string enumerations
+            // are untouched.
+            for (format, type_path, impls) in [
+                (
+                    "uuid",
+                    "::uuid::Uuid",
+                    // uuid::Uuid implements Default (the nil UUID).
+                    &[
+                        TypeSpaceImpl::Display,
+                        TypeSpaceImpl::FromStr,
+                        TypeSpaceImpl::Default,
+                    ][..],
+                ),
+                (
+                    "date",
+                    "::chrono::naive::NaiveDate",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "date-time",
+                    "::chrono::DateTime<::chrono::offset::Utc>",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ip",
+                    "::std::net::IpAddr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ipv4",
+                    "::std::net::Ipv4Addr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ipv6",
+                    "::std::net::Ipv6Addr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+            ] {
+                settings.with_conversion(
+                    format_schema(schemars::schema::InstanceType::String, format),
+                    type_path,
+                    impls.iter().copied(),
                 );
             }
         }
@@ -992,6 +1053,21 @@ impl StyleConfig {
                     .into_iter(),
                 );
             }
+        }
+        if self.constrained_strings == ConstraintMode::Plain {
+            // The catch-all: every string schema a more specific
+            // conversion doesn't claim — constrained or not — is a
+            // plain `String`. Least specific of all conversions, so
+            // every format entry above wins; enumerations are exempt by
+            // the `enum`/`const` matching rule.
+            settings.with_conversion(
+                schemars::schema::SchemaObject {
+                    instance_type: Some(schemars::schema::InstanceType::String.into()),
+                    ..Default::default()
+                },
+                "::std::string::String",
+                STD_STRING_IMPLS.iter().copied(),
+            );
         }
         if self.allof == AllOfMode::Compose {
             settings.with_all_of_strategy(typify::AllOfStrategy::Compose);
@@ -1103,23 +1179,58 @@ fn parse_instance_type(name: &str) -> Option<schemars::schema::InstanceType> {
     }
 }
 
-/// The trait impls a `[style.formats]` conversion may claim for its
-/// target type: the string formats typify itself maps natively proxy
-/// `Display`/`FromStr` (the historical format-interception behavior);
-/// everything else claims nothing.
-fn format_conversion_impls(
+/// The full impl surface of `::std::string::String`, claimed whenever a
+/// conversion targets it so the native entry behaves exactly like
+/// typify's internal string type — in particular `FromStringIrrefutable`
+/// keeps untagged unions with a string member on the
+/// irrefutable-classification path (no `TryFrom<String>` ladder to
+/// conflict with the newtype/`From<String>` blanket impl) and `Default`
+/// keeps `Default`-satisfiability analysis accurate.
+const STD_STRING_IMPLS: &[typify::TypeSpaceImpl] = &[
+    typify::TypeSpaceImpl::Display,
+    typify::TypeSpaceImpl::FromStr,
+    typify::TypeSpaceImpl::FromStringIrrefutable,
+    typify::TypeSpaceImpl::Default,
+];
+
+/// The trait impls a conversion claims for its target type, feeding
+/// typify's impl knowledge (newtype proxying, untagged-union
+/// classification, `Default` satisfiability):
+///
+/// - capabilities declared on the entry (a `[style.formats]` table form)
+///   are authoritative;
+/// - a `::std::string::String` target claims the internal string type's
+///   full surface;
+/// - otherwise the string formats typify itself maps natively proxy
+///   `Display`/`FromStr` (the historical format-interception behavior),
+///   and everything else claims nothing.
+fn conversion_impls(
     instance_type: schemars::schema::InstanceType,
-    format: &str,
-) -> &'static [typify::TypeSpaceImpl] {
+    format: Option<&str>,
+    type_path: &str,
+    declared: &[Capability],
+) -> impl Iterator<Item = typify::TypeSpaceImpl> {
     use typify::TypeSpaceImpl;
     const DISPLAY_FROMSTR: &[TypeSpaceImpl] = &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr];
-    match (instance_type, format) {
-        (
-            schemars::schema::InstanceType::String,
-            "uuid" | "date" | "date-time" | "ip" | "ipv4" | "ipv6",
-        ) => DISPLAY_FROMSTR,
-        _ => &[],
-    }
+    let impls: Vec<TypeSpaceImpl> = if !declared.is_empty() {
+        declared
+            .iter()
+            .filter_map(|capability| capability.to_typify())
+            .collect()
+    } else if type_path.replace(' ', "").trim_start_matches("::") == "std::string::String"
+        || type_path == "String"
+    {
+        STD_STRING_IMPLS.to_vec()
+    } else {
+        match (instance_type, format) {
+            (
+                schemars::schema::InstanceType::String,
+                Some("uuid" | "date" | "date-time" | "ip" | "ipv4" | "ipv6"),
+            ) => DISPLAY_FROMSTR.to_vec(),
+            _ => Vec::new(),
+        }
+    };
+    impls.into_iter()
 }
 
 /// Merge a raw `[style]` TOML table over a preset, key by key. Only keys

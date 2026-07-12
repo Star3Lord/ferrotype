@@ -20,7 +20,8 @@ emit layout, operation partitioning, and the folder-tree writer. (An
 experimental in-house IR engine was built, audited, and retired in
 favor of this split — see [docs/MIGRATION.md](docs/MIGRATION.md),
 decision D15; the fork's knob surface was later condensed into the six
-wire-shape mechanisms and this crate's decoration pass — decision D24.)
+wire-shape mechanisms and this crate's decoration pass — decisions D24
+and D25.)
 
 ## Pipeline
 
@@ -51,11 +52,13 @@ produces nested `<op>/{request,response}` +
 - `src/spec/` — the typed `Spec` model: dialect-tolerant
 normalization (3.0.x + Swagger-2.0-converted), preserving
 `discriminator`/`examples`/operations for future consumers; renders the
-draft-07 document typify consumes (hoisting self-colliding nullable
-inners into `{name}Inner` definitions on the way).
+draft-07 document typify consumes (withholding self-referential
+`title`s on Option-forming shapes, where they would override typify's
+distinct `{name}Inner` naming).
 - `src/config.rs` — style as data: [`StyleConfig`], the presets, the
 `codegen.toml` loader, and the mapping onto the fork's
-`TypeSpaceSettings` mechanisms (subset conversions, optionality
+`TypeSpaceSettings` mechanisms (subset conversions — including the
+plain-strings catch-all and per-format integer tables — optionality
 policy, `allOf` strategy, open enums, docs).
 - `src/decorate.rs` — the decoration pass, first of the AST passes:
 derive lists, attribute stacks, `rename_all` + covered-rename elision,
@@ -66,9 +69,9 @@ knobs used to emit.
 - `src/modules.rs` — partitioned emission: assembles the nested module
 tree from `TypeSpace::to_stream_for` subsets (each with its own
 `error` module and the `defaults` fns its types need).
-- `src/idents.rs` — the Rust identifier forms of schema names
-(`rust_type_ident` / `rust_field_ident`, this crate's port of typify's
-sanitization) for config-selector resolution.
+- `src/idents.rs` — the Rust identifier forms of schema names for
+config-selector resolution (re-exporting the fork's `rust_type_ident`
+/ `rust_field_ident`).
 - `src/overrides.rs` — per-type / per-field override resolution: the
 deep-patch predicate the decoration pass consults, patch-machinery
 stripping, field type replacement, and hard-error selector validation.
@@ -533,12 +536,17 @@ open-enums = "Other"
 # `Default`/`PartialEq`/`Eq`/`Hash`/`Ord` derive from any generated
 # struct a mapped type cannot satisfy — transitively (a struct whose
 # required field lost Default loses it too), with a stderr warning per
-# removal. Option/Vec-wrapped fields don't constrain Default (they
-# default to empty) but do constrain the equality family; patch
-# companions keep Default (their fields are all Option) and share the
-# equality-family pruning; deep-patch annotations on fields of a type
-# that lost Default are dropped (struct_patch's none-as-default merge
-# needs Default) with the same warning treatment.
+# removal. The declared Display/FromStr/Default subset also feeds
+# typify's own impl knowledge (newtype proxying, untagged-union
+# classification, Default satisfiability), which the same pruning
+# consults for what config can't see: required non-zero integers,
+# constrained newtypes, undefaultable natives. Option/Vec-wrapped
+# fields don't constrain Default (they default to empty) but do
+# constrain the equality family; patch companions keep Default (their
+# fields are all Option) and share the equality-family pruning;
+# deep-patch annotations on fields of a type that lost Default are
+# dropped (struct_patch's none-as-default merge needs Default) with
+# the same warning treatment.
 [style.formats."string/date-time"]
 type = "::time::OffsetDateTime"
 field-attrs = ["serde(with = \"time::serde::iso8601\")"]
@@ -777,20 +785,28 @@ reaches the raw fork knobs underneath the data layer.
 
 The *wire-shape* semantics live in the fork behind a small set of
 opt-in `TypeSpaceSettings` mechanisms — subset-matching conversions
-(`with_conversion`), the optional-properties policy
+(`with_conversion`; `enum`/`const`-bearing schemas are exempt from
+subset matching, so a plain-strings catch-all can't swallow
+enumerations), the optional-properties policy
 (`with_optional_properties`), `allOf` composition
 (`with_all_of_strategy`), open string enums (`with_open_enum_variant`),
-docs control (`with_schema_in_docs`), and subset emission
-(`to_stream_for` / `iter_definitions`) — plus first-class OpenAPI
-document ingestion. This crate sequences the pipeline, maps
-[`StyleConfig`] data onto those mechanisms, and owns every decision
-typify structurally can't host: all decoration concerns (the derive
-lists, attribute stacks, `rename_all` + rename elision, option
-serde-noise elision, `struct_patch` machinery, enum first-variant
-defaults, string-newtype conveniences — `src/decorate.rs`), per-type /
-per-field overrides, condensed emission, partitioning, and trees. See
-the fork's `FORK_FEATURES.md` for the mechanism-by-mechanism mapping to
-settings, macro keys, and CLI flags. The fork's defaults match upstream
-byte-for-byte — its upstream test goldens are unchanged — so rebasing
-it onto upstream `main` stays cheap; every deviation is an explicit
-mechanism this crate drives.
+docs control (`with_schema_in_docs`), and subset emission plus
+introspection (`to_stream_for` / `iter_definitions` /
+`Type::default_derivable`, with `rust_type_ident` / `rust_field_ident`
+exported for selector resolution) — plus first-class OpenAPI document
+ingestion. Option-forming constructions name their inner types
+`{name}Inner` in the fork itself; this crate's render only withholds
+self-referential `title`s that would override that naming. This crate
+sequences the pipeline, maps [`StyleConfig`] data onto those
+mechanisms, and owns every decision typify structurally can't host:
+all decoration concerns (the derive lists, attribute stacks,
+`rename_all` + rename elision, option serde-noise elision,
+`struct_patch` machinery, enum first-variant defaults, string-newtype
+conveniences — `src/decorate.rs`), per-type / per-field overrides —
+with `Default`-satisfiability pruning informed by the fork's type
+knowledge — condensed emission, partitioning, and trees. See the
+fork's `FORK_FEATURES.md` for the mechanism-by-mechanism mapping to
+settings, macro keys, and CLI flags. The fork's defaults match
+upstream byte-for-byte — its upstream test goldens are unchanged — so
+rebasing it onto upstream `main` stays cheap; every deviation is an
+explicit mechanism this crate drives.

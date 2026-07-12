@@ -107,17 +107,20 @@ impl Mappings {
     /// Attach the configured field attributes (mapping defaults,
     /// overridden per field by the resolved `plans` — the rules and
     /// `[fields]` tiers), apply rule-driven field type replacements,
-    /// and prune derives the mapped types cannot satisfy. Returns the
-    /// names of generated enums whose `Default` synthesis must be
-    /// skipped ([`crate::postprocess::synthesize_enum_defaults`]
-    /// consults it).
+    /// and prune derives the types cannot satisfy — seeded both by the
+    /// config-declared capabilities of external mappings and by
+    /// `default_incapable`, the typify-knowledge tier (see
+    /// [`typify_default_incapable`]). Returns the names of generated
+    /// enums whose `Default` synthesis must be skipped
+    /// ([`crate::postprocess::synthesize_enum_defaults`] consults it).
     pub(crate) fn apply_to_file(
         &self,
         file: &mut syn::File,
         untagged_enum_defaults: bool,
         plans: &crate::rules::FieldPlans,
+        default_incapable: &BTreeSet<String>,
     ) -> Result<BTreeSet<String>> {
-        if self.entries.is_empty() && plans.is_empty() {
+        if self.entries.is_empty() && plans.is_empty() && default_incapable.is_empty() {
             return Ok(BTreeSet::new());
         }
 
@@ -129,7 +132,12 @@ impl Mappings {
 
         let mut skip_default_synthesis = BTreeSet::new();
         for &capability in MANAGED {
-            let lost = self.lose_fixpoint(&nodes, capability, untagged_enum_defaults);
+            let lost = self.lose_fixpoint(
+                &nodes,
+                capability,
+                untagged_enum_defaults,
+                default_incapable,
+            );
             if lost.is_empty() {
                 continue;
             }
@@ -163,14 +171,44 @@ impl Mappings {
     }
 
     /// The set of type names losing `capability`, mapped to the reason,
-    /// computed to a fixpoint over the generated item graph.
+    /// computed to a fixpoint over the generated item graph. For
+    /// `Default`, `default_incapable` (typify's type knowledge) seeds
+    /// the loss set alongside the config-declared external
+    /// capabilities.
     fn lose_fixpoint(
         &self,
         nodes: &BTreeMap<String, TypeNode>,
         capability: Capability,
         untagged_enum_defaults: bool,
+        default_incapable: &BTreeSet<String>,
     ) -> BTreeMap<String, String> {
         let mut lost: BTreeMap<String, String> = BTreeMap::new();
+        if capability == Capability::Default {
+            for (name, node) in nodes {
+                if !default_incapable.contains(name)
+                    || !node.governed_by(capability, untagged_enum_defaults)
+                {
+                    continue;
+                }
+                // Prefer the config-declared explanation when one exists
+                // (an external dependency without the capability names
+                // the field and the config key); the generic
+                // typify-knowledge reason covers what config can't see.
+                let config_explains = node.constraining_deps(capability).iter().any(|dep| {
+                    matches!(&dep.target, DepTarget::External { capabilities, .. }
+                        if !capabilities.contains(&capability))
+                });
+                if !config_explains {
+                    lost.insert(
+                        name.clone(),
+                        "typify reports the type cannot satisfy `Default` (a required \
+                         non-zero integer or constrained-newtype member, or a contained \
+                         enum without a designated default)"
+                            .to_string(),
+                    );
+                }
+            }
+        }
         loop {
             let mut changed = false;
             for (name, node) in nodes {
@@ -212,6 +250,133 @@ impl Mappings {
             }
         }
     }
+}
+
+/// The generated named types that cannot satisfy `Default` even under
+/// this crate's decoration — the typify-knowledge tier of the capability
+/// analysis, feeding [`Mappings::apply_to_file`].
+///
+/// [`typify::Type::default_derivable`] answers the satisfiability
+/// question against typify's own emission ("could this type derive
+/// `Default`?"), but two of this crate's decoration policies change the
+/// answer, so the walk is replayed here with those folded in:
+///
+/// - enums *become* defaultable under
+///   [`EnumDefaultMode::FirstUnitVariant`] (the decoration pass appends
+///   `impl Default` selecting the first unit variant) and under the
+///   `untagged-enum-defaults` synthesis (first variant with
+///   `Default::default()` payloads);
+/// - structs and newtypes with schema-specified defaults *stop* relying
+///   on them: the decoration pass replaces typify's hand-written
+///   `impl Default` with the configured derive, whose per-field
+///   `Default` bounds must then hold.
+///
+/// Leaf knowledge — non-zero integers, native conversion targets and
+/// their declared impls, tuple/array size limits — comes from typify
+/// ([`typify::Type::has_impl`]).
+pub(crate) fn typify_default_incapable(
+    type_space: &typify::TypeSpace,
+    style: &StyleConfig,
+) -> BTreeSet<String> {
+    use crate::config::EnumDefaultMode;
+    use typify::{TypeDetails, TypeEnumVariant, TypeId, TypeSpace, TypeSpaceImpl};
+
+    fn id_capable(
+        type_space: &TypeSpace,
+        type_id: &TypeId,
+        style: &StyleConfig,
+        memo: &mut BTreeMap<TypeId, Option<bool>>,
+    ) -> bool {
+        match memo.get(type_id) {
+            Some(Some(known)) => return *known,
+            // In progress: a cycle through required members has no
+            // finite default value.
+            Some(None) => return false,
+            None => {}
+        }
+        memo.insert(type_id.clone(), None);
+        let capable = type_space
+            .get_type(type_id)
+            .map(|ty| type_capable(type_space, &ty, style, memo))
+            .unwrap_or(true);
+        memo.insert(type_id.clone(), Some(capable));
+        capable
+    }
+
+    fn type_capable(
+        type_space: &TypeSpace,
+        ty: &typify::Type<'_>,
+        style: &StyleConfig,
+        memo: &mut BTreeMap<TypeId, Option<bool>>,
+    ) -> bool {
+        match ty.details() {
+            TypeDetails::Enum(details) => {
+                // A schema-specified default (typify's own impl)…
+                ty.has_impl(TypeSpaceImpl::Default)
+                    // …or the decoration pass's first-unit-variant impl…
+                    || (style.enum_default == EnumDefaultMode::FirstUnitVariant
+                        && details
+                            .variants()
+                            .any(|(_, variant)| matches!(variant, TypeEnumVariant::Simple)))
+                    // …or the untagged-payload synthesis
+                    // (`Self::First(Default::default(), ...)`).
+                    || (style.untagged_enum_defaults
+                        && details.variants().next().is_some_and(|(_, variant)| {
+                            match variant {
+                                TypeEnumVariant::Simple => true,
+                                TypeEnumVariant::Tuple(ids) => ids
+                                    .iter()
+                                    .all(|id| id_capable(type_space, id, style, memo)),
+                                TypeEnumVariant::Struct(props) => props
+                                    .iter()
+                                    .all(|(_, id)| id_capable(type_space, id, style, memo)),
+                            }
+                        }))
+            }
+            // The decoration pass replaces hand-written struct/newtype
+            // `impl Default`s with the derive, so a schema-specified
+            // default cannot stand in for member capability.
+            TypeDetails::Struct(details) => details
+                .properties()
+                .all(|(_, id)| id_capable(type_space, &id, style, memo)),
+            TypeDetails::Newtype(details) => id_capable(type_space, &details.inner(), style, memo),
+
+            TypeDetails::Box(id) => id_capable(type_space, &id, style, memo),
+            TypeDetails::Tuple(ids) => {
+                let ids: Vec<TypeId> = ids.collect();
+                ids.len() <= 12 && ids.iter().all(|id| id_capable(type_space, id, style, memo))
+            }
+            TypeDetails::Array(id, length) => {
+                length <= 32 && id_capable(type_space, &id, style, memo)
+            }
+
+            // Intrinsic defaults (None / empty), or leaf knowledge from
+            // typify (non-zero integers, native impls).
+            TypeDetails::Option(_)
+            | TypeDetails::Vec(_)
+            | TypeDetails::Map(..)
+            | TypeDetails::Set(_)
+            | TypeDetails::Unit
+            | TypeDetails::String => true,
+            TypeDetails::Builtin(_) => ty.has_impl(TypeSpaceImpl::Default),
+
+            #[allow(unreachable_patterns)]
+            _ => true,
+        }
+    }
+
+    let mut memo = BTreeMap::new();
+    type_space
+        .iter_types()
+        .filter(|ty| {
+            matches!(
+                ty.details(),
+                TypeDetails::Struct(_) | TypeDetails::Enum(_) | TypeDetails::Newtype(_)
+            )
+        })
+        .filter(|ty| !id_capable(type_space, &ty.id(), style, &mut memo))
+        .map(|ty| ty.name())
+        .collect()
 }
 
 impl MappingEntry {
@@ -340,7 +505,9 @@ fn attach_attrs(
                     }
                     match match_field(entries, &field.ty) {
                         Some(FieldMatch::Required(index)) => {
-                            field.attrs.extend(entries[index].field_attrs.iter().cloned());
+                            field
+                                .attrs
+                                .extend(entries[index].field_attrs.iter().cloned());
                         }
                         Some(FieldMatch::Optional(index)) => {
                             // Deliberately NOT falling back to
@@ -465,9 +632,7 @@ impl TypeNode {
                 .iter()
                 .filter(|dep| !dep.wrapped)
                 .collect(),
-            (Capability::Default, false) => {
-                self.deps.iter().filter(|dep| !dep.wrapped).collect()
-            }
+            (Capability::Default, false) => self.deps.iter().filter(|dep| !dep.wrapped).collect(),
             _ => self.deps.iter().collect(),
         }
     }
@@ -614,8 +779,7 @@ fn collect_deps(
         return;
     };
     let ident = last.ident.to_string();
-    let is_defaulting_wrapper =
-        matches!(ident.as_str(), "Option" | "Vec" | "HashMap" | "BTreeMap");
+    let is_defaulting_wrapper = matches!(ident.as_str(), "Option" | "Vec" | "HashMap" | "BTreeMap");
     if (is_defaulting_wrapper || ident == "Box")
         && let syn::PathArguments::AngleBracketed(args) = &last.arguments
     {
@@ -697,11 +861,7 @@ fn derive_idents(attrs: &[syn::Attribute]) -> BTreeSet<String> {
 /// `#[patch(attribute(derive(...)))]` companion lists too. Patch
 /// companions keep `Default`: their fields are all `Option`-wrapped,
 /// which defaults fine regardless of the inner type.
-fn prune_derives(
-    items: &mut [syn::Item],
-    capability: Capability,
-    lost: &BTreeMap<String, String>,
-) {
+fn prune_derives(items: &mut [syn::Item], capability: Capability, lost: &BTreeMap<String, String>) {
     let ident = capability_ident(capability);
     let prune_companion = capability != Capability::Default;
     for item in items {
@@ -761,16 +921,14 @@ fn remove_from_patch_companion_derive(attr: &mut syn::Attribute, ident: &str) {
     let syn::Meta::List(patch_meta) = &mut attr.meta else {
         return;
     };
-    let Ok(syn::Meta::List(attribute_meta)) =
-        syn::parse2::<syn::Meta>(patch_meta.tokens.clone())
+    let Ok(syn::Meta::List(attribute_meta)) = syn::parse2::<syn::Meta>(patch_meta.tokens.clone())
     else {
         return;
     };
     if !attribute_meta.path.is_ident("attribute") {
         return;
     }
-    let Ok(syn::Meta::List(derive_meta)) =
-        syn::parse2::<syn::Meta>(attribute_meta.tokens.clone())
+    let Ok(syn::Meta::List(derive_meta)) = syn::parse2::<syn::Meta>(attribute_meta.tokens.clone())
     else {
         return;
     };
@@ -816,9 +974,7 @@ fn prune_deep_patch_annotations(items: &mut [syn::Item], lost: &BTreeMap<String,
                         inner = unwrapped;
                     }
                     let target = normalized_tokens(inner);
-                    if !lost.contains_key(&target)
-                        || !field.attrs.iter().any(is_deep_patch_attr)
-                    {
+                    if !lost.contains_key(&target) || !field.attrs.iter().any(is_deep_patch_attr) {
                         continue;
                     }
                     field.attrs.retain(|attr| !is_deep_patch_attr(attr));

@@ -5,17 +5,23 @@ Generate ergonomic Rust types from OpenAPI specs. Point it at an OpenAPI
 fields, `camelCase` serde renames, `#[serde(flatten)]` inheritance,
 `struct_patch` deep patches — partitioned into one module per operation.
 
-The schema-to-Rust core is the local
-[typify fork](../typify/FORK_FEATURES.md) (battle-tested upstream
-semantics plus opt-in ergonomic knobs, kept rebase-clean against
-upstream `main`). Everything typify doesn't own lives here, as data and
-verified AST passes: declarative style ([`StyleConfig`], a
-`codegen.toml`, built-in profile presets), per-type and per-field
-overrides (patch opt-out, deep-patch control, type replacement, module
-placement), the condensed emit layout, operation partitioning, and the
-folder-tree writer. (An experimental in-house IR engine was built,
-audited, and retired in favor of this split — see
-[docs/MIGRATION.md](docs/MIGRATION.md), decision D15.)
+The schema-to-Rust core is the
+[typify fork](https://github.com/Star3Lord/typify) (battle-tested
+upstream semantics plus a small set of opt-in wire-shape mechanisms —
+subset conversions, explicit optionality, `allOf` composition, open
+enums, subset emission — kept rebase-clean against upstream `main`; see
+its `FORK_FEATURES.md`). Everything typify doesn't own lives here, as
+data and verified AST passes: declarative style ([`StyleConfig`], a
+`codegen.toml`, built-in profile presets), the decoration pass (derive
+lists, attribute stacks, `rename_all`, patch machinery, enum defaults,
+newtype conveniences), per-type and per-field overrides (patch opt-out,
+deep-patch control, type replacement, module placement), the condensed
+emit layout, operation partitioning, and the folder-tree writer. (An
+experimental in-house IR engine was built, audited, and retired in
+favor of this split — see [docs/MIGRATION.md](docs/MIGRATION.md),
+decision D15; the fork's knob surface was later condensed into the six
+wire-shape mechanisms and this crate's decoration pass — decisions D24
+and D25.)
 
 ## Pipeline
 
@@ -25,8 +31,10 @@ load (YAML/JSON)
   → partition (operation reachability → per-op modules + shared)
   → Spec (typed normalization; keeps discriminator/examples)
   → draft-07 render → typify fork (StyleConfig → TypeSpaceSettings)
-  → AST post-passes (per-type/per-field overrides, patch stripping,
-     Default synthesis for untagged oneOf, condensed emit style)
+  → AST post-passes (decoration: derives/attrs/rename_all/patch
+     machinery/enum defaults; per-type/per-field overrides, patch
+     stripping, Default synthesis for untagged oneOf, condensed emit
+     style)
   → format (prettyplease) → write (idempotent)
 ```
 
@@ -44,13 +52,29 @@ produces nested `<op>/{request,response}` +
 - `src/spec/` — the typed `Spec` model: dialect-tolerant
 normalization (3.0.x + Swagger-2.0-converted), preserving
 `discriminator`/`examples`/operations for future consumers; renders the
-draft-07 document typify consumes.
+draft-07 document typify consumes (withholding self-referential
+`title`s on Option-forming shapes, where they would override typify's
+distinct `{name}Inner` naming).
 - `src/config.rs` — style as data: [`StyleConfig`], the presets, the
 `codegen.toml` loader, and the mapping onto the fork's
-`TypeSpaceSettings` knobs.
+`TypeSpaceSettings` mechanisms (subset conversions — including the
+plain-strings catch-all and per-format integer tables — optionality
+policy, `allOf` strategy, open enums, docs).
+- `src/decorate.rs` — the decoration pass, first of the AST passes:
+derive lists, attribute stacks, `rename_all` + covered-rename elision,
+option serde-noise elision, deep-patch annotations and patch-companion
+naming mirrors, enum first-unit-variant `Default` impls, and
+string-newtype conveniences — everything the fork's retired style
+knobs used to emit.
+- `src/modules.rs` — partitioned emission: assembles the nested module
+tree from `TypeSpace::to_stream_for` subsets (each with its own
+`error` module and the `defaults` fns its types need).
+- `src/idents.rs` — the Rust identifier forms of schema names for
+config-selector resolution (re-exporting the fork's `rust_type_ident`
+/ `rust_field_ident`).
 - `src/overrides.rs` — per-type / per-field override resolution: the
-deep-patch predicate handed to the fork, patch-machinery stripping,
-field type replacement, and hard-error selector validation.
+deep-patch predicate the decoration pass consults, patch-machinery
+stripping, field type replacement, and hard-error selector validation.
 - `src/condense.rs` — the condensed emit style, as a token-verified
 AST transformation (see [below](#readable-output--emit-style)).
 - `src/render.rs` — the shared rendering passes both output modes
@@ -398,7 +422,11 @@ stage.partition_mut().unwrap().by_schema         // move a type between
 stage.settings_mut().with_schema_in_docs(true);  // any typify knob
 
 let stage = stage.build_types()?;                // typify has run
-let names = stage.type_space().definition_rust_names();
+let names: Vec<(String, String)> = stage
+    .type_space()
+    .iter_definitions()
+    .map(|(key, ty)| (key.to_string(), ty.name()))
+    .collect();
 
 let mut file = stage.into_file()?;               // post-processed syn AST
 file.items.push(syn::parse_quote! { pub const GENERATED: bool = true; });
@@ -416,18 +444,26 @@ method is implemented as exactly this sequence. See
 ## Macro
 
 `typify::import_types!` consumes JSON Schema, not OpenAPI; the `lower`
-subcommand bridges the gap. The fork's macro knobs cover the wire-shape
-settings:
+subcommand bridges the gap. (The fork itself also detects OpenAPI
+documents directly, by their top-level `openapi` member.) The fork's
+macro knobs cover the wire-shape settings:
 
 ```rust
 typify::import_types!(
     schema = "petstore.schema.json",
-    unconstrained_string = true,
-    array_optionality = OptionalIfNotRequired,
-    allof_strategy = Compose,
-    conditional_derives = [ { feature = "schemars", body = schemars::JsonSchema } ],
+    optional_properties = Explicit,
+    all_of_strategy = Compose,
+    open_enum_variant = "Other",
+    schema_in_docs = false,
+    convert = {
+        { type = "string", format = "date-time" } = ::std::string::String,
+    },
 );
 ```
+
+Everything decoration-flavored (derives, attrs, `rename_all`, patch
+machinery) is this crate's post-processing and has no macro
+counterpart.
 
 
 
@@ -470,7 +506,7 @@ deep-patch = "all-option-structs"
 # every `#[patch(...)]` attribute, and all deep-patch annotations
 # (api-client default: true).
 patch = true
-# Open string enums (the fork's `with_open_string_enums`): every plain
+# Open string enums (the fork's `with_open_enum_variant`): every plain
 # string enum gains a trailing `#[serde(untagged)] Other(String)`
 # catch-all, so wire values outside the documented set round-trip
 # losslessly instead of failing to deserialize. The value names the
@@ -478,8 +514,9 @@ patch = true
 # enums drop `Copy`. Use when the spec's enums lag the live wire.
 open-enums = "Other"
 
-# Map schema `type`+`format` pairs to arbitrary Rust types (the fork's
-# `with_format_type`): instance types string/integer/number, any format.
+# Map schema `type`+`format` pairs to arbitrary Rust types (a subset
+# conversion on the fork's `with_conversion`): instance types
+# string/integer/number, any format.
 # An entry wins over typify's built-in format handling and over the
 # `date` / `date-time` / `uuid` sugar keys for the same format. The
 # mapped path is emitted verbatim and must implement
@@ -499,12 +536,17 @@ open-enums = "Other"
 # `Default`/`PartialEq`/`Eq`/`Hash`/`Ord` derive from any generated
 # struct a mapped type cannot satisfy — transitively (a struct whose
 # required field lost Default loses it too), with a stderr warning per
-# removal. Option/Vec-wrapped fields don't constrain Default (they
-# default to empty) but do constrain the equality family; patch
-# companions keep Default (their fields are all Option) and share the
-# equality-family pruning; deep-patch annotations on fields of a type
-# that lost Default are dropped (struct_patch's none-as-default merge
-# needs Default) with the same warning treatment.
+# removal. The declared Display/FromStr/Default subset also feeds
+# typify's own impl knowledge (newtype proxying, untagged-union
+# classification, Default satisfiability), which the same pruning
+# consults for what config can't see: required non-zero integers,
+# constrained newtypes, undefaultable natives. Option/Vec-wrapped
+# fields don't constrain Default (they default to empty) but do
+# constrain the equality family; patch companions keep Default (their
+# fields are all Option) and share the equality-family pruning;
+# deep-patch annotations on fields of a type that lost Default are
+# dropped (struct_patch's none-as-default merge needs Default) with
+# the same warning treatment.
 [style.formats."string/date-time"]
 type = "::time::OffsetDateTime"
 field-attrs = ["serde(with = \"time::serde::iso8601\")"]
@@ -603,15 +645,16 @@ cargo run -- generate --spec spec.yaml --profile api-client \
     --config codegen.toml --split-request-response --output-dir src/generated
 ```
 
-How the granular keys land (the fork's knob surface is global-per-kind
-by design, so this crate owns the per-type/per-field decisions): the
-`deep-patch` keys become the predicate handed to the fork's
-`with_deep_patch_filter`, deciding every `#[patch(name = ...)]`
-annotation at the source; `derives-add` rides the fork's per-type
-`with_patch` mechanism; `patch = false` types get their `Patch` derive
-and `patch(...)` attributes stripped in a post-generation AST pass; and
-`type` replacements rewrite the field's AST (its deep-patch annotation
-is withheld, since a replaced type has no known Patch companion).
+How the granular keys land (the fork owns only wire-shape decisions,
+so this crate owns everything per-type/per-field): the `deep-patch`
+keys become the predicate the decoration pass consults per field,
+deciding every `#[patch(name = ...)]` annotation; `derives-add` joins
+the decoration pass's derive-list rewrite (riding the fork's per-type
+`with_patch` mechanism when a kind's derive list is left native);
+`patch = false` types get their `Patch` derive and `patch(...)`
+attributes stripped in a post-generation AST pass; and `type`
+replacements rewrite the field's AST (its deep-patch annotation is
+withheld, since a replaced type has no known Patch companion).
 
 Unmatched `[types]`/`[fields]` selectors are hard errors, as are
 contradictions the generated code could not satisfy (`patch = false` on
@@ -740,13 +783,30 @@ reaches the raw fork knobs underneath the data layer.
 
 ## Relationship to the typify fork
 
-The schema-to-Rust semantics live in the fork behind opt-in
-`TypeSpaceSettings` knobs; this crate sequences the pipeline, maps
-[`StyleConfig`] data onto those knobs, and owns every decision typify
-structurally can't host (per-type/per-field overrides, condensed
-emission, partitioning, trees). See
-`[../typify/FORK_FEATURES.md](../typify/FORK_FEATURES.md)` for the full
-feature-by-feature mapping to settings, macro keys, and CLI flags. The
-fork's defaults match upstream byte-for-byte — its upstream test goldens
-are unchanged — so rebasing it onto upstream `main` stays cheap; every
-deviation is an explicit knob this crate turns.
+The *wire-shape* semantics live in the fork behind a small set of
+opt-in `TypeSpaceSettings` mechanisms — subset-matching conversions
+(`with_conversion`; `enum`/`const`-bearing schemas are exempt from
+subset matching, so a plain-strings catch-all can't swallow
+enumerations), the optional-properties policy
+(`with_optional_properties`), `allOf` composition
+(`with_all_of_strategy`), open string enums (`with_open_enum_variant`),
+docs control (`with_schema_in_docs`), and subset emission plus
+introspection (`to_stream_for` / `iter_definitions` /
+`Type::default_derivable`, with `rust_type_ident` / `rust_field_ident`
+exported for selector resolution) — plus first-class OpenAPI document
+ingestion. Option-forming constructions name their inner types
+`{name}Inner` in the fork itself; this crate's render only withholds
+self-referential `title`s that would override that naming. This crate
+sequences the pipeline, maps [`StyleConfig`] data onto those
+mechanisms, and owns every decision typify structurally can't host:
+all decoration concerns (the derive lists, attribute stacks,
+`rename_all` + rename elision, option serde-noise elision,
+`struct_patch` machinery, enum first-variant defaults, string-newtype
+conveniences — `src/decorate.rs`), per-type / per-field overrides —
+with `Default`-satisfiability pruning informed by the fork's type
+knowledge — condensed emission, partitioning, and trees. See the
+fork's `FORK_FEATURES.md` for the mechanism-by-mechanism mapping to
+settings, macro keys, and CLI flags. The fork's defaults match
+upstream byte-for-byte — its upstream test goldens are unchanged — so
+rebasing it onto upstream `main` stays cheap; every deviation is an
+explicit mechanism this crate drives.

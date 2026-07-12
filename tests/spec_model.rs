@@ -219,11 +219,107 @@ fn string_enum_with_mistyped_scalar_members_stringifies() {
 }
 
 #[test]
+fn nullable_allof_wrapper_names_inner_distinctly() {
+    // Plaid-class: a named untyped `nullable: true` allOf composition
+    // renders as `anyOf [inner, null]`; typify forms an Option whose
+    // newtype wrapper takes the definition's name and names the inner
+    // `{name}Inner` (the render withholds a self-referential `title`,
+    // which would override that suggestion — see `Schema::to_draft07`).
+    let document = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "AccessNullable": {
+                "nullable": true,
+                "description": "Allowed products.",
+                "allOf": [
+                    { "$ref": "#/components/schemas/Access" },
+                    { "type": "object", "additionalProperties": true }
+                ]
+            },
+            "Access": {
+                "type": "object",
+                "properties": { "account_data": { "type": "string" } }
+            },
+            "Holder": {
+                "type": "object",
+                "properties": {
+                    "access": { "$ref": "#/components/schemas/AccessNullable" }
+                }
+            }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("spec_model");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("nullable_allof.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
+    let out = openapi_codegen::Generator::new(&path)
+        .profile(openapi_codegen::StyleProfile::ApiClient)
+        .generate_to_string()
+        .unwrap();
+
+    assert!(
+        out.contains("pub struct AccessNullable(pub ::std::option::Option<AccessNullableInner>);"),
+        "{out}",
+    );
+    assert!(out.contains("pub struct AccessNullableInner {"), "{out}");
+}
+
+#[test]
+fn null_member_string_enum_names_inner_distinctly() {
+    // Plaid-class: a named `type: string` enum with a literal `null`
+    // member (no `nullable: true`) prunes the null into an Option whose
+    // wrapper takes the definition's name; typify names the variant
+    // enum `{name}Inner`, and the render withholds the self-titled
+    // `title` that would override that suggestion (this spec titles the
+    // schema with its own name).
+    let document = serde_json::json!({
+        "openapi": "3.0.0",
+        "info": { "title": "t", "version": "1" },
+        "paths": {},
+        "components": { "schemas": {
+            "PayFrequencyValue": {
+                "type": "string",
+                "title": "PayFrequencyValue",
+                "description": "The frequency of the pay period.",
+                "enum": ["monthly", "weekly", null]
+            },
+            "Holder": {
+                "type": "object",
+                "properties": {
+                    "frequency": { "$ref": "#/components/schemas/PayFrequencyValue" }
+                }
+            }
+        } }
+    });
+    let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("spec_model");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("null_member_enum.json");
+    std::fs::write(&path, serde_json::to_string_pretty(&document).unwrap()).unwrap();
+    let out = openapi_codegen::Generator::new(&path)
+        .profile(openapi_codegen::StyleProfile::ApiClient)
+        .generate_to_string()
+        .unwrap();
+
+    assert!(
+        out.contains(
+            "pub struct PayFrequencyValue(pub ::std::option::Option<PayFrequencyValueInner>);"
+        ),
+        "{out}",
+    );
+    assert!(out.contains("pub enum PayFrequencyValueInner"), "{out}");
+    assert!(out.contains("Monthly"), "{out}");
+}
+
+#[test]
 fn null_default_on_non_nullable_node_is_dropped() {
     // DigitalOcean-class: `default: null` on a plain oneOf union means
     // "no default" (null is not a value of the type); typify would
-    // reject or panic on it. Nullable nodes keep theirs — null is the
-    // Option's intrinsic default.
+    // reject or panic on it. Nullable nodes' `default: null` is the
+    // Option's intrinsic default — identical to no default — and is
+    // omitted too, so it can't leak onto the inner type of typify's
+    // Option conversion.
     let document = serde_json::json!({
         "openapi": "3.0.0",
         "info": { "title": "t", "version": "1" },

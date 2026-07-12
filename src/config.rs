@@ -32,17 +32,6 @@ pub enum KindFilter {
     Newtypes,
 }
 
-impl KindFilter {
-    fn to_typify(self) -> typify::TypeKindFilter {
-        match self {
-            KindFilter::All => typify::TypeKindFilter::ALL,
-            KindFilter::Structs => typify::TypeKindFilter::STRUCTS,
-            KindFilter::Enums => typify::TypeKindFilter::ENUMS,
-            KindFilter::Newtypes => typify::TypeKindFilter::NEWTYPES,
-        }
-    }
-}
-
 /// Position of an attribute relative to the main `#[derive(...)]`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -52,17 +41,8 @@ pub enum AttrPosition {
     AfterDerive,
 }
 
-impl AttrPosition {
-    fn to_typify(self) -> typify::AttrPosition {
-        match self {
-            AttrPosition::BeforeDerive => typify::AttrPosition::BeforeDerive,
-            AttrPosition::AfterDerive => typify::AttrPosition::AfterDerive,
-        }
-    }
-}
-
-/// An unconditional attribute line, mapped to
-/// [`TypeSpaceSettings::with_unconditional_attr_at`].
+/// An unconditional attribute line, applied by the decoration pass
+/// ([`crate::decorate`]).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttrEntry {
@@ -76,8 +56,8 @@ pub struct AttrEntry {
     pub kinds: KindFilter,
 }
 
-/// A `#[cfg_attr(feature = <feature>, derive(<derive>))]` line, mapped
-/// to [`TypeSpaceSettings::with_conditional_derive_for`].
+/// A `#[cfg_attr(feature = <feature>, derive(<derive>))]` line, applied
+/// by the decoration pass ([`crate::decorate`]).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CondDeriveEntry {
@@ -87,8 +67,8 @@ pub struct CondDeriveEntry {
     pub kinds: KindFilter,
 }
 
-/// A `#[cfg_attr(feature = <feature>, <attr>)]` line, mapped to
-/// [`TypeSpaceSettings::with_conditional_attr_at`].
+/// A `#[cfg_attr(feature = <feature>, <attr>)]` line, applied by the
+/// decoration pass ([`crate::decorate`]).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CondAttrEntry {
@@ -104,24 +84,28 @@ fn kind_all() -> KindFilter {
     KindFilter::All
 }
 
-/// When is a non-required field `Option<T>`? Mapped to the fork's three
-/// optionality knobs (`with_array_optionality`,
-/// `with_default_bool_optionality`, `with_defaulted_field_optionality`).
+/// When is a non-required field `Option<T>`? Mapped to the fork's
+/// `with_optional_properties` policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum OptionalFields {
-    /// Upstream typify shapes (the default): non-required arrays stay
-    /// `Vec<T>` + `serde(default)`, defaulted scalars stay bare with
-    /// `defaults::` helper fns.
+    /// Upstream typify shapes (the default, `OptionalProperties::Collapsed`):
+    /// non-required arrays stay `Vec<T>` + `serde(default)`, defaulted
+    /// scalars stay bare with `defaults::` helper fns.
     #[default]
     Bare,
     /// Every non-required field is `Option<T>` — schema defaults do not
-    /// collapse the wrapper (the house style).
+    /// collapse the wrapper (the house style;
+    /// `OptionalProperties::Explicit`).
     AlwaysOption,
 }
 
-/// What to do with string/integer constraints. Mapped to
-/// `with_unconstrained_string` / `with_unconstrained_int`.
+/// What to do with string/integer constraints. `Plain` maps constrained
+/// shapes to their plain Rust types via subset conversions
+/// (`with_conversion`): a `{type: string}` conversion for strings (safe
+/// because conversions never match schemas whose `enum`/`const` they
+/// don't specify, with the built-in format handling restated as
+/// more-specific conversions), and per-format integer conversions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ConstraintMode {
@@ -133,7 +117,7 @@ pub enum ConstraintMode {
     Plain,
 }
 
-/// `allOf` handling. Mapped to `with_allof_strategy`.
+/// `allOf` handling. Mapped to `with_all_of_strategy`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AllOfMode {
@@ -146,8 +130,8 @@ pub enum AllOfMode {
     Compose,
 }
 
-/// Enum `Default` synthesis. Mapped to
-/// `with_enum_first_variant_default`.
+/// Enum `Default` synthesis. `FirstUnitVariant` is applied by the
+/// decoration pass ([`crate::decorate`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EnumDefaultMode {
@@ -160,7 +144,8 @@ pub enum EnumDefaultMode {
 }
 
 /// Deep-patch annotation policy, resolved together with the `patch`
-/// keys into the fork's `with_deep_patch_filter` closure.
+/// keys into the predicate driving the decoration pass's
+/// `#[patch(name = ...)]` annotations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum DeepPatchMode {
@@ -188,11 +173,12 @@ pub enum EmitStyle {
     Condensed,
 }
 
-/// Ordered derive lists per type kind, mapped to
-/// `with_unconditional_derive_for` (insertion order preserved — this is
-/// how derive-list ordering is controlled). An empty list means the
-/// upstream base set (`::serde::Serialize`, `::serde::Deserialize`,
-/// `Debug`, `Clone`, lexicographically sorted).
+/// Ordered derive lists per type kind, applied by the decoration pass
+/// (insertion order preserved — this is how derive-list ordering is
+/// controlled; the list replaces typify's base set and kind intrinsics).
+/// An empty list means typify's native derive list (`::serde::Serialize`,
+/// `::serde::Deserialize`, `Debug`, `Clone`, plus kind intrinsics,
+/// lexicographically sorted).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct DeriveLists {
@@ -237,9 +223,7 @@ impl Capability {
     pub(crate) fn to_typify(self) -> Option<typify::TypeSpaceImpl> {
         match self {
             Capability::FromStr => Some(typify::TypeSpaceImpl::FromStr),
-            Capability::FromStringIrrefutable => {
-                Some(typify::TypeSpaceImpl::FromStringIrrefutable)
-            }
+            Capability::FromStringIrrefutable => Some(typify::TypeSpaceImpl::FromStringIrrefutable),
             Capability::Display => Some(typify::TypeSpaceImpl::Display),
             Capability::Default => Some(typify::TypeSpaceImpl::Default),
             _ => None,
@@ -595,54 +579,63 @@ pub struct RuleApply {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", default)]
 pub struct StyleConfig {
-    /// → optionality knobs (see [`OptionalFields`]).
+    /// → `with_optional_properties` (see [`OptionalFields`]).
     pub optional_fields: OptionalFields,
-    /// → `with_unconstrained_string`.
+    /// String constraint handling; `plain` strips `pattern` /
+    /// `minLength` / `maxLength` from non-enum string schemas in the
+    /// lowered document, so no validating newtypes are generated.
     pub constrained_strings: ConstraintMode,
-    /// → `with_unconstrained_int`.
+    /// Integer constraint handling; `plain` registers per-format subset
+    /// conversions (`integer/int32` → `i32`, …) so `minimum: 1` never
+    /// produces a `NonZero*` type.
     pub integers: ConstraintMode,
-    /// → `with_date_type`; `None` keeps upstream's `chrono` mapping.
+    /// → a `{type: string, format: date}` conversion; `None` keeps
+    /// upstream's `chrono` mapping.
     pub date: Option<String>,
-    /// → `with_date_time_type`.
+    /// → a `{type: string, format: date-time}` conversion.
     pub date_time: Option<String>,
-    /// → `with_uuid_type`; `None` keeps upstream's `uuid` mapping.
+    /// → a `{type: string, format: uuid}` conversion; `None` keeps
+    /// upstream's `uuid` mapping.
     pub uuid: Option<String>,
-    /// → `with_format_type`: map `"<instance-type>/<format>"` keys
-    /// (instance types `string`, `integer`, `number` — the instance
-    /// type keeps `"string/int64"` distinct from `"integer/int64"`) to
-    /// Rust types, either as a bare path shorthand
-    /// (`"string/decimal" = "::rust_decimal::Decimal"`) or the full
-    /// [`FormatMapping`] table form carrying field attributes and
-    /// declared capabilities. An entry wins over typify's built-in
-    /// format handling and over the [`Self::date`] / [`Self::date_time`]
-    /// / [`Self::uuid`] sugar keys for the same format. Mapped types
-    /// must implement `Serialize`/`Deserialize` for the wire format.
-    /// Malformed keys (no `/`) are hard errors at generation time.
+    /// Map `"<instance-type>/<format>"` keys (instance types `string`,
+    /// `integer`, `number` — the instance type keeps `"string/int64"`
+    /// distinct from `"integer/int64"`) to Rust types, either as a bare
+    /// path shorthand (`"string/decimal" = "::rust_decimal::Decimal"`)
+    /// or the full [`FormatMapping`] table form carrying field
+    /// attributes and declared capabilities. Each entry becomes a
+    /// `with_conversion` subset conversion; it wins over typify's
+    /// built-in format handling and over the [`Self::date`] /
+    /// [`Self::date_time`] / [`Self::uuid`] sugar keys for the same
+    /// format. Mapped types must implement `Serialize`/`Deserialize`
+    /// for the wire format. Malformed keys (no `/`) are hard errors at
+    /// generation time.
     #[serde(default)]
     pub formats: BTreeMap<String, FormatMapping>,
-    /// → `with_struct_rename_all`: struct-level `rename_all` case, with
-    /// covered per-field renames elided.
+    /// Struct-level `#[serde(rename_all = "<case>")]`, with covered
+    /// per-field renames elided; applied by the decoration pass.
     pub rename_all: Option<String>,
-    /// → `with_allof_strategy`.
+    /// → `with_all_of_strategy`.
     pub allof: AllOfMode,
-    /// → `with_enum_first_variant_default`.
+    /// Enum `Default` synthesis (see [`EnumDefaultMode`]); applied by
+    /// the decoration pass.
     pub enum_default: EnumDefaultMode,
-    /// → `with_open_string_enums`: give every plain string enum a
+    /// → `with_open_enum_variant`: give every plain string enum a
     /// trailing `#[serde(untagged)] <Name>(String)` catch-all variant,
     /// so wire values outside the documented set round-trip instead of
     /// failing to deserialize. The value names the catch-all variant
     /// (`open-enums = "Other"`). Enums already declaring a variant with
     /// that name stay closed; opened enums drop `Copy`.
     pub open_enums: Option<String>,
-    /// → `with_elide_option_field_defaults`: drop the `default` +
-    /// `skip_serializing_if = "Option::is_none"` pair on `Option<T>`
-    /// fields (a struct-level `skip_serializing_none` attr is assumed).
+    /// Drop the `default` + `skip_serializing_if = "Option::is_none"`
+    /// pair on `Option<T>` fields (a struct-level
+    /// `skip_serializing_none` attr is assumed); applied by the
+    /// decoration pass.
     pub elide_option_defaults: bool,
     /// → `with_schema_in_docs`: embed the full JSON Schema `<details>`
     /// block in doc comments (upstream default `true`).
     pub schema_in_docs: bool,
-    /// → `with_string_newtype_conveniences`: `AsRef<str>` / `Display` /
-    /// `From<&str>` on string newtypes.
+    /// `AsRef<str>` / `Display` / `From<&str>` on string newtypes;
+    /// applied by the decoration pass.
     pub string_newtype_conveniences: bool,
     /// The `struct_patch` baseline. `true` (the default) lets structs
     /// carry whatever patch machinery the style data declares (the
@@ -653,8 +646,8 @@ pub struct StyleConfig {
     /// way. Resolved by [`crate::patch_plan::PatchPlan`].
     pub patch: bool,
     /// Deep-patch annotation policy (see [`DeepPatchMode`]); resolved
-    /// into the fork's `with_deep_patch_filter` closure together with
-    /// the `patch` keys.
+    /// into the predicate driving the decoration pass together with the
+    /// `patch` keys.
     pub deep_patch: DeepPatchMode,
     /// Output layout: expanded (typify's native shape) or condensed
     /// (macro + shared `support` module); see [`crate::condense`].
@@ -663,15 +656,18 @@ pub struct StyleConfig {
     /// variant (post-generation AST pass; required whenever structs
     /// derive `Default` and may hold such an enum in a required field).
     pub untagged_enum_defaults: bool,
-    /// → `with_unconditional_derive_for`, in order, per kind.
+    /// The ordered per-kind derive lists; applied by the decoration
+    /// pass.
     pub derives: DeriveLists,
-    /// → `with_unconditional_attr_at`.
+    /// Unconditional attribute lines; applied by the decoration pass.
     #[serde(default)]
     pub attrs: Vec<AttrEntry>,
-    /// → `with_conditional_derive_for`.
+    /// Conditional (`cfg_attr`) derive lines; applied by the decoration
+    /// pass.
     #[serde(default)]
     pub conditional_derives: Vec<CondDeriveEntry>,
-    /// → `with_conditional_attr_at`.
+    /// Conditional (`cfg_attr`) attribute lines; applied by the
+    /// decoration pass.
     #[serde(default)]
     pub conditional_attrs: Vec<CondAttrEntry>,
     /// Full `use ...;` statements injected at the top of every generated
@@ -906,33 +902,30 @@ impl StyleConfig {
         }
     }
 
-    /// Apply every typify-knob-backed key to `settings`. The keys typify
-    /// has no knob for — the `patch`/`deep-patch` resolution, `emit-style`,
-    /// `untagged-enum-defaults`, `imports`, and the `[types]`/`[fields]`
-    /// overrides — are consumed by [`crate::patch_plan::PatchPlan`] and
-    /// the post-generation passes instead.
+    /// Apply every typify-settings-backed key to `settings`. The keys
+    /// typify has no setting for split across this crate's two levers:
+    /// pre-typify schema handling (the `[[rules]]` `optional` rewrites)
+    /// and the post-generation AST passes — the decoration pass
+    /// ([`crate::decorate`]) for derives / attrs / `rename_all` /
+    /// option-noise elision / patch machinery / enum defaults / newtype
+    /// conveniences, plus the override, mapping, and condense passes.
     pub fn apply_to_settings(&self, settings: &mut TypeSpaceSettings) {
+        use typify::TypeSpaceImpl;
+
         if self.optional_fields == OptionalFields::AlwaysOption {
-            settings
-                .with_array_optionality(typify::ArrayOptionality::OptionalIfNotRequired)
-                .with_default_bool_optionality(typify::DefaultBoolOptionality::AlwaysOption)
-                .with_defaulted_field_optionality(typify::DefaultedFieldOptionality::AlwaysOption);
+            settings.with_optional_properties(typify::OptionalProperties::Explicit);
         }
-        if self.constrained_strings == ConstraintMode::Plain {
-            settings.with_unconstrained_string(true);
-        }
-        if self.integers == ConstraintMode::Plain {
-            settings.with_unconstrained_int(true);
-        }
-        if let Some(date) = &self.date {
-            settings.with_date_type(date);
-        }
-        if let Some(date_time) = &self.date_time {
-            settings.with_date_time_type(date_time);
-        }
-        if let Some(uuid) = &self.uuid {
-            settings.with_uuid_type(uuid);
-        }
+
+        // Conversion registration order encodes precedence among equal
+        // specificity (typify keeps the earliest-registered conversion
+        // among equals): `[style.formats]` entries first, then the
+        // date/uuid sugar keys, then the `constrained-strings = "plain"`
+        // restatement of typify's built-in string formats, then the
+        // integers=Plain table, and last the catch-all `{type: string}`
+        // conversion (less specific than every format conversion, so its
+        // position matters only for exact `{type: string}` user entries,
+        // which win).
+        //
         // Key shape is validated with a clean error in
         // `Overrides::resolve` (always run by `Generator::load`); a
         // malformed key reaching this point is a programming error in
@@ -945,61 +938,149 @@ impl StyleConfig {
                      e.g. \"string/date-time\"",
                 )
             });
-            settings.with_format_type(instance_type, format, mapping.type_path());
+            // Unknown instance types were inert under the old format
+            // interception (consulted only for string/integer/number);
+            // keep them inert rather than registering a conversion with
+            // undefined semantics.
+            let Some(instance_type) = parse_instance_type(instance_type) else {
+                continue;
+            };
+            settings.with_conversion(
+                format_schema(instance_type, format),
+                mapping.type_path(),
+                conversion_impls(
+                    instance_type,
+                    Some(format),
+                    mapping.type_path(),
+                    mapping.capabilities(),
+                ),
+            );
         }
-        if let Some(case) = &self.rename_all {
-            settings.with_struct_rename_all(case);
+        for (format, type_path) in [
+            ("date", &self.date),
+            ("date-time", &self.date_time),
+            ("uuid", &self.uuid),
+        ] {
+            if let Some(type_path) = type_path {
+                settings.with_conversion(
+                    format_schema(schemars::schema::InstanceType::String, format),
+                    type_path,
+                    conversion_impls(
+                        schemars::schema::InstanceType::String,
+                        Some(format),
+                        type_path,
+                        &[],
+                    ),
+                );
+            }
+        }
+        if self.constrained_strings == ConstraintMode::Plain {
+            // Restate typify's built-in string-format handling as
+            // conversions so the catch-all below can't swallow it (a
+            // user conversion for the same format, registered above,
+            // still wins the tie), then map every remaining plain
+            // string — conversions never match schemas whose
+            // `enum`/`const` they don't specify, so string enumerations
+            // are untouched.
+            for (format, type_path, impls) in [
+                (
+                    "uuid",
+                    "::uuid::Uuid",
+                    // uuid::Uuid implements Default (the nil UUID).
+                    &[
+                        TypeSpaceImpl::Display,
+                        TypeSpaceImpl::FromStr,
+                        TypeSpaceImpl::Default,
+                    ][..],
+                ),
+                (
+                    "date",
+                    "::chrono::naive::NaiveDate",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "date-time",
+                    "::chrono::DateTime<::chrono::offset::Utc>",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ip",
+                    "::std::net::IpAddr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ipv4",
+                    "::std::net::Ipv4Addr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+                (
+                    "ipv6",
+                    "::std::net::Ipv6Addr",
+                    &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr][..],
+                ),
+            ] {
+                settings.with_conversion(
+                    format_schema(schemars::schema::InstanceType::String, format),
+                    type_path,
+                    impls.iter().copied(),
+                );
+            }
+        }
+        if self.integers == ConstraintMode::Plain {
+            // One conversion per integer format, onto the plain type the
+            // format names: subset matching disregards bounds, so
+            // `minimum: 1` no longer selects a `NonZero*` type.
+            for (format, plain_type) in [
+                ("int8", "i8"),
+                ("uint8", "u8"),
+                ("int16", "i16"),
+                ("uint16", "u16"),
+                ("int", "i32"),
+                ("int32", "i32"),
+                ("uint", "u32"),
+                ("uint32", "u32"),
+                ("int64", "i64"),
+                ("uint64", "u64"),
+            ] {
+                settings.with_conversion(
+                    format_schema(schemars::schema::InstanceType::Integer, format),
+                    plain_type,
+                    [
+                        TypeSpaceImpl::Display,
+                        TypeSpaceImpl::FromStr,
+                        TypeSpaceImpl::Default,
+                    ]
+                    .into_iter(),
+                );
+            }
+        }
+        if self.constrained_strings == ConstraintMode::Plain {
+            // The catch-all: every string schema a more specific
+            // conversion doesn't claim — constrained or not — is a
+            // plain `String`. Least specific of all conversions, so
+            // every format entry above wins; enumerations are exempt by
+            // the `enum`/`const` matching rule.
+            settings.with_conversion(
+                schemars::schema::SchemaObject {
+                    instance_type: Some(schemars::schema::InstanceType::String.into()),
+                    ..Default::default()
+                },
+                "::std::string::String",
+                STD_STRING_IMPLS.iter().copied(),
+            );
         }
         if self.allof == AllOfMode::Compose {
-            settings.with_allof_strategy(typify::AllOfStrategy::Compose);
-        }
-        if self.enum_default == EnumDefaultMode::FirstUnitVariant {
-            settings.with_enum_first_variant_default(true);
+            settings.with_all_of_strategy(typify::AllOfStrategy::Compose);
         }
         if let Some(variant) = &self.open_enums {
-            settings.with_open_string_enums(variant);
-        }
-        if self.elide_option_defaults {
-            settings.with_elide_option_field_defaults(true);
+            settings.with_open_enum_variant(variant);
         }
         settings.with_schema_in_docs(self.schema_in_docs);
-        settings.with_string_newtype_conveniences(self.string_newtype_conveniences);
 
-        for derive in &self.derives.structs {
-            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::STRUCTS);
-        }
-        for derive in &self.derives.enums {
-            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::ENUMS);
-        }
-        for derive in &self.derives.newtypes {
-            settings.with_unconditional_derive_for(derive, typify::TypeKindFilter::NEWTYPES);
-        }
-        for entry in &self.attrs {
-            settings.with_unconditional_attr_at(
-                &entry.attr,
-                entry.position.to_typify(),
-                entry.kinds.to_typify(),
-            );
-        }
-        for entry in &self.conditional_derives {
-            settings.with_conditional_derive_for(
-                &entry.feature,
-                &entry.derive,
-                entry.kinds.to_typify(),
-            );
-        }
-        for entry in &self.conditional_attrs {
-            settings.with_conditional_attr_at(
-                &entry.feature,
-                &entry.attr,
-                entry.position.to_typify(),
-                entry.kinds.to_typify(),
-            );
-        }
         for (selector, override_) in &self.types {
             if let Some(replace) = &override_.replace {
                 settings.with_replacement(
-                    typify::rust_type_ident(selector),
+                    crate::idents::rust_type_ident(selector),
                     replace,
                     override_
                         .replace_impls
@@ -1007,6 +1088,10 @@ impl StyleConfig {
                         .filter_map(|capability| capability.to_typify()),
                 );
             }
+            // Per-type `derives-add` extras ride typify's `with_patch`
+            // when the kind's derive list is left native; when the
+            // decoration pass replaces the list it re-applies them (the
+            // rewrite would otherwise erase them).
             if override_.derives_add.is_empty() {
                 continue;
             }
@@ -1014,7 +1099,7 @@ impl StyleConfig {
             for derive in &override_.derives_add {
                 patch.with_derive(derive);
             }
-            settings.with_patch(typify::rust_type_ident(selector), &patch);
+            settings.with_patch(crate::idents::rust_type_ident(selector), &patch);
         }
     }
 
@@ -1070,6 +1155,82 @@ impl StyleConfig {
             .with_context(|| format!("failed to read config {}", path.display()))?;
         Self::from_toml_str(&raw, base).with_context(|| format!("in {}", path.display()))
     }
+}
+
+/// A `{type: <instance>, format: <format>}` schema object for a subset
+/// conversion.
+fn format_schema(
+    instance_type: schemars::schema::InstanceType,
+    format: &str,
+) -> schemars::schema::SchemaObject {
+    schemars::schema::SchemaObject {
+        instance_type: Some(instance_type.into()),
+        format: Some(format.to_string()),
+        ..Default::default()
+    }
+}
+
+fn parse_instance_type(name: &str) -> Option<schemars::schema::InstanceType> {
+    match name {
+        "string" => Some(schemars::schema::InstanceType::String),
+        "integer" => Some(schemars::schema::InstanceType::Integer),
+        "number" => Some(schemars::schema::InstanceType::Number),
+        _ => None,
+    }
+}
+
+/// The full impl surface of `::std::string::String`, claimed whenever a
+/// conversion targets it so the native entry behaves exactly like
+/// typify's internal string type — in particular `FromStringIrrefutable`
+/// keeps untagged unions with a string member on the
+/// irrefutable-classification path (no `TryFrom<String>` ladder to
+/// conflict with the newtype/`From<String>` blanket impl) and `Default`
+/// keeps `Default`-satisfiability analysis accurate.
+const STD_STRING_IMPLS: &[typify::TypeSpaceImpl] = &[
+    typify::TypeSpaceImpl::Display,
+    typify::TypeSpaceImpl::FromStr,
+    typify::TypeSpaceImpl::FromStringIrrefutable,
+    typify::TypeSpaceImpl::Default,
+];
+
+/// The trait impls a conversion claims for its target type, feeding
+/// typify's impl knowledge (newtype proxying, untagged-union
+/// classification, `Default` satisfiability):
+///
+/// - capabilities declared on the entry (a `[style.formats]` table form)
+///   are authoritative;
+/// - a `::std::string::String` target claims the internal string type's
+///   full surface;
+/// - otherwise the string formats typify itself maps natively proxy
+///   `Display`/`FromStr` (the historical format-interception behavior),
+///   and everything else claims nothing.
+fn conversion_impls(
+    instance_type: schemars::schema::InstanceType,
+    format: Option<&str>,
+    type_path: &str,
+    declared: &[Capability],
+) -> impl Iterator<Item = typify::TypeSpaceImpl> {
+    use typify::TypeSpaceImpl;
+    const DISPLAY_FROMSTR: &[TypeSpaceImpl] = &[TypeSpaceImpl::Display, TypeSpaceImpl::FromStr];
+    let impls: Vec<TypeSpaceImpl> = if !declared.is_empty() {
+        declared
+            .iter()
+            .filter_map(|capability| capability.to_typify())
+            .collect()
+    } else if type_path.replace(' ', "").trim_start_matches("::") == "std::string::String"
+        || type_path == "String"
+    {
+        STD_STRING_IMPLS.to_vec()
+    } else {
+        match (instance_type, format) {
+            (
+                schemars::schema::InstanceType::String,
+                Some("uuid" | "date" | "date-time" | "ip" | "ipv4" | "ipv6"),
+            ) => DISPLAY_FROMSTR.to_vec(),
+            _ => Vec::new(),
+        }
+    };
+    impls.into_iter()
 }
 
 /// Merge a raw `[style]` TOML table over a preset, key by key. Only keys

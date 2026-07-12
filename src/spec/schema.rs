@@ -203,10 +203,9 @@ impl Schema {
                         .with_context(|| format!("properties at {child} is not an object"))?;
                     for (name, property) in properties {
                         let property_origin = child.child(name);
-                        schema.properties.insert(
-                            name.clone(),
-                            Schema::from_value(property, property_origin)?,
-                        );
+                        schema
+                            .properties
+                            .insert(name.clone(), Schema::from_value(property, property_origin)?);
                     }
                 }
                 "required" => {
@@ -293,9 +292,11 @@ impl Schema {
                 "minItems" => schema.min_items = Some(number_at(value, &child)?),
                 "maxItems" => schema.max_items = Some(number_at(value, &child)?),
                 "uniqueItems" => {
-                    schema.unique_items = Some(value.as_bool().with_context(|| {
-                        format!("uniqueItems at {child} is not a boolean")
-                    })?);
+                    schema.unique_items = Some(
+                        value
+                            .as_bool()
+                            .with_context(|| format!("uniqueItems at {child} is not a boolean"))?,
+                    );
                 }
                 "minProperties" => schema.min_properties = Some(number_at(value, &child)?),
                 "maxProperties" => schema.max_properties = Some(number_at(value, &child)?),
@@ -346,9 +347,10 @@ impl Schema {
                 match non_null.as_slice() {
                     [] => self.ty = Some(TypeHint::Null),
                     [single] => {
-                        self.ty = Some(TypeHint::parse(single).with_context(|| {
-                            format!("unknown type {single:?} at {origin}")
-                        })?);
+                        self.ty = Some(
+                            TypeHint::parse(single)
+                                .with_context(|| format!("unknown type {single:?} at {origin}"))?,
+                        );
                     }
                     several => bail!(
                         "union type {several:?} at {origin} is not supported \
@@ -413,16 +415,24 @@ impl Schema {
                 Value::String(description.clone()),
             );
         }
-        // A nullable typed node renders as `type: [T, "null"]` (above),
-        // and typify names the Option wrapper's INNER type from the
-        // node's `title` when one is present — GitHub titles every
-        // schema with its own name, so the inner would collide with
-        // the wrapper (`X(Option<X>)`). Withhold the title on exactly
-        // that shape; the inner then falls back to typify's
-        // collision-free `{Wrapper}Inner` naming. The description
-        // (the useful doc text) still renders.
+        // Option-forming constructions carry the node's `title` into the
+        // *inner* (non-null) schema — the typed-nullable render swaps the
+        // instance type in place, the untyped-nullable wrap moves the
+        // whole node inside `anyOf [inner, null]`, and typify's
+        // null-member enum handling reads the enum's own metadata — and
+        // typify names such inners `{Wrapper}Inner` only as a
+        // *suggestion*, which a title overrides. GitHub and Plaid title
+        // every schema with its own name, so the inner would collide
+        // with the Option's newtype wrapper (`X(Option<X>)`, E0428).
+        // Withhold the title on exactly those shapes; the description
+        // (the useful doc text) still renders. Nullable multi-member
+        // unions are exempt: their `null` joins the member list and the
+        // title stays at the node level, where it names no inner.
+        let title_reaches_option_inner = (self.nullable
+            && (self.ty.is_some() || (self.one_of.is_empty() && self.any_of.is_empty())))
+            || (self.ty == Some(TypeHint::String) && self.enumeration.iter().any(Value::is_null));
         if let Some(title) = &self.title
-            && !(self.nullable && self.ty.is_some())
+            && !title_reaches_option_inner
         {
             map.insert("title".to_string(), Value::String(title.clone()));
         }
@@ -464,17 +474,16 @@ impl Schema {
             // the wire carries: stringify the mistyped scalars. A
             // nullable enum keeps its `null` member so typify prunes
             // it into the Option wrapper.
-            let members = self.enumeration.iter().map(|member| {
-                match (&self.ty, member) {
-                    (Some(TypeHint::String), Value::Bool(flag)) => {
-                        Value::String(flag.to_string())
-                    }
+            let members = self
+                .enumeration
+                .iter()
+                .map(|member| match (&self.ty, member) {
+                    (Some(TypeHint::String), Value::Bool(flag)) => Value::String(flag.to_string()),
                     (Some(TypeHint::String), Value::Number(number)) => {
                         Value::String(number.to_string())
                     }
                     _ => member.clone(),
-                }
-            });
+                });
             let mut members: Vec<Value> = members.collect();
             // A nullable typed enum renders `type: [T, "null"]`; the
             // values list must offer the null typify folds into
@@ -485,13 +494,17 @@ impl Schema {
             map.insert("enum".to_string(), Value::Array(members));
         }
         if let Some(default) = &self.default {
-            // `default: null` on a non-nullable node is the JSON-ism
-            // for "no default" (DigitalOcean writes it on plain oneOf
-            // unions): null is not a value of the type, and typify
-            // either rejects the default or panics rendering it. A
-            // nullable node keeps it — null is the Option's intrinsic
-            // default there.
-            if !default.is_null() || self.nullable {
+            // `default: null` is representable only by omission. On a
+            // non-nullable node it's the JSON-ism for "no default"
+            // (DigitalOcean writes it on plain oneOf unions): null is
+            // not a value of the type, and typify either rejects the
+            // default or panics rendering it. On a *nullable* node null
+            // is already the `Option`'s intrinsic default — typify
+            // treats a missing default identically, whereas a literal
+            // null default on the rendered `type: [T, "null"]` schema
+            // leaks onto the inner non-null type during typify's Option
+            // conversion and fails default validation there.
+            if !default.is_null() {
                 map.insert("default".to_string(), default.clone());
             }
         }
@@ -556,9 +569,10 @@ impl Schema {
         if self.nullable && self.ty.is_none() {
             for key in ["oneOf", "anyOf"] {
                 if let Some(Value::Array(members)) = map.get_mut(key) {
-                    if !members.iter().any(|member| {
-                        member.get("type").and_then(Value::as_str) == Some("null")
-                    }) {
+                    if !members
+                        .iter()
+                        .any(|member| member.get("type").and_then(Value::as_str) == Some("null"))
+                    {
                         members.push(serde_json::json!({ "type": "null" }));
                     }
                     return Value::Object(map);

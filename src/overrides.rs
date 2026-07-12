@@ -1,15 +1,16 @@
 //! Per-type and per-field override resolution: the consumer of the
 //! `patch` / `deep-patch` / `[types]` / `[fields]` configuration keys.
 //!
-//! typify's style surface is global-per-kind; the granular decisions are
-//! made here instead, split across the two levers this crate owns:
+//! typify owns only the wire-shape decisions; the granular patch
+//! decisions are made here instead, split across the two AST passes
+//! this crate owns:
 //!
-//! - **at generation time**, the fork's `with_deep_patch_filter` closure
-//!   (built by [`Overrides::deep_patch_filter`]) decides every
+//! - **in the decoration pass** ([`crate::decorate`]), the predicate
+//!   built by [`Overrides::deep_patch_filter_with_rules`] decides every
 //!   `#[patch(name = "Option<InnerPatch>")]` annotation — consulting the
 //!   per-field overrides, then per-type patchability of both the owner
 //!   and the inner type, then the style-level [`DeepPatchMode`];
-//! - **after generation**, [`Overrides::apply_to_file`] strips the
+//! - **after decoration**, [`Overrides::apply_to_file`] strips the
 //!   `Patch` derive and `patch(...)` attributes from non-patchable
 //!   structs, applies per-field Rust-type replacements, validates every
 //!   selector matched something (unmatched keys are hard errors), and
@@ -18,10 +19,10 @@
 //!   dependency.
 //!
 //! Config keys are schema names (`components.schemas` keys and wire
-//! property names); they are translated once to the Rust names that
-//! generation-time hooks and the AST observe via the fork's exported
-//! sanitizers ([`typify::rust_type_ident`] / [`typify::rust_field_ident`]),
-//! so generated-name keys work too.
+//! property names); they are translated once to the Rust names the AST
+//! observes via [`crate::idents::rust_type_ident`] /
+//! [`crate::idents::rust_field_ident`] (this crate's port of typify's
+//! sanitization), so generated-name keys work too.
 
 use std::collections::BTreeMap;
 
@@ -107,7 +108,7 @@ impl Overrides {
                      replacement type",
                 );
             }
-            let rust_name = typify::rust_type_ident(selector);
+            let rust_name = crate::idents::rust_type_ident(selector);
             let plan = types.entry(rust_name).or_default();
             if !plan.selector.is_empty() && plan.selector != *selector {
                 bail!(
@@ -134,8 +135,8 @@ impl Overrides {
                 );
             }
             let key = (
-                typify::rust_type_ident(type_part),
-                typify::rust_field_ident(field_part),
+                crate::idents::rust_type_ident(type_part),
+                crate::idents::rust_field_ident(field_part),
             );
             let plan = fields.entry(key).or_default();
             if !plan.selector.is_empty() && plan.selector != *selector {
@@ -178,22 +179,14 @@ impl Overrides {
             .unwrap_or(self.patch_baseline)
     }
 
-    /// The predicate handed to the fork's `with_deep_patch_filter`:
+    /// The deep-patch predicate the decoration pass consults per field:
     /// `(owner_struct, field, inner_struct) -> annotate?`. Field-level
-    /// overrides win; then patchability of both ends (an annotation
-    /// naming `{Inner}Patch` requires the inner type's companion to
-    /// exist, and the owner's `Patch` derive to survive the strip);
-    /// then the style-level mode. Fields with a `type` replacement are
-    /// never annotated — the replacement has no known companion.
-    pub(crate) fn deep_patch_filter(
-        &self,
-    ) -> impl Fn(&str, &str, &str) -> bool + Send + Sync + 'static {
-        self.deep_patch_filter_with_rules(BTreeMap::new())
-    }
-
-    /// [`Self::deep_patch_filter`] with the `[[rules]]` tier's forced
-    /// decisions layered between the `[fields]` tier (which wins) and
-    /// the style-level mode.
+    /// overrides win; then the `[[rules]]` tier's forced decisions; then
+    /// patchability of both ends (an annotation naming `{Inner}Patch`
+    /// requires the inner type's companion to exist, and the owner's
+    /// `Patch` derive to survive the strip); then the style-level mode.
+    /// Fields with a `type` replacement are never annotated — the
+    /// replacement has no known companion.
     pub(crate) fn deep_patch_filter_with_rules(
         &self,
         rules: BTreeMap<(String, String), bool>,

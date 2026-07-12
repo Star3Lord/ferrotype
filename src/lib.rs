@@ -81,7 +81,11 @@
 //! stage.settings_mut().with_schema_in_docs(true); // any typify knob
 //!
 //! let stage = stage.build_types()?;                // typify has run
-//! let names = stage.type_space().definition_rust_names();
+//! let names: Vec<(String, String)> = stage
+//!     .type_space()
+//!     .iter_definitions()
+//!     .map(|(key, ty)| (key.to_string(), ty.name()))
+//!     .collect();
 //!
 //! let mut file = stage.into_file()?;               // post-processed AST
 //! file.items.push(syn::parse_quote! { pub const GENERATED: bool = true; });
@@ -119,10 +123,13 @@
 pub mod client;
 mod condense;
 pub mod config;
+mod decorate;
 mod generate;
+mod idents;
 mod load;
 mod lower;
 mod mappings;
+mod modules;
 mod overrides;
 mod partition;
 mod pipeline;
@@ -136,6 +143,7 @@ mod verify;
 
 pub use config::StyleConfig;
 pub use generate::Generator;
+pub use idents::{rust_field_ident, rust_type_ident};
 pub use load::{apply_patches_dir, load_spec};
 pub use lower::{lower_to_json_schema, lowered_root_schema};
 pub use partition::{

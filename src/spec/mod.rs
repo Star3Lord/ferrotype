@@ -175,13 +175,21 @@ impl Spec {
 
     /// Render `components.schemas` as a draft-07 `definitions` map — the
     /// bridge feeding the typify engine. Reproduces the historical
-    /// lowering exactly: `#/components/schemas/` refs become
-    /// `#/definitions/`, `nullable: true` becomes an `anyOf` with `null`,
-    /// missing `type` is inferred from `format`, boolean exclusive bounds
-    /// take draft-07's numeric form, and OpenAPI-only metadata
+    /// lowering: `#/components/schemas/` refs become `#/definitions/`,
+    /// `nullable: true` becomes an `anyOf` with `null`, missing `type` is
+    /// inferred from `format`, boolean exclusive bounds take draft-07's
+    /// numeric form, and OpenAPI-only metadata
     /// (`example`/`examples`/`xml`/`externalDocs`/`discriminator`) is
     /// absent (the model keeps `discriminator` and examples; the render
     /// drops them for the strict draft-07 parser).
+    ///
+    /// Option-forming constructions (nullable wrappers, string enums with
+    /// a literal `null` member) need no restructuring: typify names their
+    /// inner types `{name}Inner`, distinct from the `Option` newtype
+    /// wrapper that takes the definition's name. The render's only
+    /// contribution is withholding self-referential `title`s on those
+    /// shapes (see [`Schema::to_draft07`]), which would otherwise
+    /// override the distinct inner name.
     pub fn to_draft07_definitions(&self) -> serde_json::Map<String, Value> {
         self.schemas
             .iter()
@@ -192,11 +200,10 @@ impl Spec {
     /// [`Self::to_draft07_definitions`] wrapped as the
     /// [`RootSchema`](schemars::schema::RootSchema) that typify consumes.
     pub fn to_draft07_root(&self) -> Result<schemars::schema::RootSchema> {
-        let root: schemars::schema::RootSchema =
-            serde_json::from_value(serde_json::json!({
-                "definitions": Value::Object(self.to_draft07_definitions()),
-            }))
-            .context("failed to deserialize the rendered schemas as a JSON Schema root")?;
+        let root: schemars::schema::RootSchema = serde_json::from_value(serde_json::json!({
+            "definitions": Value::Object(self.to_draft07_definitions()),
+        }))
+        .context("failed to deserialize the rendered schemas as a JSON Schema root")?;
         Ok(root)
     }
 }

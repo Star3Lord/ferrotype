@@ -42,11 +42,11 @@ fn main() {
     // Stage 3 — build types: typify has run; inspect what came out before
     // committing to tokens.
     let stage = stage.build_types().unwrap();
-    let names = stage.type_space().definition_rust_names();
     assert!(
-        names
-            .iter()
-            .any(|(schema, rust)| schema == "Dog" && rust == "Dog"),
+        stage
+            .type_space()
+            .iter_definitions()
+            .any(|(schema, ty)| schema == "Dog" && ty.name() == "Dog"),
         "typify should emit a `Dog` type for the Dog schema",
     );
 

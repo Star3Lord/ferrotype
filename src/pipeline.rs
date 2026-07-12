@@ -58,7 +58,11 @@ use crate::{Result, condense, postprocess};
 /// stage.settings_mut().with_schema_in_docs(true);
 ///
 /// let stage = stage.build_types()?;      // GeneratedTypes: populated TypeSpace
-/// let names = stage.type_space().definition_rust_names();
+/// let names: Vec<(String, String)> = stage
+///     .type_space()
+///     .iter_definitions()
+///     .map(|(key, ty)| (key.to_string(), ty.name()))
+///     .collect();
 ///
 /// let mut file = stage.into_file()?;     // syn::File, post-processing applied
 /// file.items.push(syn::parse_quote! { pub const GENERATED: bool = true; });
@@ -210,20 +214,7 @@ impl LoweredSchema {
 
     /// Run typify: build a [`TypeSpace`] from the settings and populate it
     /// from the lowered schema.
-    pub fn build_types(mut self) -> Result<GeneratedTypes> {
-        // Rule-tier deep-patch and type-level patch decisions feed
-        // typify's generation-time filter (the load-time install
-        // predates rules resolution); re-install it augmented only
-        // when rules force something, preserving any `customize`-hook
-        // filter otherwise.
-        if !self.field_rules.deep_patch_overrides().is_empty()
-            || !self.field_rules.patch_overrides().is_empty()
-        {
-            self.settings.with_deep_patch_filter(
-                self.overrides
-                    .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone()),
-            );
-        }
+    pub fn build_types(self) -> Result<GeneratedTypes> {
         let mut type_space = TypeSpace::new(&self.settings);
         type_space
             .add_root_schema(self.schema)
@@ -273,7 +264,7 @@ pub struct GeneratedTypes {
 
 impl GeneratedTypes {
     /// The populated type space, e.g. for
-    /// [`typify::TypeSpace::definition_rust_names`] or
+    /// [`typify::TypeSpace::iter_definitions`] or
     /// [`typify::TypeSpace::iter_types`].
     pub fn type_space(&self) -> &TypeSpace {
         &self.type_space
@@ -303,11 +294,13 @@ impl GeneratedTypes {
                 let rust_partition =
                     resolved_rust_partition(partition, &self.type_space, &self.style);
                 let imports = partition.module_imports(&trait_imports);
-                self.type_space.to_stream_partitioned(
+                crate::modules::partitioned_stream(
+                    &self.type_space,
                     &rust_partition,
                     partition.default_module(),
                     &imports,
                 )
+                .expect("every partitioned type id comes from this type space")
             }
             None => {
                 let body = self.type_space.to_stream();
@@ -397,17 +390,33 @@ impl GeneratedTypes {
     fn build_file(&self) -> Result<syn::File> {
         let mut file = syn::parse_file(&self.tokens().to_string())
             .context("generated tokens failed to parse as a Rust file")?;
+        // The decoration pass runs first, so every downstream pass sees
+        // the same decorated shape the old typify fork used to emit:
+        // derive lists, attribute stacks, rename_all + rename elision,
+        // Option serde-noise elision, deep-patch annotations and naming
+        // mirrors, enum first-variant defaults, newtype conveniences.
+        let deep_patch = self
+            .overrides
+            .deep_patch_filter_with_rules(self.field_rules.deep_patch_overrides().clone());
+        crate::decorate::decorate_file(&mut file, &self.style, &deep_patch)?;
         self.overrides.apply_to_file(&mut file)?;
         // The per-field decision layer: `[style.formats]` / `replace`
         // mapping defaults, overridden by `[[rules]]` in order, then
         // the `[fields]` tier — materialized once and applied by the
         // mappings machinery (attrs, rule type overrides, capability
-        // pruning); enums whose Default synthesis would not compile
-        // are skipped below.
+        // pruning seeded by both config-declared external capabilities
+        // and typify's `Default`-satisfiability knowledge); enums whose
+        // Default synthesis would not compile are skipped below.
         let plans = self.field_rules.field_plans(&file, &self.style)?;
         let mappings = crate::mappings::Mappings::resolve(&self.style)?;
-        let skip_defaults =
-            mappings.apply_to_file(&mut file, self.style.untagged_enum_defaults, &plans)?;
+        let default_incapable =
+            crate::mappings::typify_default_incapable(&self.type_space, &self.style);
+        let skip_defaults = mappings.apply_to_file(
+            &mut file,
+            self.style.untagged_enum_defaults,
+            &plans,
+            &default_incapable,
+        )?;
         if self.style.untagged_enum_defaults {
             postprocess::synthesize_enum_defaults(&mut file, &skip_defaults);
         }
@@ -432,7 +441,7 @@ pub(crate) fn resolved_rust_partition(
     let mut rust_partition = partition.to_rust_partition(type_space);
     for (selector, override_) in &style.types {
         if let Some(module) = &override_.module {
-            rust_partition.insert(typify::rust_type_ident(selector), module.clone());
+            rust_partition.insert(crate::idents::rust_type_ident(selector), module.clone());
         }
     }
     rust_partition
@@ -445,9 +454,9 @@ fn parse_imports(imports: &[String]) -> TokenStream {
     imports
         .iter()
         .map(|statement| {
-            statement
-                .parse::<TokenStream>()
-                .unwrap_or_else(|error| panic!("style import {statement:?} failed to parse: {error}"))
+            statement.parse::<TokenStream>().unwrap_or_else(|error| {
+                panic!("style import {statement:?} failed to parse: {error}")
+            })
         })
         .collect()
 }

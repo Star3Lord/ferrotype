@@ -765,6 +765,35 @@ the old engine as default, and record where the wall is.
   house-style `Default` on a struct with a required `NonZeroU64` field
   is pruned with a warning instead of emitted as non-compiling code.
 
+- **D26 — the verify gate mounts the `ext/` modules generated code
+  references, not the whole directory.** The gate's contract is
+  generated code; mounting the user's real `ext/` (added so
+  `...::ext::datetime::...` field-attrs resolve) had widened it to
+  everything the user keeps there. The Sabre consumer showed the
+  cost: each suite's `ext/origins.rs` stamps error origins with its
+  workspace's `lib_errors::sites!`, names the client error by its
+  real-crate path (`crate::booking::client::support::Error`), and
+  renders site codes through a trait only the crate root's
+  `site_unit!` implements — three things a scratch crate in `/tmp`
+  cannot reproduce, so regeneration failed before writing a byte and
+  the spec patch it carried shipped with the gate switched off. Now
+  the tree gate scans the planned output for `ext::<name>` segments
+  (`ext` at a word boundary — the D21 marker mechanism) and mounts
+  exactly those: `ext/<name>.rs` plus `ext/<name>/**` under a
+  synthesized `ext/mod.rs` declaring them. A mounted module must
+  stand on the generated tree and the declared `[verify]
+  dependencies` alone — the stated contract for helpers the config
+  points generated code at — while the rest of `ext/` is the
+  enclosing crate's build to check. Nothing referenced yields the
+  pristine scaffold; a referenced module with no file of its own
+  (declared inline in `ext/mod.rs`, or a config typo) falls back to
+  the whole `ext/` so rustc reports on it. Rejected: making `ext/`
+  self-contained on the consumer side (impossible — the site-code
+  trait bound is the real crate's), an explicit `[verify]
+  ext-modules` list (config that can drift from the field-attrs that
+  already name the modules), and opting the gate off (it is the only
+  thing standing between a bad spec patch and 150 overwritten files).
+
 ## Results (2026-07-03)
 
 - **Parity gate: green, byte-identical** — not merely token-identical —

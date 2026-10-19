@@ -17,7 +17,7 @@
 //! dependencies must be resolvable in the environment running the
 //! generator (network or a warm cargo cache).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -76,6 +76,35 @@ fn detect_conditional_dependencies<'a>(
         }
     }
     found
+}
+
+/// The user-owned `ext/` modules the rendered `sources` reference: the
+/// `<name>` of every `ext::<name>` path segment — a config field-attr
+/// or type mapping naming `...::ext::<name>::...` — with `ext` at a
+/// word boundary, so `Text::new` and the like don't register. The
+/// tree gate mounts exactly these from the user's `ext/` (see
+/// [`crate::tree::plan_ext_dir`]).
+pub(crate) fn referenced_ext_modules<'a>(
+    sources: impl Iterator<Item = &'a str>,
+) -> BTreeSet<String> {
+    const SEGMENT: &str = "ext::";
+    let is_ident_char = |c: char| c.is_alphanumeric() || c == '_';
+    let mut modules = BTreeSet::new();
+    for source in sources {
+        for (index, _) in source.match_indices(SEGMENT) {
+            if source[..index].chars().next_back().is_some_and(is_ident_char) {
+                continue;
+            }
+            let name: String = source[index + SEGMENT.len()..]
+                .chars()
+                .take_while(|&c| is_ident_char(c))
+                .collect();
+            if name.chars().next().is_some_and(|c| !c.is_ascii_digit()) {
+                modules.insert(name);
+            }
+        }
+    }
+    modules
 }
 
 /// Gate a single-file output: the generated source becomes the scratch
@@ -303,6 +332,30 @@ mod tests {
                 "{name} missing from {auto:?}",
             );
         }
+    }
+
+    /// `ext::<name>` segments name the user ext modules the tree gate
+    /// mounts: paths inside attribute strings and bare type paths both
+    /// count, duplicates collapse, and `ext` glued to a preceding
+    /// identifier (`Text::`) or followed by no identifier is not one.
+    #[test]
+    fn referenced_ext_module_detection() {
+        let modules = referenced_ext_modules(
+            [
+                r#"#[serde(default, with = "super::super::ext::datetime::option")]"#,
+                "pub stamp: super::super::ext::stamp::Stamp,",
+                r#"#[serde(with = "super::super::ext::datetime::required")]"#,
+                "let t = Text::new(); let _ = ::std::ext::{a};",
+            ]
+            .into_iter(),
+        );
+        assert_eq!(
+            modules,
+            BTreeSet::from(["datetime".to_string(), "stamp".to_string()]),
+        );
+        assert!(
+            referenced_ext_modules(std::iter::once("pub v: ::serde_json::Value,")).is_empty()
+        );
     }
 
     /// Unresolved-crate failures produce the `[verify] dependencies`

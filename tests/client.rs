@@ -640,6 +640,72 @@ fn ext_module_can_be_disabled() {
     assert!(!dir.join("ext").exists());
 }
 
+/// A split-tree, client-enabled generator whose `Thing` carries a
+/// `date-time` field mapped onto a type living in the user's
+/// `ext/stamp.rs` (`super::super::` reaches the tree root from every
+/// partition leaf), with the verify gate on.
+fn ext_gated_generator(name: &str) -> Generator {
+    let mut document = spec_with(thing_paths(), None);
+    document["components"]["schemas"]["Thing"]["properties"]["stamp"] =
+        serde_json::json!({ "type": "string", "format": "date-time" });
+    generator_for(name, document)
+        .split_request_response(true)
+        .style(|style| {
+            style.formats.insert(
+                "string/date-time".into(),
+                "super::super::ext::stamp::Stamp".into(),
+            );
+        })
+        .verify_compile(true)
+}
+
+/// The verify gate compiles the generated tree against the user's
+/// `ext/` modules it references — and only those. Unreferenced user
+/// code under `ext/` may lean on the enclosing crate (its
+/// dependencies, items at its root) and must not fail the gate; a
+/// referenced module is genuinely compiled, so breaking it does.
+#[test]
+fn verify_gate_mounts_only_referenced_ext_modules() {
+    let dir = tree_dir("ext_gate");
+    // Scaffold the tree without the gate, then take over ext/: the
+    // referenced helper, plus a sibling only the real crate can build.
+    tree_generator("tree_ext_gate").generate_to_dir(&dir).unwrap();
+    let ext = dir.join("ext");
+    let scaffold = std::fs::read_to_string(ext.join("mod.rs")).unwrap();
+    std::fs::write(
+        ext.join("mod.rs"),
+        format!("{scaffold}\npub mod stamp;\npub mod origins;\n"),
+    )
+    .unwrap();
+    std::fs::write(ext.join("stamp.rs"), "pub type Stamp = ::std::string::String;\n").unwrap();
+    std::fs::write(
+        ext.join("origins.rs"),
+        "use ::nonexistent_crate::sites;\npub fn origin() -> sites::Site { todo!() }\n",
+    )
+    .unwrap();
+
+    ext_gated_generator("tree_ext_gate")
+        .generate_to_dir(&dir)
+        .expect("the gate must ignore ext/origins.rs, which only the real crate can compile");
+    let common = std::fs::read_to_string(dir.join("shared/common.rs")).unwrap();
+    assert!(common.contains("super::super::ext::stamp::Stamp"), "{common}");
+
+    // The referenced module is compiled for real: break it, and the
+    // gate reports the breakage.
+    std::fs::write(ext.join("stamp.rs"), "pub type Stamp = ::nonexistent_crate::Missing;\n")
+        .unwrap();
+    let error = format!(
+        "{:#}",
+        ext_gated_generator("tree_ext_gate")
+            .generate_to_dir(&dir)
+            .unwrap_err(),
+    );
+    assert!(
+        error.contains("failed to compile") && error.contains("nonexistent_crate"),
+        "the gate must compile the referenced ext module: {error}",
+    );
+}
+
 /// Eject rewrites the header; the ejected file is skipped on
 /// regeneration (edits survive) and never deleted; deleting it and
 /// regenerating restores the generated version.

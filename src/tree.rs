@@ -88,34 +88,90 @@ pub fn write_file_tree(
     remove_stale_generated(dir, Path::new(""), &written)
 }
 
-/// The user's real `ext/` directory under `dir`, as `dir`-relative
-/// path → contents pairs for the verify gate's scratch crate. Empty
-/// when the tree is fresh (no `ext/` yet) or unreadable — the caller
-/// falls back to the pristine scaffold.
-pub(crate) fn plan_ext_dir(dir: &Path) -> BTreeMap<PathBuf, String> {
-    fn collect(root: &Path, dir: &Path, files: &mut BTreeMap<PathBuf, String>) {
-        let Ok(entries) = std::fs::read_dir(dir) else {
-            return;
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                collect(root, &path, files);
-            } else if path.extension().is_some_and(|ext| ext == "rs")
-                && let Ok(contents) = std::fs::read_to_string(&path)
-                && let Ok(rel) = path.strip_prefix(root)
-            {
-                files.insert(PathBuf::from("ext").join(rel), contents);
-            }
+/// The `ext/` files the verify gate mounts beside the generated tree,
+/// as `dir`-relative path → contents pairs for its scratch crate.
+///
+/// Generated code may reference helpers in the user-owned `ext/`
+/// (config field-attrs and type mappings naming `...::ext::<name>::...`
+/// paths), so the gate compiles against what the user actually wrote —
+/// but only the modules it references: `ext/<name>.rs` and
+/// `ext/<name>/**` for each `name` in `referenced`, under a synthesized
+/// `ext/mod.rs` (the pristine `scaffold` plus one `pub mod <name>;`
+/// per module). Everything else under `ext/` is user code that may
+/// lean on the enclosing crate — its dependencies, items at its root —
+/// and is that crate's build to check, not the gate's; a mounted
+/// module, by contrast, must stand on the generated tree and the
+/// declared `[verify] dependencies` alone.
+///
+/// Nothing referenced yields the scaffold alone. A referenced module
+/// with no file or directory of its own (declared inline in the user's
+/// `ext/mod.rs`, or a typo in the config) falls back to mounting the
+/// user's whole `ext/` so the compiler can report on it; a tree without
+/// `ext/mod.rs` yet falls back to the scaffold.
+pub(crate) fn plan_ext_dir(
+    dir: &Path,
+    referenced: &BTreeSet<String>,
+    scaffold: &str,
+) -> BTreeMap<PathBuf, String> {
+    let ext_dir = dir.join("ext");
+    let scaffold_only = || BTreeMap::from([(PathBuf::from("ext/mod.rs"), scaffold.to_string())]);
+    if referenced.is_empty() {
+        return scaffold_only();
+    }
+
+    let mut files = BTreeMap::new();
+    for name in referenced {
+        let before = files.len();
+        collect_ext_file(&ext_dir, &ext_dir.join(format!("{name}.rs")), &mut files);
+        collect_ext_tree(&ext_dir, &ext_dir.join(name), &mut files);
+        if files.len() == before {
+            let mut whole = BTreeMap::new();
+            collect_ext_tree(&ext_dir, &ext_dir, &mut whole);
+            // A directory without a mod.rs cannot satisfy `pub mod ext;`.
+            return if whole.contains_key(Path::new("ext/mod.rs")) {
+                whole
+            } else {
+                scaffold_only()
+            };
         }
     }
-    let mut files = BTreeMap::new();
-    collect(&dir.join("ext"), &dir.join("ext"), &mut files);
-    // A directory without a mod.rs cannot satisfy `pub mod ext;`.
-    if !files.contains_key(Path::new("ext/mod.rs")) {
-        return BTreeMap::new();
-    }
+
+    let declarations: String = referenced
+        .iter()
+        .map(|name| format!("pub mod {name};\n"))
+        .collect();
+    files.insert(
+        PathBuf::from("ext/mod.rs"),
+        format!("{scaffold}\n{declarations}"),
+    );
     files
+}
+
+/// Record `path` (an `.rs` file under the user's `ext/` at `root`)
+/// into `files` under its `ext/`-prefixed relative path.
+fn collect_ext_file(root: &Path, path: &Path, files: &mut BTreeMap<PathBuf, String>) {
+    if path.extension().is_some_and(|ext| ext == "rs")
+        && let Ok(contents) = std::fs::read_to_string(path)
+        && let Ok(rel) = path.strip_prefix(root)
+    {
+        files.insert(PathBuf::from("ext").join(rel), contents);
+    }
+}
+
+/// Record every `.rs` file under `dir` (recursively) into `files`; a
+/// missing or unreadable directory records nothing.
+fn collect_ext_tree(root: &Path, dir: &Path, files: &mut BTreeMap<PathBuf, String>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_ext_tree(root, &path, files);
+        } else {
+            collect_ext_file(root, &path, files);
+        }
+    }
 }
 
 /// Write the user-owned `ext/mod.rs` scaffold, once: if the file
@@ -342,4 +398,105 @@ pub fn eject_file(path: impl AsRef<Path>) -> Result<()> {
         path.display(),
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SCAFFOLD: &str = "//! User-owned extensions.\n";
+
+    /// A fresh tree root holding the given `ext/`-relative files.
+    fn tree_with_ext(name: &str, files: &[(&str, &str)]) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "openapi-codegen-tree-{}-{name}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        for (rel, contents) in files {
+            write_if_changed(&dir.join("ext").join(rel), contents).unwrap();
+        }
+        dir
+    }
+
+    fn referenced(names: &[&str]) -> BTreeSet<String> {
+        names.iter().map(|name| name.to_string()).collect()
+    }
+
+    /// Only the referenced modules are mounted — a file module with its
+    /// submodule directory, a directory-only module — under a
+    /// synthesized mod.rs; the user's mod.rs and unreferenced siblings
+    /// stay out.
+    #[test]
+    fn mounts_referenced_ext_modules_only() {
+        let dir = tree_with_ext(
+            "referenced",
+            &[
+                ("mod.rs", "pub mod datetime;\npub mod stamp;\npub mod origins;\n"),
+                ("datetime.rs", "pub mod option {}\n#[cfg(test)]\nmod tests;\n"),
+                ("datetime/tests/mod.rs", "#[test]\nfn t() {}\n"),
+                ("stamp/mod.rs", "pub type Stamp = String;\n"),
+                ("origins.rs", "use lib_errors::sites;\n"),
+            ],
+        );
+
+        let planned = plan_ext_dir(&dir, &referenced(&["datetime", "stamp"]), SCAFFOLD);
+
+        let paths: Vec<_> = planned.keys().map(|p| p.to_str().unwrap()).collect();
+        assert_eq!(
+            paths,
+            [
+                "ext/datetime/tests/mod.rs",
+                "ext/datetime.rs",
+                "ext/mod.rs",
+                "ext/stamp/mod.rs",
+            ],
+        );
+        assert_eq!(
+            planned[Path::new("ext/mod.rs")],
+            format!("{SCAFFOLD}\npub mod datetime;\npub mod stamp;\n"),
+        );
+    }
+
+    /// Nothing referenced: the pristine scaffold alone, whatever the
+    /// user's ext/ holds.
+    #[test]
+    fn nothing_referenced_mounts_scaffold_only() {
+        let dir = tree_with_ext(
+            "unreferenced",
+            &[("mod.rs", "pub mod origins;\n"), ("origins.rs", "broken")],
+        );
+
+        let planned = plan_ext_dir(&dir, &BTreeSet::new(), SCAFFOLD);
+
+        assert_eq!(
+            planned,
+            BTreeMap::from([(PathBuf::from("ext/mod.rs"), SCAFFOLD.to_string())]),
+        );
+    }
+
+    /// A referenced module without a file of its own falls back to the
+    /// user's whole ext/ (it may be declared inline in mod.rs); without
+    /// any mod.rs there is nothing to mount but the scaffold.
+    #[test]
+    fn missing_referenced_module_falls_back() {
+        let dir = tree_with_ext(
+            "inline",
+            &[
+                ("mod.rs", "pub mod inline { pub type T = u8; }\npub mod other;\n"),
+                ("other.rs", "pub fn f() {}\n"),
+            ],
+        );
+        let planned = plan_ext_dir(&dir, &referenced(&["inline"]), SCAFFOLD);
+        let paths: Vec<_> = planned.keys().map(|p| p.to_str().unwrap()).collect();
+        assert_eq!(paths, ["ext/mod.rs", "ext/other.rs"]);
+        assert!(planned[Path::new("ext/mod.rs")].contains("pub mod inline"));
+
+        let fresh = tree_with_ext("fresh", &[]);
+        let planned = plan_ext_dir(&fresh, &referenced(&["datetime"]), SCAFFOLD);
+        assert_eq!(
+            planned,
+            BTreeMap::from([(PathBuf::from("ext/mod.rs"), SCAFFOLD.to_string())]),
+        );
+    }
 }

@@ -690,6 +690,18 @@ are both covered. Types mapped via `[style.formats]`/`replace` still
 need their crates declared explicitly (the gate can't guess versions
 or features for arbitrary crates).
 
+With the client's `ext/` module in play, the tree gate mounts only the
+`ext/` modules the generated output references — the `<name>` of every
+`...::ext::<name>::...` path a config field-attr or type mapping
+emitted — as `ext/<name>.rs` plus `ext/<name>/**` under a synthesized
+`ext/mod.rs`. Those helpers must stand on the generated tree and the
+declared `[verify] dependencies` alone (a lenient datetime serde module
+does; it needs `time`). Everything else under `ext/` — impls, hooks,
+anything leaning on the enclosing crate's dependencies or root items —
+is that crate's build to check, so it neither passes nor fails the
+gate. A referenced module with no file of its own (declared inline in
+`ext/mod.rs`) falls back to mounting the whole `ext/`.
+
 ## Readable output / emit style
 
 Regardless of emit style, every rendered file separates adjacent items
